@@ -53,8 +53,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
           <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-zinc-500 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span>Vardiya — kafe & restoranlar için vardiya yönetimi.</span>
-            <span>MVP · yerel veri (tarayıcı depolaması)</span>
+            <span>Vardiya — kafe &amp; restoranlar için vardiya yönetimi.</span>
+            <span>MVP · veritabanı (SQLite / Prisma)</span>
           </div>
         </footer>
       </body>

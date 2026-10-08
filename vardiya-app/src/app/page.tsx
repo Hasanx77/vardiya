@@ -65,8 +65,9 @@ export default function Home() {
         </div>
 
         <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-          <strong>Bu bir MVP.</strong> Veriler şimdilik tarayıcında saklanır. Gerçek pilot
-          müşteriyle test edip geri bildirime göre geliştireceğiz.
+          <strong>Bu bir MVP.</strong> Veriler sunucudaki veritabanında (SQLite) saklanır; panele
+          eklediğin personel anında kaydedilir. Gerçek pilot müşteriyle test edip geri bildirime
+          göre geliştiriyoruz.
         </div>
       </section>
     </main>

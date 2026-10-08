@@ -27,6 +27,7 @@ export async function GET() {
       phone: e.phone,
       role: e.role,
       color: e.color,
+      hourlyWage: e.hourlyWage,
     })),
     shiftTemplates: shiftTemplates.map((t) => ({
       id: t.id,

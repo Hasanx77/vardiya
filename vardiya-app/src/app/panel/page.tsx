@@ -31,9 +31,9 @@ export default function PanelPage() {
   const [showForm, setShowForm] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
-  const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "" });
+  const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [showBulk, setShowBulk] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", role: "" });
+  const [form, setForm] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
 
@@ -115,8 +115,13 @@ export default function PanelPage() {
     const name = form.name.trim();
     if (!name) return flash("Personel adı gerekli.");
     try {
-      await apiAddEmployee({ name, phone: form.phone.trim(), role: form.role.trim() });
-      setForm({ name: "", phone: "", role: "" });
+      await apiAddEmployee({
+        name,
+        phone: form.phone.trim(),
+        role: form.role.trim(),
+        hourlyWage: Number(form.hourlyWage) || 0,
+      });
+      setForm({ name: "", phone: "", role: "", hourlyWage: "" });
       setShowForm(false);
       await load();
       flash("Personel eklendi ✅");
@@ -192,7 +197,12 @@ export default function PanelPage() {
 
   function startEditEmp(emp: Employee) {
     setEditingEmpId(emp.id);
-    setEmpDraft({ name: emp.name, phone: emp.phone, role: emp.role });
+    setEmpDraft({
+      name: emp.name,
+      phone: emp.phone,
+      role: emp.role,
+      hourlyWage: emp.hourlyWage ? String(emp.hourlyWage) : "",
+    });
   }
 
   async function saveEmp() {
@@ -204,6 +214,7 @@ export default function PanelPage() {
         name,
         phone: empDraft.phone.trim(),
         role: empDraft.role.trim(),
+        hourlyWage: Number(empDraft.hourlyWage) || 0,
       });
       setEditingEmpId(null);
       await load();
@@ -222,6 +233,10 @@ export default function PanelPage() {
       if (t) total += shiftHours(t);
     }
     return total;
+  }
+
+  function weekCost(emp: Employee): number {
+    return weekTotal(emp) * (emp.hourlyWage || 0);
   }
 
   function sendWhatsApp(emp: Employee) {
@@ -292,6 +307,8 @@ export default function PanelPage() {
 
   const pending = data.requests.filter((r) => r.status === "pending");
   const resolved = data.requests.filter((r) => r.status !== "pending");
+  const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
+  const totalCost = data.employees.reduce((s, e) => s + weekTotal(e) * (e.hourlyWage || 0), 0);
   const weekEmpty = data.employees.length === 0;
 
   return (
@@ -326,7 +343,7 @@ export default function PanelPage() {
       {/* Personel ekleme formu */}
       {showForm && (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-5">
             <input
               placeholder="Ad Soyad *"
               value={form.name}
@@ -343,6 +360,13 @@ export default function PanelPage() {
               placeholder="Görev (Barista, Garson…)"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+            />
+            <input
+              placeholder="Saatlik ücret ₺"
+              inputMode="decimal"
+              value={form.hourlyWage}
+              onChange={(e) => setForm({ ...form, hourlyWage: e.target.value })}
               className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
             />
             <button
@@ -562,6 +586,13 @@ export default function PanelPage() {
                             placeholder="Telefon"
                             className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
                           />
+                          <input
+                            value={empDraft.hourlyWage}
+                            onChange={(e) => setEmpDraft({ ...empDraft, hourlyWage: e.target.value })}
+                            placeholder="Saatlik ₺"
+                            inputMode="decimal"
+                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
+                          />
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -608,6 +639,11 @@ export default function PanelPage() {
                       {over && (
                         <span className="ml-1 text-red-600" title={`${WEEKLY_LIMIT_HOURS} saati aştı`}>
                           ⚠️
+                        </span>
+                      )}
+                      {emp.hourlyWage > 0 && (
+                        <span className="block text-[11px] text-zinc-500">
+                          ≈ {weekCost(emp).toLocaleString("tr-TR")} ₺
                         </span>
                       )}
                     </td>
@@ -669,6 +705,24 @@ export default function PanelPage() {
           </table>
         </div>
       )}
+
+      {/* Haftalık özet */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-zinc-500">Bu hafta toplam saat</div>
+          <div className="mt-1 text-2xl font-semibold">{summaryHours} sa</div>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-zinc-500">Tahmini işçilik maliyeti</div>
+          <div className="mt-1 text-2xl font-semibold">
+            {totalCost > 0 ? `≈ ${totalCost.toLocaleString("tr-TR")} ₺` : "—"}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-zinc-500">Personel sayısı</div>
+          <div className="mt-1 text-2xl font-semibold">{data.employees.length}</div>
+        </div>
+      </div>
 
       {/* Şablonlar */}
       <div className="mt-6">

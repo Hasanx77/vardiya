@@ -7,10 +7,14 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
 
-  const data: Record<string, string> = {};
+  const data: Record<string, string | number> = {};
   if (typeof body?.name === "string" && body.name.trim()) data.name = body.name.trim().slice(0, 60);
   if (typeof body?.phone === "string") data.phone = body.phone.trim().slice(0, 30);
   if (typeof body?.role === "string") data.role = body.role.trim().slice(0, 40) || "Personel";
+  if (body?.hourlyWage !== undefined) {
+    const wage = Number(body.hourlyWage);
+    if (Number.isFinite(wage) && wage >= 0) data.hourlyWage = wage;
+  }
 
   try {
     const emp = await prisma.employee.update({ where: { id }, data });
@@ -20,6 +24,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
       phone: emp.phone,
       role: emp.role,
       color: emp.color,
+      hourlyWage: emp.hourlyWage,
     });
   } catch {
     return NextResponse.json({ error: "Personel bulunamadı" }, { status: 404 });

@@ -22,6 +22,8 @@ export type Employee = {
   /** Görev / pozisyon (ör. Barista, Garson, Şef) */
   role: string;
   color: ColorKey;
+  /** Saatlik ücret (₺) — 0 ise maliyet hesaplanmaz */
+  hourlyWage: number;
 };
 
 /** Yeniden kullanılabilir vardiya şablonu (ör. Sabah 09:00-17:00) */

@@ -24,7 +24,12 @@ export function updateBusiness(name: string) {
   });
 }
 
-export function addEmployee(input: { name: string; phone: string; role: string }) {
+export function addEmployee(input: {
+  name: string;
+  phone: string;
+  role: string;
+  hourlyWage?: number;
+}) {
   return jsonRequest<{ id: string }>("/api/employees", {
     method: "POST",
     body: JSON.stringify(input),
@@ -33,7 +38,7 @@ export function addEmployee(input: { name: string; phone: string; role: string }
 
 export function updateEmployee(
   id: string,
-  input: { name?: string; phone?: string; role?: string }
+  input: { name?: string; phone?: string; role?: string; hourlyWage?: number }
 ) {
   return jsonRequest<{ id: string }>(`/api/employees/${id}`, {
     method: "PATCH",

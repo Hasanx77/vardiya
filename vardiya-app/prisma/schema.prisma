@@ -28,6 +28,7 @@ model Employee {
   phone      String   @default("")
   role       String   @default("Personel")
   color      String   @default("sky")
+  hourlyWage Float    @default(0)
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
 
