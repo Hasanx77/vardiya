@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,6 +41,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
+        {/* Tema tercihini ilk boyamadan önce uygula (flicker önleyici) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('vardiya-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
+          }}
+        />
         <header className="border-b border-zinc-200 bg-white/80 backdrop-blur sticky top-0 z-30 print:hidden">
           <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 font-semibold">
@@ -67,6 +75,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               >
                 Raporlar
               </Link>
+              <ThemeToggle />
               <Link
                 href="/panel"
                 className="rounded-md px-3 py-1.5 font-medium bg-zinc-900 text-white hover:bg-zinc-700"

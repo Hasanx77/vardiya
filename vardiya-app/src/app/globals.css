@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
-/* Uygulama her zaman açık tema kullanır (kullanıcının OS temasından bağımsız). */
+/* Tema: varsayılan açık; <html class="dark"> ile koyu tema */
 :root {
   color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,4 +15,140 @@
 
 body {
   font-family: var(--font-geist-sans), system-ui, Arial, Helvetica, sans-serif;
+}
+
+/* ============================================================
+   KOYU TEMA KATMANI
+   Uygulamada kullanılan açık-renk yardımcı sınıflarının üzerine
+   yazar; böylece tek bayrakla tüm sayfalar koyulaşır.
+   ============================================================ */
+html.dark body {
+  background-color: #09090b; /* zinc-950 */
+  color: #f4f4f5; /* zinc-100 */
+}
+
+/* --- Yüzeyler --- */
+html.dark .bg-white {
+  background-color: #18181b; /* zinc-900 */
+}
+html.dark .bg-white\/80 {
+  background-color: rgba(24, 24, 27, 0.85);
+}
+html.dark .bg-zinc-50 {
+  background-color: #101013;
+}
+html.dark .bg-zinc-100 {
+  background-color: #27272a;
+}
+html.dark .bg-zinc-200 {
+  background-color: #3f3f46;
+}
+
+/* --- Ana butonlar (bg-zinc-900) koyu zeminde görünür kalsın --- */
+html.dark .bg-zinc-900 {
+  background-color: #3f3f46; /* zinc-700 */
+}
+html.dark .bg-zinc-900\/80 {
+  background-color: rgba(212, 212, 216, 0.8);
+}
+
+/* --- Metin --- */
+html.dark .text-zinc-900 {
+  color: #fafafa;
+}
+html.dark .text-zinc-800 {
+  color: #e4e4e7;
+}
+html.dark .text-zinc-700 {
+  color: #d4d4d8;
+}
+html.dark .text-zinc-600 {
+  color: #b4b4bb;
+}
+html.dark .text-zinc-500 {
+  color: #a1a1aa;
+}
+html.dark .text-zinc-400 {
+  color: #8a8a93;
+}
+
+/* --- Kenarlıklar --- */
+html.dark .border-zinc-100 {
+  border-color: #27272a;
+}
+html.dark .border-zinc-200 {
+  border-color: #27272a;
+}
+html.dark .border-zinc-300 {
+  border-color: #3f3f46;
+}
+html.dark .divide-zinc-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a;
+}
+
+/* --- Vurgu kutuları --- */
+html.dark .bg-amber-50 {
+  background-color: rgba(120, 53, 15, 0.3);
+}
+html.dark .border-amber-200 {
+  border-color: #92400e;
+}
+html.dark .text-amber-900 {
+  color: #fcd34d;
+}
+html.dark .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.3);
+}
+html.dark .border-emerald-300 {
+  border-color: #047857;
+}
+html.dark .text-emerald-700 {
+  color: #6ee7b7;
+}
+html.dark .bg-sky-50 {
+  background-color: rgba(12, 74, 110, 0.3);
+}
+html.dark .border-sky-200 {
+  border-color: #0369a1;
+}
+html.dark .text-sky-900 {
+  color: #bae6fd;
+}
+html.dark .text-sky-600 {
+  color: #7dd3fc;
+}
+html.dark .text-sky-700 {
+  color: #7dd3fc;
+}
+html.dark .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.3);
+}
+html.dark .border-red-200 {
+  border-color: #991b1b;
+}
+html.dark .border-red-300 {
+  border-color: #991b1b;
+}
+html.dark .text-red-600 {
+  color: #fca5a5;
+}
+html.dark .text-red-500 {
+  color: #fca5a5;
+}
+
+/* --- Hover durumları --- */
+html.dark .hover\:bg-zinc-50:hover {
+  background-color: #27272a;
+}
+html.dark .hover\:bg-zinc-100:hover {
+  background-color: #27272a;
+}
+html.dark .hover\:bg-zinc-700:hover {
+  background-color: #52525b;
+}
+html.dark .hover\:bg-red-50:hover {
+  background-color: rgba(127, 29, 29, 0.3);
+}
+html.dark .hover\:bg-zinc-900:hover {
+  background-color: #52525b;
 }
