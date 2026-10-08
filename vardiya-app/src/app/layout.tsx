@@ -42,6 +42,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Ana Sayfa
               </Link>
               <Link
+                href="/bugun"
+                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Bugün
+              </Link>
+              <Link
                 href="/panel"
                 className="rounded-md px-3 py-1.5 font-medium bg-zinc-900 text-white hover:bg-zinc-700"
               >
