@@ -81,6 +81,19 @@ export type Announcement = {
   createdAt: string;
 };
 
+/** Personelin "müsait değilim" işaretlediği gün */
+export type Availability = {
+  employeeId: string;
+  date: string;
+  note: string;
+};
+
+/** Gün bazlı not */
+export type DayNote = {
+  date: string;
+  note: string;
+};
+
 /** /api/state yanıtı */
 export type StatePayload = {
   business: { id: string; name: string };
@@ -89,4 +102,6 @@ export type StatePayload = {
   assignments: AssignmentRow[];
   requests: TimeOffRequest[];
   announcements: Announcement[];
+  availabilities: Availability[];
+  dayNotes: DayNote[];
 };

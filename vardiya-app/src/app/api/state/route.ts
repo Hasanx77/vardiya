@@ -6,23 +6,28 @@ import { ensureBusiness } from "@/lib/server-data";
 export async function GET() {
   const business = await ensureBusiness();
 
-  const [employees, shiftTemplates, assignments, requests, announcements] = await Promise.all([
-    prisma.employee.findMany({
-      where: { businessId: business.id, active: true },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.shiftTemplate.findMany({ where: { businessId: business.id } }),
-    prisma.assignment.findMany({ where: { businessId: business.id } }),
-    prisma.timeOffRequest.findMany({
-      where: { employee: { businessId: business.id } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.announcement.findMany({
-      where: { businessId: business.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
-  ]);
+  const [employees, shiftTemplates, assignments, requests, announcements, availabilities, dayNotes] =
+    await Promise.all([
+      prisma.employee.findMany({
+        where: { businessId: business.id, active: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.shiftTemplate.findMany({ where: { businessId: business.id } }),
+      prisma.assignment.findMany({ where: { businessId: business.id } }),
+      prisma.timeOffRequest.findMany({
+        where: { employee: { businessId: business.id } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.announcement.findMany({
+        where: { businessId: business.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.availability.findMany({
+        where: { employee: { businessId: business.id } },
+      }),
+      prisma.dayNote.findMany({ where: { businessId: business.id } }),
+    ]);
 
   return NextResponse.json({
     business: { id: business.id, name: business.name },
@@ -62,5 +67,11 @@ export async function GET() {
       message: a.message,
       createdAt: a.createdAt.toISOString(),
     })),
+    availabilities: availabilities.map((a) => ({
+      employeeId: a.employeeId,
+      date: a.date,
+      note: a.note,
+    })),
+    dayNotes: dayNotes.map((d) => ({ date: d.date, note: d.note })),
   });
 }

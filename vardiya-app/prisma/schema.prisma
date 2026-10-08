@@ -20,6 +20,7 @@ model Business {
   shiftTemplates ShiftTemplate[]
   assignments    Assignment[]
   announcements  Announcement[]
+  dayNotes       DayNote[]
 }
 
 model Employee {
@@ -37,6 +38,7 @@ model Employee {
   business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
   assignments Assignment[]
   requests    TimeOffRequest[]
+  availabilities Availability[]
 }
 
 model ShiftTemplate {
@@ -88,4 +90,30 @@ model Announcement {
   createdAt  DateTime @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// Personelin "müsait değilim" işaretlediği günler
+model Availability {
+  id         String   @id @default(cuid())
+  employeeId String
+  date       String // YYYY-MM-DD
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+}
+
+// Gün bazlı notlar (ör. "canlı müzik", "stok sayımı")
+model DayNote {
+  id         String   @id @default(cuid())
+  businessId String
+  date       String // YYYY-MM-DD
+  note       String
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, date])
 }

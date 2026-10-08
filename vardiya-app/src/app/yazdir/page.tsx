@@ -29,6 +29,12 @@ export default function PrintPage() {
     return m;
   }, [data]);
 
+  const dayNoteMap = useMemo(() => {
+    const m = new Map<string, string>();
+    data?.dayNotes.forEach((d) => m.set(d.date, d.note));
+    return m;
+  }, [data]);
+
   if (!data) {
     return (
       <main className="flex-1 grid place-items-center">
@@ -85,6 +91,11 @@ export default function PrintPage() {
                   {holiday && (
                     <span className="block text-[10px] font-normal text-red-600" title={holiday.name}>
                       {holiday.name}
+                    </span>
+                  )}
+                  {dayNoteMap.get(iso) && (
+                    <span className="block text-[10px] font-normal text-sky-700">
+                      📝 {dayNoteMap.get(iso)}
                     </span>
                   )}
                 </th>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { StatePayload } from "@/lib/types";
-import { createRequest, fetchState } from "@/lib/api-client";
+import { createRequest, fetchState, setAvailability } from "@/lib/api-client";
 import { formatWeekRange, getWeekDates, toISODate, DAY_NAMES_TR, formatShort } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
@@ -23,6 +23,7 @@ export default function EmployeePage() {
     targetEmployeeId: "",
   });
   const [sent, setSent] = useState("");
+  const [availForm, setAvailForm] = useState({ date: "", note: "" });
 
   useEffect(() => {
     fetchState()
@@ -108,6 +109,36 @@ export default function EmployeePage() {
     (r) => r.employeeId === employee.id && r.status === "approved" && r.type === "izin"
   ).length;
   const leaveLeft = Math.max(0, (employee.annualLeaveDays ?? 0) - leaveUsed);
+
+  const myAvail = data.availabilities.filter((a) => a.employeeId === employee.id);
+
+  async function addAvailability() {
+    if (!availForm.date) {
+      setSent("Müsait olmadığın gün için bir tarih seç.");
+      return;
+    }
+    try {
+      await setAvailability({
+        employeeId: employee!.id,
+        date: availForm.date,
+        note: availForm.note,
+      });
+      setAvailForm({ date: "", note: "" });
+      setData(await fetchState());
+      setSent("Müsait olmadığın gün kaydedildi ✅");
+    } catch {
+      setSent("Kaydedilemedi, tekrar dene.");
+    }
+  }
+
+  async function removeAvailability(date: string) {
+    try {
+      await setAvailability({ employeeId: employee!.id, date, remove: true });
+      setData(await fetchState());
+    } catch {
+      /* yoksay */
+    }
+  }
 
   return (
     <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-10">
@@ -269,6 +300,55 @@ export default function EmployeePage() {
           Talebi Gönder
         </button>
         {sent && <p className="mt-3 text-sm text-emerald-700">{sent}</p>}
+      </div>
+
+      {/* Müsait olmadığım günler */}
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h2 className="font-semibold">Müsait olmadığım günler</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Çalışamayacağın günleri işaretle; işletme planlarken görür.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <input
+            type="date"
+            value={availForm.date}
+            onChange={(e) => setAvailForm({ ...availForm, date: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+          <input
+            placeholder="Not (opsiyonel)"
+            value={availForm.note}
+            onChange={(e) => setAvailForm({ ...availForm, note: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+        </div>
+        <button
+          onClick={addAvailability}
+          className="mt-3 rounded-lg bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+        >
+          Müsait değilim
+        </button>
+        {myAvail.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {myAvail.map((a) => (
+              <li
+                key={a.date}
+                className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+              >
+                <span>
+                  {a.date}
+                  {a.note ? ` · ${a.note}` : ""}
+                </span>
+                <button
+                  onClick={() => removeAvailability(a.date)}
+                  className="text-xs text-zinc-400 hover:text-red-600"
+                >
+                  Kaldır
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   );

@@ -114,6 +114,25 @@ export function deleteAnnouncement(id: string) {
   return jsonRequest<{ ok: boolean }>(`/api/announcements/${id}`, { method: "DELETE" });
 }
 
+export function setAvailability(input: {
+  employeeId: string;
+  date: string;
+  note?: string;
+  remove?: boolean;
+}) {
+  return jsonRequest<{ ok: boolean }>("/api/availability", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function setDayNote(date: string, note: string) {
+  return jsonRequest<{ ok: boolean }>("/api/day-notes", {
+    method: "POST",
+    body: JSON.stringify({ date, note }),
+  });
+}
+
 export function updateRequest(id: string, status: string) {
   return jsonRequest<{ ok: boolean }>(`/api/requests/${id}`, {
     method: "PATCH",

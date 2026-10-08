@@ -86,6 +86,13 @@ export default function BugunPage() {
         </div>
       )}
 
+      {data.dayNotes.find((d) => d.date === todayISO) && (
+        <div className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sky-900">
+          <span className="text-sm font-semibold">📝 Bugünün notu:</span>{" "}
+          {data.dayNotes.find((d) => d.date === todayISO)?.note}
+        </div>
+      )}
+
       <div className="mt-8 space-y-6">
         {data.shiftTemplates.map((t) => {
           const list = working.get(t.id) ?? [];

@@ -13,6 +13,8 @@ import {
   fetchState,
   resetData as apiResetData,
   setAssignment as apiSetAssignment,
+  setAvailability as apiSetAvailability,
+  setDayNote as apiSetDayNote,
   updateBusiness as apiUpdateBusiness,
   updateEmployee as apiUpdateEmployee,
   updateRequest as apiUpdateRequest,
@@ -124,6 +126,18 @@ export default function PanelPage() {
     data?.requests
       .filter((r) => r.status === "approved" && r.type === "izin")
       .forEach((r) => m.set(r.employeeId, (m.get(r.employeeId) ?? 0) + 1));
+    return m;
+  }, [data]);
+
+  const unavailableSet = useMemo(() => {
+    const s = new Set<string>();
+    data?.availabilities.forEach((a) => s.add(`${a.employeeId}__${a.date}`));
+    return s;
+  }, [data]);
+
+  const dayNoteMap = useMemo(() => {
+    const m = new Map<string, string>();
+    data?.dayNotes.forEach((d) => m.set(d.date, d.note));
     return m;
   }, [data]);
 
@@ -307,6 +321,19 @@ export default function PanelPage() {
       flash("Duyuru silindi.");
     } catch {
       flash("Silinemedi.");
+    }
+  }
+
+  async function editDayNote(iso: string) {
+    const current = dayNoteMap.get(iso) ?? "";
+    const val = window.prompt("Gün notu (boş bırak = sil):", current);
+    if (val === null) return;
+    try {
+      await apiSetDayNote(iso, val);
+      await load();
+      flash("Not kaydedildi.");
+    } catch {
+      flash("Not kaydedilemedi.");
     }
   }
 
@@ -829,6 +856,13 @@ export default function PanelPage() {
                           🎉 {holiday.halfDay ? "Arife" : "Tatil"}
                         </span>
                       )}
+                      <button
+                        onClick={() => editDayNote(iso)}
+                        title={dayNoteMap.get(iso) ?? "Gün notu ekle"}
+                        className="mt-0.5 block max-w-[110px] truncate text-[10px] font-normal text-sky-600 hover:underline"
+                      >
+                        {dayNoteMap.get(iso) ? `📝 ${dayNoteMap.get(iso)}` : "＋ not"}
+                      </button>
                     </th>
                   );
                 })}
@@ -902,6 +936,7 @@ export default function PanelPage() {
                       const iso = toISODate(d);
                       const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
                       const template = shiftId ? templateById.get(shiftId) : undefined;
+                      const warn = !!shiftId && unavailableSet.has(keyOf(emp.id, iso));
                       const cls = template
                         ? COLOR_CLASSES[template.color]?.chip ?? ""
                         : "bg-white text-zinc-400 border-dashed border-zinc-300";
@@ -910,7 +945,12 @@ export default function PanelPage() {
                           <select
                             value={shiftId}
                             onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
-                            className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-zinc-300 ${cls}`}
+                            title={
+                              warn ? "⚠️ Personel bu günü 'müsait değil' işaretlemiş" : undefined
+                            }
+                            className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-zinc-300 ${cls} ${
+                              warn ? "ring-2 ring-red-400" : ""
+                            }`}
                           >
                             <option value="">—</option>
                             {data.shiftTemplates.map((t) => (
