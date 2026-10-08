@@ -152,3 +152,112 @@ html.dark .hover\:bg-red-50:hover {
 html.dark .hover\:bg-zinc-900:hover {
   background-color: #52525b;
 }
+
+/* --- Renkli vardiya etiketleri (çipler): koyu zemin + açık yazı --- */
+html.dark .bg-sky-100 {
+  background-color: rgba(12, 74, 110, 0.4);
+}
+html.dark .border-sky-200 {
+  border-color: #0369a1;
+}
+html.dark .text-sky-800,
+html.dark .text-sky-900 {
+  color: #7dd3fc;
+}
+
+html.dark .bg-emerald-100 {
+  background-color: rgba(6, 78, 59, 0.4);
+}
+html.dark .border-emerald-200 {
+  border-color: #047857;
+}
+html.dark .text-emerald-800 {
+  color: #6ee7b7;
+}
+
+html.dark .bg-amber-100 {
+  background-color: rgba(120, 53, 15, 0.4);
+}
+html.dark .border-amber-200 {
+  border-color: #b45309;
+}
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: #fcd34d;
+}
+
+html.dark .bg-violet-100 {
+  background-color: rgba(76, 29, 149, 0.4);
+}
+html.dark .border-violet-200 {
+  border-color: #6d28d9;
+}
+html.dark .text-violet-800 {
+  color: #c4b5fd;
+}
+
+html.dark .bg-rose-100 {
+  background-color: rgba(136, 19, 55, 0.4);
+}
+html.dark .border-rose-200 {
+  border-color: #be123c;
+}
+html.dark .text-rose-800 {
+  color: #fda4af;
+}
+
+html.dark .bg-cyan-100 {
+  background-color: rgba(22, 78, 99, 0.4);
+}
+html.dark .border-cyan-200 {
+  border-color: #0e7490;
+}
+html.dark .text-cyan-800 {
+  color: #67e8f9;
+}
+
+html.dark .bg-lime-100 {
+  background-color: rgba(54, 83, 20, 0.4);
+}
+html.dark .border-lime-200 {
+  border-color: #4d7c0f;
+}
+html.dark .text-lime-800 {
+  color: #bef264;
+}
+
+html.dark .bg-orange-100 {
+  background-color: rgba(124, 45, 18, 0.4);
+}
+html.dark .border-orange-200 {
+  border-color: #c2410c;
+}
+html.dark .text-orange-900 {
+  color: #fdba74;
+}
+
+html.dark .bg-fuchsia-100 {
+  background-color: rgba(112, 26, 117, 0.4);
+}
+html.dark .border-fuchsia-200 {
+  border-color: #a21caf;
+}
+html.dark .text-fuchsia-800 {
+  color: #f0abfc;
+}
+
+html.dark .bg-teal-100 {
+  background-color: rgba(19, 78, 74, 0.4);
+}
+html.dark .border-teal-200 {
+  border-color: #0f766e;
+}
+html.dark .text-teal-800 {
+  color: #5eead4;
+}
+
+/* --- Aç/kapa (select) seçenek listesi koyu temada okunur olsun --- */
+html.dark select option {
+  background-color: #18181b;
+  color: #f4f4f5;
+}
