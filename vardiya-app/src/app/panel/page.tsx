@@ -76,6 +76,20 @@ export default function PanelPage() {
     return m;
   }, [data]);
 
+  const todayISO = toISODate(new Date());
+  const todayByShift = useMemo(() => {
+    const m = new Map<string, Employee[]>();
+    if (!data) return m;
+    data.employees.forEach((e) => {
+      const sid = assignMap.get(keyOf(e.id, todayISO));
+      if (!sid) return;
+      const arr = m.get(sid) ?? [];
+      arr.push(e);
+      m.set(sid, arr);
+    });
+    return m;
+  }, [data, assignMap, todayISO]);
+
   async function changeAssignment(employeeId: string, iso: string, shiftTemplateId: string) {
     // Önce ekranda güncelle (hızlı), sonra sunucuya yaz
     setData((prev) => {
@@ -276,6 +290,7 @@ export default function PanelPage() {
   }
 
   const pending = data.requests.filter((r) => r.status === "pending");
+  const resolved = data.requests.filter((r) => r.status !== "pending");
   const weekEmpty = data.employees.length === 0;
 
   return (
@@ -380,6 +395,34 @@ export default function PanelPage() {
         </div>
       )}
 
+      {/* Talep geçmişi */}
+      {resolved.length > 0 && (
+        <details className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-zinc-700">
+            Talep geçmişi ({resolved.length})
+          </summary>
+          <ul className="mt-3 space-y-2">
+            {resolved.map((r) => {
+              const emp = empById.get(r.employeeId);
+              return (
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+                >
+                  <span>
+                    <strong>{emp?.name ?? "?"}</strong> ·{" "}
+                    {r.type === "degisim" ? "Değişim" : "İzin"} · {r.date}
+                  </span>
+                  <span className={r.status === "approved" ? "text-emerald-700" : "text-red-600"}>
+                    {r.status === "approved" ? "Onaylandı" : "Reddedildi"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      )}
+
       {/* Hafta gezinme */}
       <div className="mt-6 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
         <button
@@ -419,6 +462,45 @@ export default function PanelPage() {
         >
           🗑 Bu haftayı temizle
         </button>
+        <Link
+          href="/yazdir"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
+        >
+          🖨 Yazdır / Çizelge
+        </Link>
+      </div>
+
+      {/* Bugün kim çalışıyor? */}
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-zinc-700">
+          Bugün kim çalışıyor?{" "}
+          <span className="font-normal text-zinc-400">({formatShort(new Date())})</span>
+        </h3>
+        <div className="mt-3 space-y-2">
+          {data.shiftTemplates.map((t) => {
+            const list = todayByShift.get(t.id) ?? [];
+            if (list.length === 0) return null;
+            return (
+              <div key={t.id} className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-md border px-2 py-0.5 text-xs ${
+                    COLOR_CLASSES[t.color]?.chip ?? ""
+                  }`}
+                >
+                  {t.name} {t.start}–{t.end}
+                </span>
+                {list.map((e) => (
+                  <span key={e.id} className="text-sm text-zinc-700">
+                    {e.name}
+                  </span>
+                ))}
+              </div>
+            );
+          })}
+          {todayByShift.size === 0 && (
+            <p className="text-sm text-zinc-400">Bugün için atanmış vardiya yok.</p>
+          )}
+        </div>
       </div>
 
       {/* Ana ızgara */}
