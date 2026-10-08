@@ -17,6 +17,7 @@ import {
 } from "@/lib/api-client";
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
+import { analyzeWeek, MIN_DAILY_REST_HOURS, OVERTIME_MULTIPLIER } from "@/lib/compliance";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 import TemplateManager from "@/components/TemplateManager";
@@ -35,6 +36,7 @@ export default function PanelPage() {
   const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -78,6 +80,19 @@ export default function PanelPage() {
     data?.shiftTemplates.forEach((t) => m.set(t.id, t));
     return m;
   }, [data]);
+
+  // Mevzuat/çakışma analizi (saf fonksiyon) — her veri/hafta değişiminde yeniden hesaplanır
+  const analysis = useMemo(() => {
+    if (!data) return null;
+    const weekISO = weekDates.map((d) => toISODate(d));
+    return analyzeWeek({
+      employees: data.employees.map((e) => ({ id: e.id, name: e.name })),
+      shifts: data.shiftTemplates,
+      assignments: data.assignments,
+      weekDates: weekISO,
+      previousDate: toISODate(addDays(weekDates[0], -1)),
+    });
+  }, [data, weekDates]);
 
   const todayISO = toISODate(new Date());
   const todayByShift = useMemo(() => {
@@ -210,6 +225,7 @@ export default function PanelPage() {
       "Görev",
       ...weekDates.map((d) => formatShort(d)),
       "Toplam Saat",
+      "Fazla Mesai (sa)",
       "Maliyet (TL)",
     ];
     const rows: string[][] = [head];
@@ -224,6 +240,7 @@ export default function PanelPage() {
         emp.role,
         ...cells,
         String(weekTotal(emp)),
+        String(empOvertime(emp)),
         String(Math.round(weekCost(emp))),
       ]);
     }
@@ -292,6 +309,11 @@ export default function PanelPage() {
 
   function weekCost(emp: Employee): number {
     return weekTotal(emp) * (emp.hourlyWage || 0);
+  }
+
+  /** Personelin haftalık fazla mesai saati (45 sa üstü) */
+  function empOvertime(emp: Employee): number {
+    return analysis?.perEmployee.get(emp.id)?.overtimeHours ?? 0;
   }
 
   function sendWhatsApp(emp: Employee) {
@@ -364,6 +386,26 @@ export default function PanelPage() {
   const resolved = data.requests.filter((r) => r.status !== "pending");
   const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
   const totalCost = data.employees.reduce((s, e) => s + weekTotal(e) * (e.hourlyWage || 0), 0);
+  const totalOvertime = analysis?.totalOvertimeHours ?? 0;
+  const overtimeCost = data.employees.reduce(
+    (s, e) => s + empOvertime(e) * (e.hourlyWage || 0) * OVERTIME_MULTIPLIER,
+    0
+  );
+  const issues = analysis?.issues ?? [];
+
+  const visibleEmployees = data.employees.filter((e) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q);
+  });
+
+  const dayCounts = weekDates.map((d) => {
+    const iso = toISODate(d);
+    return data.employees.reduce(
+      (n, e) => n + (assignMap.get(keyOf(e.id, iso)) ? 1 : 0),
+      0
+    );
+  });
   const weekEmpty = data.employees.length === 0;
 
   return (
@@ -602,11 +644,41 @@ export default function PanelPage() {
       </div>
 
       {/* Ana ızgara */}
+      {!weekEmpty && (
+        <div className="mt-4 flex items-center gap-3">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="🔍 Personel ara…"
+            className="w-56 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+          {search && (
+            <span className="text-xs text-zinc-500">{visibleEmployees.length} sonuç</span>
+          )}
+        </div>
+      )}
+
       {weekEmpty ? (
         <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
-          <p className="text-zinc-600">
-            Henüz personel yok. Yukarıdaki <strong>+ Personel Ekle</strong> ile başla.
+          <div className="text-4xl">🚀</div>
+          <h3 className="mt-3 text-lg font-semibold">Başlamaya hazırsın</h3>
+          <p className="mt-1 text-sm text-zinc-600">
+            1) Personelini ekle · 2) Haftalık vardiyayı doldur · 3) WhatsApp&apos;tan gönder.
           </p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <button
+              onClick={() => setShowForm(true)}
+              className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700"
+            >
+              + İlk personeli ekle
+            </button>
+            <button
+              onClick={() => handleReset("demo")}
+              className="rounded-lg border border-zinc-300 px-5 py-2.5 text-sm text-zinc-600 hover:bg-zinc-100"
+            >
+              Örnek veriyle dene
+            </button>
+          </div>
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -627,7 +699,7 @@ export default function PanelPage() {
               </tr>
             </thead>
             <tbody>
-              {data.employees.map((emp) => {
+              {visibleEmployees.map((emp) => {
                 const total = weekTotal(emp);
                 const over = total > WEEKLY_LIMIT_HOURS;
                 return (
@@ -708,6 +780,11 @@ export default function PanelPage() {
                           ⚠️
                         </span>
                       )}
+                      {empOvertime(emp) > 0 && (
+                        <span className="block text-[11px] text-amber-600">
+                          +{empOvertime(emp)} sa fazla mesai
+                        </span>
+                      )}
                       {emp.hourlyWage > 0 && (
                         <span className="block text-[11px] text-zinc-500">
                           ≈ {weekCost(emp).toLocaleString("tr-TR")} ₺
@@ -769,12 +846,30 @@ export default function PanelPage() {
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="border-t border-zinc-200 bg-zinc-50 text-xs text-zinc-500">
+                <td className="sticky left-0 z-10 bg-zinc-50 px-4 py-2 font-medium">
+                  Günlük kapsam
+                </td>
+                {dayCounts.map((c, i) => (
+                  <td
+                    key={i}
+                    className={`px-2 py-2 text-center font-medium ${
+                      c === 0 ? "text-red-500" : "text-zinc-600"
+                    }`}
+                  >
+                    {c} kişi
+                  </td>
+                ))}
+                <td colSpan={2} className="px-3 py-2" />
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
 
       {/* Haftalık özet */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="text-xs text-zinc-500">Bu hafta toplam saat</div>
           <div className="mt-1 text-2xl font-semibold">{summaryHours} sa</div>
@@ -785,11 +880,70 @@ export default function PanelPage() {
             {totalCost > 0 ? `≈ ${totalCost.toLocaleString("tr-TR")} ₺` : "—"}
           </div>
         </div>
+        <div
+          className={`rounded-2xl border p-4 shadow-sm ${
+            totalOvertime > 0 ? "border-amber-200 bg-amber-50" : "border-zinc-200 bg-white"
+          }`}
+        >
+          <div className="text-xs text-zinc-500">Fazla mesai ({WEEKLY_LIMIT_HOURS} sa üstü)</div>
+          <div className={`mt-1 text-2xl font-semibold ${totalOvertime > 0 ? "text-amber-700" : ""}`}>
+            {totalOvertime > 0 ? `${totalOvertime} sa` : "—"}
+          </div>
+          {overtimeCost > 0 && (
+            <div className="text-[11px] text-amber-600">
+              ≈ {Math.round(overtimeCost).toLocaleString("tr-TR")} ₺ ({OVERTIME_MULTIPLIER}x)
+            </div>
+          )}
+        </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="text-xs text-zinc-500">Personel sayısı</div>
           <div className="mt-1 text-2xl font-semibold">{data.employees.length}</div>
         </div>
       </div>
+
+      {/* Mevzuat uyarıları */}
+      {data.employees.length > 0 && (
+        <div
+          className={`mt-4 rounded-2xl border p-4 ${
+            issues.length > 0 ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"
+          }`}
+        >
+          <h3
+            className={`text-sm font-semibold ${
+              issues.length > 0 ? "text-amber-900" : "text-emerald-800"
+            }`}
+          >
+            ⚖️ Mevzuat Uyarıları {issues.length > 0 ? `(${issues.length})` : ""}
+          </h3>
+          {issues.length === 0 ? (
+            <p className="mt-2 text-sm text-emerald-800">
+              Bu hafta için çakışma veya mevzuat ihlali yok. (Haftalık {WEEKLY_LIMIT_HOURS} saat ·
+              iki vardiya arası en az {MIN_DAILY_REST_HOURS} saat dinlenme)
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {issues.map((it, idx) => {
+                const emp = empById.get(it.employeeId);
+                const isErr = it.severity === "error";
+                return (
+                  <li
+                    key={`${it.employeeId}-${it.type}-${it.date}-${idx}`}
+                    className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
+                  >
+                    <span aria-hidden>{isErr ? "⛔" : "⚠️"}</span>
+                    <span>
+                      <strong>{emp?.name ?? "Bilinmeyen"}</strong>{" "}
+                      <span className={isErr ? "text-red-700" : "text-amber-700"}>
+                        {it.message}
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Şablonlar */}
       <div className="mt-6">
@@ -821,8 +975,9 @@ export default function PanelPage() {
           </div>
         )}
         <p className="mt-3 text-xs text-zinc-500">
-          Haftalık {WEEKLY_LIMIT_HOURS} saati aşan personel kırmızı ile işaretlenir (İş Kanunu
-          haftalık çalışma süresi).
+          Denetimler: haftalık {WEEKLY_LIMIT_HOURS} saat sınırı, iki vardiya arası en az{" "}
+          {MIN_DAILY_REST_HOURS} saat dinlenme ve aynı gün çift vardiya (İş Kanunu 4857). İhlaller
+          yukarıdaki &quot;Mevzuat Uyarıları&quot; kartında listelenir.
         </p>
       </div>
 
