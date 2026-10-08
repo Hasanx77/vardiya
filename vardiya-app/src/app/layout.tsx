@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -17,6 +17,20 @@ export const metadata: Metadata = {
   title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
   description:
     "5 dakikada haftalık vardiya planla, personele WhatsApp'tan tek tıkla gönder. Türkçe, mevzuata uygun, cebinde.",
+  applicationName: "Vardiya",
+  icons: {
+    icon: "/icons/icon-32.png",
+    apple: "/icons/apple-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Vardiya",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#18181b",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
