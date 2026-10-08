@@ -38,14 +38,20 @@ Bonus: Personel izin / vardiya değişimi talebini mobilden yapar, patron tek t�
 
 ---
 
-## 4. İş Modeli & Fiyatlandırma (hipotez — sahada test edilecek)
+## 4. İş Modeli & Fiyatlandırma — SADELEŞTİ (sadece 2 paket)
 
-- **Freemium kanca:** 5 çalışana kadar ücretsiz → güven + viral yayılma.
-- **Ücretli:** lokasyon paketi **₺750–1.500/ay** ya da **çalışan başı ₺30–60/ay**.
-- **Yıllık ödeme:** %20 indirim (nakit akışı).
-- **Ek gelir:** Bordro/puantaj dışa aktarımı (Excel/PDF), PDKS entegrasyonu, kurulum hizmeti.
+**İlke:** İki paket. Üçüncüsü yok. Gizli ücret yok, uzun taahhüt yok.
 
-> Referans: Global oyuncu Shifter çalışan başı $2.5/ay + ilk 5 ücretsiz modeli kullanıyor.
+| Paket | Fiyat | Kapsam |
+|---|---|---|
+| **Ücretsiz** | ₺0 | 5 çalışana kadar · panel, WhatsApp gönderim, 45 saat uyarısı, yazdırma |
+| **Pro** | **₺399/ay** (lokasyon başına) | Sınırsız çalışan · personel görünümü + izin talepleri · Excel · öncelikli destek + kurulum yardımı |
+
+- Ücretsiz katman = güven + viral yayılma kancası.
+- Yıllık ödemede %20 indirim.
+- **Hipotez:** pilot müşteriyle test edilecek (fiyat noktası hassas ayar ister).
+
+> Referans: Shifter çalışan başı $2.50/ay + ilk 5 ücretsiz. Biz "**lokasyon başı sabit**" ile esnaf için daha öngörülebilir ve şeffaf olmayı seçtik — sadelik manifestomuzla uyumlu.
 
 ---
 

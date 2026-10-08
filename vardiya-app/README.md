@@ -43,8 +43,10 @@ npm.cmd run dev
 
 Aç: <http://localhost:3000>
 
-- `/` → tanıtım sayfası
+- `/` → tanıtım + fiyatlandırma
+- `/basla` → **90 saniyede kurulum** (işletme adı + toplu personel yapıştır)
 - `/panel` → yönetim paneli
+- `/bugun` → "bugün kim çalışıyor" tahtası (tablet için)
 - `/ekip` → personel görünümü
 - `/yazdir` → yazdırılabilir çizelge
 

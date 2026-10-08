@@ -46,6 +46,13 @@ Sayfalar: `/` · `/panel` · `/ekip` · `/bugun` · `/yazdir`
   dışına taşımak iyi olur.
 - Şema değişince dev server'ı **yeniden başlat** (Prisma istemcisi tazelensin).
 
+### 🧘 Ek: Radikal sadelik + kurulum (talep üzerine)
+- Ürün **"5 dakika, sıfır eğitim"** manifestosuna göre sadeleştirildi.
+- Panelde **3 adım şeridi**; ikincil araçlar **"⋯ Diğer"** menüsüne toplandı.
+- Tanıtım sayfasına **iki paketli sade fiyatlandırma** (Ücretsiz ≤5 çalışan · Pro ₺399/ay lokasyon).
+- **`/basla` — 90 saniyede kurulum sihirbazı** (işletme adı + toplu personel yapıştır).
+- Yeni API: toplu personel ekleme (`/api/employees/bulk`).
+
 ### 🎯 Sıradaki adımlar (öneri)
 1. **Pilot kafe** ile gerçek test — geri bildirim topla (en önemli adım!).
 2. **Postgres'e geç + Vercel'e yayın** (adımlar README'de) → telefondan test.

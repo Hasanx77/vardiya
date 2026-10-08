@@ -50,6 +50,15 @@ export function deleteEmployee(id: string) {
   return jsonRequest<{ ok: boolean }>(`/api/employees/${id}`, { method: "DELETE" });
 }
 
+export function addEmployeesBulk(
+  employees: { name: string; role: string; phone: string }[]
+) {
+  return jsonRequest<{ ok: boolean; created: number }>("/api/employees/bulk", {
+    method: "POST",
+    body: JSON.stringify({ employees }),
+  });
+}
+
 export function setAssignment(
   employeeId: string,
   date: string,
