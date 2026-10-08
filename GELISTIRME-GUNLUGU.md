@@ -53,6 +53,16 @@ Sayfalar: `/` · `/panel` · `/ekip` · `/bugun` · `/yazdir`
 - **`/basla` — 90 saniyede kurulum sihirbazı** (işletme adı + toplu personel yapıştır).
 - Yeni API: toplu personel ekleme (`/api/employees/bulk`).
 
+### 🎼 Ek: Rakiplerde olup bizde olmayanlar eklendi (orkestra şefi modu)
+- 🎉 **TR resmî tatiller** (2026–2027) + tatilde çalışma uyarısı; grid ve çizelgede işaretli
+- 🌙 **Gece çalışması 7,5 saat kuralı** (4857 m.69) compliance modülüne eklendi
+- 🌴 **Yıllık izin hakkı + kalan izin bakiyesi** (panel ve personel görünümünde)
+- 🔁 **Gerçek vardiya takası** — personel arkadaşıyla değişir, onayda vardiyalar otomatik takas edilir
+- 📢 **Duyurular** — panelden yayınla; personel görünümü + "bugün" tahtasında görünür
+- 📅 **`/.ics` takvim dışa aktarımı** — personel programını telefon takvimine ekler
+- 📊 **Raporlar sayfası** (`/raporlar`) — aylık saat/maliyet/izin + günlük grafik + CSV
+- Testler **40'a** çıktı (compliance gece/tatil dahil)
+
 ### 🎯 Sıradaki adımlar (öneri)
 1. **Pilot kafe** ile gerçek test — geri bildirim topla (en önemli adım!).
 2. **Postgres'e geç + Vercel'e yayın** (adımlar README'de) → telefondan test.
