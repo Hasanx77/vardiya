@@ -119,3 +119,10 @@ export function updateTemplate(
 export function deleteTemplate(id: string) {
   return jsonRequest<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" });
 }
+
+export function resetData(mode: "demo" | "empty") {
+  return jsonRequest<{ ok: boolean; mode: string }>("/api/reset", {
+    method: "POST",
+    body: JSON.stringify({ mode }),
+  });
+}

@@ -9,6 +9,7 @@ import {
   copyWeek as apiCopyWeek,
   deleteEmployee as apiDeleteEmployee,
   fetchState,
+  resetData as apiResetData,
   setAssignment as apiSetAssignment,
   updateBusiness as apiUpdateBusiness,
   updateEmployee as apiUpdateEmployee,
@@ -33,6 +34,7 @@ export default function PanelPage() {
   const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
   const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [showBulk, setShowBulk] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -182,6 +184,22 @@ export default function PanelPage() {
       flash("Hafta temizlendi.");
     } catch {
       flash("Temizlenemedi.");
+    }
+  }
+
+  async function handleReset(mode: "demo" | "empty") {
+    const msg =
+      mode === "demo"
+        ? "Tüm veriler silinip örnek veri yüklenecek. Devam?"
+        : "TÜM personel, vardiya ve talepler silinecek (boş başlangıç). Devam?";
+    if (!window.confirm(msg)) return;
+    try {
+      await apiResetData(mode);
+      setShowSettings(false);
+      await load();
+      flash(mode === "demo" ? "Örnek veri yüklendi." : "Sıfırlandı, boş başlayabilirsin.");
+    } catch {
+      flash("İşlem başarısız.");
     }
   }
 
@@ -499,6 +517,12 @@ export default function PanelPage() {
         >
           📤 Tümüne Gönder
         </button>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
+        >
+          ⚙ Ayarlar
+        </button>
       </div>
 
       {/* Bugün kim çalışıyor? */}
@@ -758,6 +782,44 @@ export default function PanelPage() {
           haftalık çalışma süresi).
         </p>
       </div>
+
+      {/* Ayarlar modali */}
+      {showSettings && (
+        <div
+          className="fixed inset-0 z-40 grid place-items-center bg-black/40 p-4"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-semibold">Ayarlar</h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              Veri işlemleri. İşletme adını üstteki alandan değiştirebilirsin.
+            </p>
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={() => handleReset("demo")}
+                className="w-full rounded-lg border border-zinc-300 py-2.5 text-sm hover:bg-zinc-100"
+              >
+                🔄 Örnek veriyi (demo) yükle
+              </button>
+              <button
+                onClick={() => handleReset("empty")}
+                className="w-full rounded-lg border border-red-300 py-2.5 text-sm text-red-600 hover:bg-red-50"
+              >
+                🗑 Boş başla (tüm personeli sil)
+              </button>
+            </div>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="mt-4 w-full rounded-lg border border-zinc-300 py-2 text-sm hover:bg-zinc-100"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Toplu gönderim modali */}
       {showBulk && (
