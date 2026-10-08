@@ -48,6 +48,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Bugün
               </Link>
               <Link
+                href="/raporlar"
+                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Raporlar
+              </Link>
+              <Link
                 href="/panel"
                 className="rounded-md px-3 py-1.5 font-medium bg-zinc-900 text-white hover:bg-zinc-700"
               >

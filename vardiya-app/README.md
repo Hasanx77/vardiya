@@ -47,6 +47,7 @@ Aç: <http://localhost:3000>
 - `/basla` → **90 saniyede kurulum** (işletme adı + toplu personel yapıştır)
 - `/panel` → yönetim paneli
 - `/bugun` → "bugün kim çalışıyor" tahtası (tablet için)
+- `/raporlar` → aylık saat/maliyet/izin raporları
 - `/ekip` → personel görünümü
 - `/yazdir` → yazdırılabilir çizelge
 
