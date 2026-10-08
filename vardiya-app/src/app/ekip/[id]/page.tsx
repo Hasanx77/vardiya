@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import type { StatePayload } from "@/lib/types";
 import { createRequest, fetchState } from "@/lib/api-client";
 import { formatWeekRange, getWeekDates, toISODate, DAY_NAMES_TR, formatShort } from "@/lib/dates";
-import { shiftHours } from "@/lib/shifts";
+import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
 
 export default function EmployeePage() {
@@ -72,6 +72,8 @@ export default function EmployeePage() {
     const t = shiftId ? templateById.get(shiftId) : undefined;
     return sum + (t ? shiftHours(t) : 0);
   }, 0);
+  // Haftalık 45 saat üstü fazla mesai (personel kendi görünümünde de uyarılır)
+  const overtime = Math.round(Math.max(0, total - WEEKLY_LIMIT_HOURS) * 10) / 10;
 
   async function submitRequest() {
     if (!reqForm.date) {
@@ -118,7 +120,15 @@ export default function EmployeePage() {
         </button>
         <div className="text-center">
           <div className="font-semibold">{formatWeekRange(weekDates)}</div>
-          <div className="text-xs text-zinc-500">Toplam {total} saat</div>
+          <div className="text-xs text-zinc-500">
+            Toplam {total} saat
+            {overtime > 0 && (
+              <span className="text-amber-600">
+                {" "}
+                · ⚠️ {overtime} sa fazla mesai ({WEEKLY_LIMIT_HOURS} sa üstü)
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
