@@ -132,6 +132,13 @@ export default function EmployeePage() {
         </span>
       </p>
 
+      <a
+        href={`/api/calendar/${employee.id}`}
+        className="mt-3 inline-block rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+      >
+        📅 Telefon takvimine ekle (.ics)
+      </a>
+
       {data.announcements.length > 0 && (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <div className="font-semibold">📢 Duyurular</div>
