@@ -5,16 +5,19 @@ import Link from "next/link";
 import type { Employee, StatePayload } from "@/lib/types";
 import {
   addEmployee as apiAddEmployee,
+  clearWeek as apiClearWeek,
+  copyWeek as apiCopyWeek,
   deleteEmployee as apiDeleteEmployee,
   fetchState,
   setAssignment as apiSetAssignment,
   updateBusiness as apiUpdateBusiness,
   updateRequest as apiUpdateRequest,
 } from "@/lib/api-client";
-import { formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
+import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
+import TemplateManager from "@/components/TemplateManager";
 
 function keyOf(employeeId: string, iso: string) {
   return `${employeeId}__${iso}`;
@@ -25,6 +28,7 @@ export default function PanelPage() {
   const [error, setError] = useState("");
   const [weekOffset, setWeekOffset] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", role: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -124,6 +128,37 @@ export default function PanelPage() {
       flash("İşletme adı kaydedildi.");
     } catch {
       flash("Kaydedilemedi.");
+    }
+  }
+
+  async function handleCopyPrev() {
+    const monday = weekDates[0];
+    const fromISO = toISODate(addDays(monday, -7));
+    const toISO = toISODate(monday);
+    if (
+      !window.confirm(
+        "Geçen haftanın vardiyaları bu haftaya kopyalanacak. Bu haftanın mevcut planı silinecek. Devam?"
+      )
+    )
+      return;
+    try {
+      await apiCopyWeek(fromISO, toISO);
+      await load();
+      flash("Geçen hafta kopyalandı ✅");
+    } catch {
+      flash("Kopyalanamadı.");
+    }
+  }
+
+  async function handleClearWeek() {
+    const toISO = toISODate(weekDates[0]);
+    if (!window.confirm("Bu haftanın TÜM vardiyaları silinsin mi?")) return;
+    try {
+      await apiClearWeek(toISO);
+      await load();
+      flash("Hafta temizlendi.");
+    } catch {
+      flash("Temizlenemedi.");
     }
   }
 
@@ -344,6 +379,22 @@ export default function PanelPage() {
         </button>
       </div>
 
+      {/* Hızlı işlemler */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          onClick={handleCopyPrev}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
+        >
+          ⧉ Geçen haftayı kopyala
+        </button>
+        <button
+          onClick={handleClearWeek}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+        >
+          🗑 Bu haftayı temizle
+        </button>
+      </div>
+
       {/* Ana ızgara */}
       {weekEmpty ? (
         <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
@@ -458,9 +509,17 @@ export default function PanelPage() {
         </div>
       )}
 
-      {/* Şablon açıklaması */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-700">Vardiya Şablonları</h3>
+      {/* Şablonlar */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-700">Vardiya Şablonları</h3>
+          <button
+            onClick={() => setShowTemplates((s) => !s)}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
+          >
+            {showTemplates ? "Kapat" : "Şablonları Yönet"}
+          </button>
+        </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {data.shiftTemplates.map((t) => (
             <span
@@ -474,6 +533,11 @@ export default function PanelPage() {
             </span>
           ))}
         </div>
+        {showTemplates && (
+          <div className="mt-4">
+            <TemplateManager templates={data.shiftTemplates} onChanged={load} />
+          </div>
+        )}
         <p className="mt-3 text-xs text-zinc-500">
           Haftalık {WEEKLY_LIMIT_HOURS} saati aşan personel kırmızı ile işaretlenir (İş Kanunu
           haftalık çalışma süresi).

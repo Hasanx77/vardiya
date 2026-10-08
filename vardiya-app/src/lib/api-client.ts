@@ -56,6 +56,20 @@ export function setAssignment(
   });
 }
 
+export function copyWeek(from: string, to: string) {
+  return jsonRequest<{ ok: boolean; copied: number }>("/api/assignments/copy", {
+    method: "POST",
+    body: JSON.stringify({ from, to }),
+  });
+}
+
+export function clearWeek(week: string) {
+  return jsonRequest<{ ok: boolean; deleted: number }>("/api/assignments/clear", {
+    method: "POST",
+    body: JSON.stringify({ week }),
+  });
+}
+
 export function createRequest(input: {
   employeeId: string;
   date: string;
@@ -73,4 +87,30 @@ export function updateRequest(id: string, status: string) {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
+}
+
+export function addTemplate(input: {
+  name: string;
+  start: string;
+  end: string;
+  color: string;
+}) {
+  return jsonRequest<{ id: string }>("/api/templates", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateTemplate(
+  id: string,
+  input: { name?: string; start?: string; end?: string; color?: string }
+) {
+  return jsonRequest<{ id: string }>(`/api/templates/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteTemplate(id: string) {
+  return jsonRequest<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" });
 }
