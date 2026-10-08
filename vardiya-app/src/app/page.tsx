@@ -40,8 +40,9 @@ export default function Home() {
           <br className="hidden sm:block" /> 5 dakikada planla
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-zinc-600">
-          Personele tek tıkla WhatsApp&apos;tan gönder. Türkçe, mevzuata uygun, cebinde.
+          Personele tek tıkla WhatsApp&apos;tan gönder. <strong>Eğitim yok, karmaşa yok.</strong>
         </p>
+        <p className="mt-3 text-sm text-zinc-500">PDKS yok · Bordro yok · Sadece vardiya</p>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/panel"

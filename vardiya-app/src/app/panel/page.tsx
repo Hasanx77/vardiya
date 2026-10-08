@@ -36,6 +36,7 @@ export default function PanelPage() {
   const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [nameDraft, setNameDraft] = useState("");
@@ -437,6 +438,21 @@ export default function PanelPage() {
         </div>
       </div>
 
+      {/* 3 adım rehberi (sadelik) */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+        <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
+          1 · Personel ekle
+        </span>
+        <span>→</span>
+        <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
+          2 · Vardiyaları seç
+        </span>
+        <span>→</span>
+        <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
+          3 · WhatsApp&apos;tan gönder
+        </span>
+      </div>
+
       {/* Personel ekleme formu */}
       {showForm && (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -570,8 +586,8 @@ export default function PanelPage() {
         </button>
       </div>
 
-      {/* Hızlı işlemler */}
-      <div className="mt-3 flex flex-wrap gap-2">
+      {/* Hızlı işlemler — en sık kullanılanlar görünür, gerisi "Diğer" altında */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           onClick={handleCopyPrev}
           className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
@@ -579,35 +595,59 @@ export default function PanelPage() {
           ⧉ Geçen haftayı kopyala
         </button>
         <button
-          onClick={handleClearWeek}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
-        >
-          🗑 Bu haftayı temizle
-        </button>
-        <Link
-          href="/yazdir"
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
-        >
-          🖨 Yazdır / Çizelge
-        </Link>
-        <button
           onClick={() => setShowBulk(true)}
-          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-100"
+          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
         >
           📤 Tümüne Gönder
         </button>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
-        >
-          ⚙ Ayarlar
-        </button>
-        <button
-          onClick={exportCsv}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
-        >
-          ⬇ Excel (CSV)
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowMore((s) => !s)}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
+          >
+            ⋯ Diğer
+          </button>
+          {showMore && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowMore(false)} />
+              <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                <Link
+                  href="/yazdir"
+                  className="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+                >
+                  🖨 Yazdır / Çizelge
+                </Link>
+                <button
+                  onClick={() => {
+                    setShowMore(false);
+                    exportCsv();
+                  }}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+                >
+                  ⬇ Excel (CSV)
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMore(false);
+                    setShowSettings(true);
+                  }}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+                >
+                  ⚙ Ayarlar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMore(false);
+                    handleClearWeek();
+                  }}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                >
+                  🗑 Bu haftayı temizle
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Bugün kim çalışıyor? */}
