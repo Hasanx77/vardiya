@@ -33,6 +33,7 @@ describe("buildScheduleText", () => {
     role: "Barista",
     color: "sky",
     hourlyWage: 100,
+    annualLeaveDays: 14,
   };
   const templates: ShiftTemplate[] = [
     { id: "sabah", name: "Sabah", start: "09:00", end: "17:00", color: "amber" },

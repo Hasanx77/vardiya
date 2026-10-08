@@ -16,7 +16,12 @@ export default function EmployeePage() {
   const [data, setData] = useState<StatePayload | null>(null);
   const [error, setError] = useState("");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [reqForm, setReqForm] = useState({ date: "", type: "izin", note: "" });
+  const [reqForm, setReqForm] = useState({
+    date: "",
+    type: "izin",
+    note: "",
+    targetEmployeeId: "",
+  });
   const [sent, setSent] = useState("");
 
   useEffect(() => {
@@ -80,19 +85,29 @@ export default function EmployeePage() {
       setSent("Lütfen bir tarih seç.");
       return;
     }
+    if (reqForm.type === "degisim" && !reqForm.targetEmployeeId) {
+      setSent("Vardiya değişimi için bir arkadaş seç.");
+      return;
+    }
     try {
       await createRequest({
         employeeId: employee!.id,
         date: reqForm.date,
         type: reqForm.type,
         note: reqForm.note,
+        targetEmployeeId: reqForm.type === "degisim" ? reqForm.targetEmployeeId : undefined,
       });
-      setReqForm({ date: "", type: "izin", note: "" });
+      setReqForm({ date: "", type: "izin", note: "", targetEmployeeId: "" });
       setSent("Talebiniz gönderildi ✅ İşletme onaylayınca bilgilendirileceksiniz.");
     } catch {
       setSent("Talep gönderilemedi, tekrar deneyin.");
     }
   }
+
+  const leaveUsed = data.requests.filter(
+    (r) => r.employeeId === employee.id && r.status === "approved" && r.type === "izin"
+  ).length;
+  const leaveLeft = Math.max(0, (employee.annualLeaveDays ?? 0) - leaveUsed);
 
   return (
     <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-10">
@@ -109,6 +124,24 @@ export default function EmployeePage() {
           </p>
         </div>
       </div>
+
+      <p className="mt-3 text-sm text-zinc-500">
+        🌴 Kalan izin: <strong className="text-zinc-800">{leaveLeft} gün</strong>{" "}
+        <span className="text-zinc-400">
+          ({leaveUsed}/{employee.annualLeaveDays} kullanıldı)
+        </span>
+      </p>
+
+      {data.announcements.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="font-semibold">📢 Duyurular</div>
+          <ul className="mt-2 space-y-1">
+            {data.announcements.slice(0, 3).map((a) => (
+              <li key={a.id}>• {a.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Hafta gezinme */}
       <div className="mt-6 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
@@ -193,6 +226,25 @@ export default function EmployeePage() {
             </select>
           </label>
         </div>
+        {reqForm.type === "degisim" && (
+          <label className="mt-3 block text-sm">
+            <span className="text-zinc-500">Kiminle değiştirmek istiyorsun?</span>
+            <select
+              value={reqForm.targetEmployeeId}
+              onChange={(e) => setReqForm({ ...reqForm, targetEmployeeId: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:border-zinc-900"
+            >
+              <option value="">Seç…</option>
+              {data.employees
+                .filter((e) => e.id !== employee.id)
+                .map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         <label className="mt-3 block text-sm">
           <span className="text-zinc-500">Not (opsiyonel)</span>
           <textarea

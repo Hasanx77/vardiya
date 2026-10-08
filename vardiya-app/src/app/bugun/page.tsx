@@ -79,6 +79,13 @@ export default function BugunPage() {
         </Link>
       </div>
 
+      {data.announcements.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <div className="text-sm font-semibold">📢 Duyuru</div>
+          <p className="mt-1 text-lg">{data.announcements[0].message}</p>
+        </div>
+      )}
+
       <div className="mt-8 space-y-6">
         {data.shiftTemplates.map((t) => {
           const list = working.get(t.id) ?? [];

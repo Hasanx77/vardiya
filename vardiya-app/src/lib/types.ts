@@ -24,6 +24,8 @@ export type Employee = {
   color: ColorKey;
   /** Saatlik ücret (₺) — 0 ise maliyet hesaplanmaz */
   hourlyWage: number;
+  /** Yıllık izin hakkı (gün) */
+  annualLeaveDays: number;
 };
 
 /** Yeniden kullanılabilir vardiya şablonu (ör. Sabah 09:00-17:00) */
@@ -67,6 +69,15 @@ export type TimeOffRequest = {
   type: string; // izin | degisim
   note: string;
   status: string; // pending | approved | rejected
+  /** Vardiya değişiminde hedef personel */
+  targetEmployeeId?: string | null;
+  createdAt: string;
+};
+
+/** Patronun ekibe duyurusu */
+export type Announcement = {
+  id: string;
+  message: string;
   createdAt: string;
 };
 
@@ -77,4 +88,5 @@ export type StatePayload = {
   shiftTemplates: ShiftTemplate[];
   assignments: AssignmentRow[];
   requests: TimeOffRequest[];
+  announcements: Announcement[];
 };

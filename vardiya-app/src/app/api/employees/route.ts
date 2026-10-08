@@ -14,6 +14,8 @@ export async function POST(request: Request) {
   const count = await prisma.employee.count({ where: { businessId: business.id } });
   const wageRaw = Number(body?.hourlyWage);
   const hourlyWage = Number.isFinite(wageRaw) && wageRaw >= 0 ? wageRaw : 0;
+  const leaveRaw = Number(body?.annualLeaveDays);
+  const annualLeaveDays = Number.isFinite(leaveRaw) && leaveRaw >= 0 ? Math.round(leaveRaw) : 14;
 
   const emp = await prisma.employee.create({
     data: {
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
       role: String(body?.role ?? "").trim().slice(0, 40) || "Personel",
       color: nextColor(count),
       hourlyWage,
+      annualLeaveDays,
     },
   });
 
@@ -33,5 +36,6 @@ export async function POST(request: Request) {
     role: emp.role,
     color: emp.color,
     hourlyWage: emp.hourlyWage,
+    annualLeaveDays: emp.annualLeaveDays,
   });
 }

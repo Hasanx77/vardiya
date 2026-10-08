@@ -6,7 +6,7 @@ import { ensureBusiness } from "@/lib/server-data";
 export async function GET() {
   const business = await ensureBusiness();
 
-  const [employees, shiftTemplates, assignments, requests] = await Promise.all([
+  const [employees, shiftTemplates, assignments, requests, announcements] = await Promise.all([
     prisma.employee.findMany({
       where: { businessId: business.id, active: true },
       orderBy: { createdAt: "asc" },
@@ -16,6 +16,11 @@ export async function GET() {
     prisma.timeOffRequest.findMany({
       where: { employee: { businessId: business.id } },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.announcement.findMany({
+      where: { businessId: business.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
     }),
   ]);
 
@@ -28,6 +33,7 @@ export async function GET() {
       role: e.role,
       color: e.color,
       hourlyWage: e.hourlyWage,
+      annualLeaveDays: e.annualLeaveDays,
     })),
     shiftTemplates: shiftTemplates.map((t) => ({
       id: t.id,
@@ -48,7 +54,13 @@ export async function GET() {
       type: r.type,
       note: r.note,
       status: r.status,
+      targetEmployeeId: r.targetEmployeeId,
       createdAt: r.createdAt.toISOString(),
+    })),
+    announcements: announcements.map((a) => ({
+      id: a.id,
+      message: a.message,
+      createdAt: a.createdAt.toISOString(),
     })),
   });
 }

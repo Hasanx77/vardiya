@@ -7,6 +7,8 @@ import {
   addEmployee as apiAddEmployee,
   clearWeek as apiClearWeek,
   copyWeek as apiCopyWeek,
+  createAnnouncement as apiCreateAnnouncement,
+  deleteAnnouncement as apiDeleteAnnouncement,
   deleteEmployee as apiDeleteEmployee,
   fetchState,
   resetData as apiResetData,
@@ -34,7 +36,14 @@ export default function PanelPage() {
   const [showForm, setShowForm] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
-  const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
+  const [empDraft, setEmpDraft] = useState({
+    name: "",
+    phone: "",
+    role: "",
+    hourlyWage: "",
+    annualLeaveDays: "",
+  });
+  const [announcementDraft, setAnnouncementDraft] = useState("");
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -109,6 +118,14 @@ export default function PanelPage() {
     });
     return m;
   }, [data, assignMap, todayISO]);
+
+  const approvedLeaveCount = useMemo(() => {
+    const m = new Map<string, number>();
+    data?.requests
+      .filter((r) => r.status === "approved" && r.type === "izin")
+      .forEach((r) => m.set(r.employeeId, (m.get(r.employeeId) ?? 0) + 1));
+    return m;
+  }, [data]);
 
   async function changeAssignment(employeeId: string, iso: string, shiftTemplateId: string) {
     // Önce ekranda güncelle (hızlı), sonra sunucuya yaz
@@ -269,6 +286,30 @@ export default function PanelPage() {
     }
   }
 
+  async function postAnnouncement() {
+    const message = announcementDraft.trim();
+    if (!message) return flash("Mesaj boş.");
+    try {
+      await apiCreateAnnouncement(message);
+      setAnnouncementDraft("");
+      await load();
+      flash("Duyuru yayınlandı 📢");
+    } catch {
+      flash("Yayınlanamadı.");
+    }
+  }
+
+  async function removeAnnouncement(id: string) {
+    if (!window.confirm("Duyuru silinsin mi?")) return;
+    try {
+      await apiDeleteAnnouncement(id);
+      await load();
+      flash("Duyuru silindi.");
+    } catch {
+      flash("Silinemedi.");
+    }
+  }
+
   function startEditEmp(emp: Employee) {
     setEditingEmpId(emp.id);
     setEmpDraft({
@@ -276,6 +317,7 @@ export default function PanelPage() {
       phone: emp.phone,
       role: emp.role,
       hourlyWage: emp.hourlyWage ? String(emp.hourlyWage) : "",
+      annualLeaveDays: emp.annualLeaveDays != null ? String(emp.annualLeaveDays) : "14",
     });
   }
 
@@ -289,6 +331,10 @@ export default function PanelPage() {
         phone: empDraft.phone.trim(),
         role: empDraft.role.trim(),
         hourlyWage: Number(empDraft.hourlyWage) || 0,
+        annualLeaveDays:
+          empDraft.annualLeaveDays.trim() === ""
+            ? 14
+            : Math.max(0, Math.round(Number(empDraft.annualLeaveDays) || 0)),
       });
       setEditingEmpId(null);
       await load();
@@ -684,6 +730,43 @@ export default function PanelPage() {
         </div>
       </div>
 
+      {/* Duyurular */}
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-zinc-700">📢 Duyurular</h3>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input
+            value={announcementDraft}
+            onChange={(e) => setAnnouncementDraft(e.target.value)}
+            placeholder="Ekibe bir mesaj yaz… (ör. Cumartesi canlı müzik var)"
+            className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+          <button
+            onClick={postAnnouncement}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            Yayınla
+          </button>
+        </div>
+        {data.announcements.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {data.announcements.slice(0, 5).map((a) => (
+              <li
+                key={a.id}
+                className="flex items-start justify-between gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+              >
+                <span className="text-zinc-700">{a.message}</span>
+                <button
+                  onClick={() => removeAnnouncement(a.id)}
+                  className="shrink-0 text-xs text-zinc-400 hover:text-red-600"
+                >
+                  Sil
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* Ana ızgara */}
       {!weekEmpty && (
         <div className="mt-4 flex items-center gap-3">
@@ -757,6 +840,8 @@ export default function PanelPage() {
               {visibleEmployees.map((emp) => {
                 const total = weekTotal(emp);
                 const over = total > WEEKLY_LIMIT_HOURS;
+                const leaveUsed = approvedLeaveCount.get(emp.id) ?? 0;
+                const leaveLeft = Math.max(0, (emp.annualLeaveDays ?? 0) - leaveUsed);
                 return (
                   <tr key={emp.id} className="border-t border-zinc-100">
                     <td className="sticky left-0 z-10 bg-white px-4 py-2">
@@ -787,6 +872,15 @@ export default function PanelPage() {
                             inputMode="decimal"
                             className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
                           />
+                          <input
+                            value={empDraft.annualLeaveDays}
+                            onChange={(e) =>
+                              setEmpDraft({ ...empDraft, annualLeaveDays: e.target.value })
+                            }
+                            placeholder="Yıllık izin gün"
+                            inputMode="numeric"
+                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
+                          />
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -797,7 +891,9 @@ export default function PanelPage() {
                           />
                           <div>
                             <div className="font-medium whitespace-nowrap">{emp.name}</div>
-                            <div className="text-[11px] text-zinc-400">{emp.role}</div>
+                            <div className="text-[11px] text-zinc-400">
+                              {emp.role} · İzin {leaveLeft} gün
+                            </div>
                           </div>
                         </div>
                       )}

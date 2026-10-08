@@ -19,6 +19,7 @@ model Business {
   employees      Employee[]
   shiftTemplates ShiftTemplate[]
   assignments    Assignment[]
+  announcements  Announcement[]
 }
 
 model Employee {
@@ -29,6 +30,7 @@ model Employee {
   role       String   @default("Personel")
   color      String   @default("sky")
   hourlyWage Float    @default(0)
+  annualLeaveDays Int @default(14)
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
 
@@ -71,7 +73,19 @@ model TimeOffRequest {
   type       String   @default("izin") // izin | degisim
   note       String   @default("")
   status     String   @default("pending") // pending | approved | rejected
+  /** Vardiya değişiminde hedef personel (opsiyonel) */
+  targetEmployeeId String?
   createdAt  DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+// Patronun ekibe duyurusu
+model Announcement {
+  id         String   @id @default(cuid())
+  businessId String
+  message    String
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }

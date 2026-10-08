@@ -14,7 +14,13 @@ export async function POST(request: Request) {
   }
 
   const req = await prisma.timeOffRequest.create({
-    data: { employeeId, date, type, note },
+    data: {
+      employeeId,
+      date,
+      type,
+      note,
+      targetEmployeeId: body?.targetEmployeeId ? String(body.targetEmployeeId) : null,
+    },
   });
 
   return NextResponse.json({ id: req.id, status: req.status });

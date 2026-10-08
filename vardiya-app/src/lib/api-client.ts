@@ -38,7 +38,13 @@ export function addEmployee(input: {
 
 export function updateEmployee(
   id: string,
-  input: { name?: string; phone?: string; role?: string; hourlyWage?: number }
+  input: {
+    name?: string;
+    phone?: string;
+    role?: string;
+    hourlyWage?: number;
+    annualLeaveDays?: number;
+  }
 ) {
   return jsonRequest<{ id: string }>(`/api/employees/${id}`, {
     method: "PATCH",
@@ -89,11 +95,23 @@ export function createRequest(input: {
   date: string;
   type: string;
   note: string;
+  targetEmployeeId?: string;
 }) {
   return jsonRequest<{ id: string }>("/api/requests", {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function createAnnouncement(message: string) {
+  return jsonRequest<{ id: string }>("/api/announcements", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
+
+export function deleteAnnouncement(id: string) {
+  return jsonRequest<{ ok: boolean }>(`/api/announcements/${id}`, { method: "DELETE" });
 }
 
 export function updateRequest(id: string, status: string) {

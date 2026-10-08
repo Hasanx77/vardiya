@@ -15,6 +15,10 @@ export async function PATCH(request: Request, { params }: Ctx) {
     const wage = Number(body.hourlyWage);
     if (Number.isFinite(wage) && wage >= 0) data.hourlyWage = wage;
   }
+  if (body?.annualLeaveDays !== undefined) {
+    const leave = Number(body.annualLeaveDays);
+    if (Number.isFinite(leave) && leave >= 0) data.annualLeaveDays = Math.round(leave);
+  }
 
   try {
     const emp = await prisma.employee.update({ where: { id }, data });
@@ -25,6 +29,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
       role: emp.role,
       color: emp.color,
       hourlyWage: emp.hourlyWage,
+      annualLeaveDays: emp.annualLeaveDays,
     });
   } catch {
     return NextResponse.json({ error: "Personel bulunamadı" }, { status: 404 });
