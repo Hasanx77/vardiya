@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vardiya 🗓️
 
-## Getting Started
+Kafe & restoranlar için **vardiya yönetimi** uygulaması.
+Excel ve WhatsApp yerine: 5 dakikada haftalık plan kur, personele tek tıkla WhatsApp'tan gönder.
 
-First, run the development server:
+> Bu bir MVP'dir. Gerçek pilot müşteriyle test edilip geri bildirime göre geliştirilir.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## ✨ Özellikler
+
+- 👥 **Personel yönetimi** — ekle, düzenle (ad/görev/telefon/saatlik ücret), sil
+- 🗓️ **Haftalık vardiya ızgarası** — personel × gün, süratle doldur
+- 🎨 **Vardiya şablonları** — Sabah/Akşam/Tam Gün + kendi şablonlarını ekle/düzenle (renkli)
+- ⚖️ **45 saat uyarısı** — İş Kanunu haftalık süreyi aşan personel kırmızı işaretlenir
+- 💰 **Tahmini işçilik maliyeti** — saatlik ücret × saat
+- 📲 **WhatsApp gönderimi** — tek tık veya "Tümüne Gönder"
+- 🧑‍🍳 **Personel görünümü** — çalışan kendi programını görür, **izin/değişim talebi** gönderir
+- ⏳ **Talep yönetimi** — patron talebi onaylar/reddeder; onaylanan izin vardiyayı kaldırır
+- 🖨 **Yazdırılabilir çizelge** — duvara asılacak haftalık çizelge
+- ⧉ **Geçen haftayı kopyala** / 🗑 haftayı temizle
+- 🗄️ **Veritabanı** (Prisma + SQLite) — veriler sunucuda, kalıcı
+
+---
+
+## 🚀 Kurulum
+
+```powershell
+cd vardiya-app
+
+# Bağımlılıklar (PowerShell'de npm yerine npm.cmd kullanın)
+npm.cmd install
+
+# Veritabanını oluştur + Prisma istemcisini üret
+npx.cmd prisma migrate dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ▶️ Çalıştırma
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm.cmd run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Aç: <http://localhost:3000>
 
-## Learn More
+- `/` → tanıtım sayfası
+- `/panel` → yönetim paneli
+- `/ekip` → personel görünümü
+- `/yazdir` → yazdırılabilir çizelge
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🧱 Teknoloji
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Katman | Teknoloji |
+|---|---|
+| Çatı | Next.js 16 (App Router) + React 19 |
+| Dil | TypeScript |
+| Stil | Tailwind CSS 4 |
+| Veritabanı | Prisma 6 + SQLite |
+| Doğrulama/tipler | TypeScript (strict) |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Yapı
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/
+    page.tsx              # tanıtım
+    panel/page.tsx        # yönetim paneli
+    ekip/                 # personel görünümü
+    yazdir/page.tsx       # yazdırılabilir çizelge
+    api/                  # sunucu uçları (state, employees, assignments, templates, requests, reset)
+  components/
+    TemplateManager.tsx   # vardiya şablonu yönetimi
+  lib/
+    prisma.ts             # veritabanı bağlantısı
+    server-data.ts        # işletme kurulumu + demo veri
+    api-client.ts         # istemci tarafı API fonksiyonları
+    dates.ts shifts.ts colors.ts whatsapp.ts types.ts validate.ts
+prisma/
+  schema.prisma           # veri modeli
+  dev.db                  # SQLite veritabanı (git'e girmez)
+```
+
+---
+
+## ⚠️ Ortam notları (bu makineye özel)
+
+- PowerShell `npm.ps1` betiğini engelliyor → **`npm.cmd` / `npx.cmd`** kullan.
+- Proje **OneDrive** içinde. `node_modules` bazen OneDrive senkronunda bozulabiliyor
+  (ör. Next.js native SWC dosyası yarım inmişti). Böyle bir hata görürsen:
+  `Remove-Item node_modules\@next\swc-win32-x64-msvc -Recurse -Force` + `npm.cmd install`
+  → şema değişince dev server'ı **yeniden başlat** (Prisma istemcisi tazelensin diye).
+- Uzun vadede projeyi OneDrive dışına (ör. `C:\dev`) taşımak hız ve sağlık açısından iyi olur.
+
+---
+
+## 🗺️ Yol haritası
+
+- [ ] Çoklu işletme / kullanıcı hesapları (giriş)
+- [ ] Postgres'e geçiş + yayına alma (Vercel)
+- [ ] Otomatik WhatsApp/SMS hatırlatma
+- [ ] Birden fazla şube
+- [ ] Puantaj / bordro dışa aktarım (Excel/PDF)
+- [ ] PDKS entegrasyonu
+
+---
+
+*Vardiya — kafe & restoranlar için vardiya yönetimi.*

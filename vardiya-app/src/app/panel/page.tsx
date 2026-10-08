@@ -203,6 +203,43 @@ export default function PanelPage() {
     }
   }
 
+  function exportCsv() {
+    if (!data) return;
+    const head = [
+      "Personel",
+      "Görev",
+      ...weekDates.map((d) => formatShort(d)),
+      "Toplam Saat",
+      "Maliyet (TL)",
+    ];
+    const rows: string[][] = [head];
+    for (const emp of data.employees) {
+      const cells = weekDates.map((d) => {
+        const sid = assignMap.get(keyOf(emp.id, toISODate(d)));
+        const t = sid ? templateById.get(sid) : undefined;
+        return t ? `${t.name} ${t.start}-${t.end}` : "";
+      });
+      rows.push([
+        emp.name,
+        emp.role,
+        ...cells,
+        String(weekTotal(emp)),
+        String(Math.round(weekCost(emp))),
+      ]);
+    }
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vardiya-${toISODate(weekDates[0])}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    flash("CSV indirildi ⬇");
+  }
+
   async function handleRequest(id: string, status: string) {
     try {
       await apiUpdateRequest(id, status);
@@ -522,6 +559,12 @@ export default function PanelPage() {
           className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
         >
           ⚙ Ayarlar
+        </button>
+        <button
+          onClick={exportCsv}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
+        >
+          ⬇ Excel (CSV)
         </button>
       </div>
 
