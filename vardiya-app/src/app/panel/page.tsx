@@ -1,105 +1,146 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { AppData, Employee } from "@/lib/types";
-import { assignmentKey } from "@/lib/types";
-import { clearData, loadData, saveData, seedData, uid } from "@/lib/storage";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import type { Employee, StatePayload } from "@/lib/types";
 import {
-  formatShort,
-  formatWeekRange,
-  getWeekDates,
-  toISODate,
-  DAY_SHORT_TR,
-} from "@/lib/dates";
+  addEmployee as apiAddEmployee,
+  deleteEmployee as apiDeleteEmployee,
+  fetchState,
+  setAssignment as apiSetAssignment,
+  updateBusiness as apiUpdateBusiness,
+  updateRequest as apiUpdateRequest,
+} from "@/lib/api-client";
+import { formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
-import { COLOR_CLASSES, nextColor } from "@/lib/colors";
+import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 
+function keyOf(employeeId: string, iso: string) {
+  return `${employeeId}__${iso}`;
+}
+
 export default function PanelPage() {
-  const [data, setData] = useState<AppData | null>(null);
+  const [data, setData] = useState<StatePayload | null>(null);
+  const [error, setError] = useState("");
   const [weekOffset, setWeekOffset] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", role: "" });
+  const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
 
-  // İlk yüklemede veriyi al (tarayıcı tarafı)
-  useEffect(() => {
-    setData(loadData());
+  const flash = useCallback((msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(""), 2200);
   }, []);
 
-  // Her değişiklikte kaydet
+  const load = useCallback(async () => {
+    try {
+      const state = await fetchState();
+      setData(state);
+      setNameDraft(state.business.name);
+      setError("");
+    } catch {
+      setError("Sunucuya ulaşılamadı. Dev server çalışıyor mu?");
+    }
+  }, []);
+
   useEffect(() => {
-    if (data) saveData(data);
-  }, [data]);
+    load();
+  }, [load]);
 
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
-  const templateById = useMemo(() => {
-    const map = new Map<string, AppData["shiftTemplates"][number]>();
-    data?.shiftTemplates.forEach((t) => map.set(t.id, t));
-    return map;
+  const assignMap = useMemo(() => {
+    const m = new Map<string, string>();
+    data?.assignments.forEach((a) => m.set(keyOf(a.employeeId, a.date), a.shiftTemplateId));
+    return m;
   }, [data]);
 
-  function flash(msg: string) {
-    setToast(msg);
-    window.setTimeout(() => setToast(""), 2200);
-  }
+  const empById = useMemo(() => {
+    const m = new Map<string, Employee>();
+    data?.employees.forEach((e) => m.set(e.id, e));
+    return m;
+  }, [data]);
 
-  function setAssignment(empId: string, iso: string, shiftId: string) {
+  const templateById = useMemo(() => {
+    const m = new Map<string, StatePayload["shiftTemplates"][number]>();
+    data?.shiftTemplates.forEach((t) => m.set(t.id, t));
+    return m;
+  }, [data]);
+
+  async function changeAssignment(employeeId: string, iso: string, shiftTemplateId: string) {
+    // Önce ekranda güncelle (hızlı), sonra sunucuya yaz
     setData((prev) => {
       if (!prev) return prev;
-      const assignments = { ...prev.assignments };
-      const key = assignmentKey(empId, iso);
-      if (shiftId) assignments[key] = shiftId;
-      else delete assignments[key];
-      return { ...prev, assignments };
+      const others = prev.assignments.filter(
+        (a) => !(a.employeeId === employeeId && a.date === iso)
+      );
+      const next = shiftTemplateId
+        ? [...others, { employeeId, date: iso, shiftTemplateId }]
+        : others;
+      return { ...prev, assignments: next };
     });
-  }
-
-  function addEmployee() {
-    const name = form.name.trim();
-    if (!name) {
-      flash("Personel adı gerekli.");
-      return;
+    try {
+      await apiSetAssignment(employeeId, iso, shiftTemplateId);
+    } catch {
+      flash("Kaydedilemedi, yeniden deneniyor…");
+      load();
     }
-    setData((prev) => {
-      if (!prev) return prev;
-      const emp: Employee = {
-        id: uid("emp"),
-        name,
-        phone: form.phone.trim(),
-        role: form.role.trim() || "Personel",
-        color: nextColor(prev.employees.length),
-      };
-      return { ...prev, employees: [...prev.employees, emp] };
-    });
-    setForm({ name: "", phone: "", role: "" });
-    setShowForm(false);
-    flash("Personel eklendi ✅");
   }
 
-  function removeEmployee(emp: Employee) {
+  async function handleAddEmployee() {
+    const name = form.name.trim();
+    if (!name) return flash("Personel adı gerekli.");
+    try {
+      await apiAddEmployee({ name, phone: form.phone.trim(), role: form.role.trim() });
+      setForm({ name: "", phone: "", role: "" });
+      setShowForm(false);
+      await load();
+      flash("Personel eklendi ✅");
+    } catch {
+      flash("Personel eklenemedi.");
+    }
+  }
+
+  async function handleRemoveEmployee(emp: Employee) {
     if (!window.confirm(`${emp.name} silinsin mi? Vardiyaları da silinir.`)) return;
-    setData((prev) => {
-      if (!prev) return prev;
-      const assignments = { ...prev.assignments };
-      Object.keys(assignments).forEach((k) => {
-        if (k.startsWith(`${emp.id}__`)) delete assignments[k];
-      });
-      return {
-        ...prev,
-        employees: prev.employees.filter((e) => e.id !== emp.id),
-        assignments,
-      };
-    });
-    flash("Personel silindi.");
+    try {
+      await apiDeleteEmployee(emp.id);
+      await load();
+      flash("Personel silindi.");
+    } catch {
+      flash("Silinemedi.");
+    }
+  }
+
+  async function saveBusinessName() {
+    if (!data) return;
+    const name = nameDraft.trim();
+    if (!name || name === data.business.name) return;
+    try {
+      await apiUpdateBusiness(name);
+      await load();
+      flash("İşletme adı kaydedildi.");
+    } catch {
+      flash("Kaydedilemedi.");
+    }
+  }
+
+  async function handleRequest(id: string, status: string) {
+    try {
+      await apiUpdateRequest(id, status);
+      await load();
+      flash(status === "approved" ? "Onaylandı ✅" : "Reddedildi.");
+    } catch {
+      flash("İşlem başarısız.");
+    }
   }
 
   function weekTotal(emp: Employee): number {
-    if (!data) return 0;
     let total = 0;
     for (const d of weekDates) {
-      const shiftId = data.assignments[assignmentKey(emp.id, toISODate(d))];
+      const shiftId = assignMap.get(keyOf(emp.id, toISODate(d)));
       if (!shiftId) continue;
       const t = templateById.get(shiftId);
       if (t) total += shiftHours(t);
@@ -109,16 +150,15 @@ export default function PanelPage() {
 
   function sendWhatsApp(emp: Employee) {
     if (!data) return;
-    if (!emp.phone.trim()) {
-      flash("Bu personelin telefonu yok. Önce düzenle.");
-      return;
-    }
+    if (!emp.phone.trim()) return flash("Bu personelin telefonu yok.");
     const text = buildScheduleText(
       emp,
       weekDates,
-      data.assignments,
+      Object.fromEntries(
+        [...assignMap.entries()].map(([k, v]) => [k, v])
+      ),
       data.shiftTemplates,
-      data.businessName
+      data.business.name
     );
     window.open(buildWhatsAppLink(emp.phone, text), "_blank");
   }
@@ -128,9 +168,9 @@ export default function PanelPage() {
     const text = buildScheduleText(
       emp,
       weekDates,
-      data.assignments,
+      Object.fromEntries([...assignMap.entries()]),
       data.shiftTemplates,
-      data.businessName
+      data.business.name
     );
     try {
       await navigator.clipboard.writeText(text);
@@ -140,11 +180,30 @@ export default function PanelPage() {
     }
   }
 
-  function resetDemo() {
-    if (!window.confirm("Tüm veriler silinip örnek veri yüklensin mi?")) return;
-    clearData();
-    setData(seedData());
-    flash("Örnek veri yüklendi.");
+  async function copyStaffLink(emp: Employee) {
+    const url = `${window.location.origin}/ekip/${emp.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      flash("Personel linki kopyalandı 🔗");
+    } catch {
+      flash("Kopyalanamadı.");
+    }
+  }
+
+  if (error) {
+    return (
+      <main className="flex-1 grid place-items-center px-4">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
+          <p className="font-medium">{error}</p>
+          <button
+            onClick={load}
+            className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+          >
+            Tekrar dene
+          </button>
+        </div>
+      </main>
+    );
   }
 
   if (!data) {
@@ -155,34 +214,34 @@ export default function PanelPage() {
     );
   }
 
+  const pending = data.requests.filter((r) => r.status === "pending");
   const weekEmpty = data.employees.length === 0;
 
   return (
     <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">
       {/* Üst bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <label className="text-xs font-medium text-zinc-500">İşletme adı</label>
           <input
-            value={data.businessName}
-            onChange={(e) =>
-              setData((prev) => (prev ? { ...prev, businessName: e.target.value } : prev))
-            }
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={saveBusinessName}
             className="mt-1 block w-full sm:w-64 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-lg font-semibold outline-none focus:border-zinc-900"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/ekip"
+            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+          >
+            Personel Görünümü
+          </Link>
           <button
             onClick={() => setShowForm((s) => !s)}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
           >
             + Personel Ekle
-          </button>
-          <button
-            onClick={resetDemo}
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100"
-          >
-            Örnek veriye dön
           </button>
         </div>
       </div>
@@ -210,12 +269,53 @@ export default function PanelPage() {
               className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
             />
             <button
-              onClick={addEmployee}
+              onClick={handleAddEmployee}
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
             >
               Kaydet
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Bekleyen talepler */}
+      {pending.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <h3 className="text-sm font-semibold text-amber-900">
+            ⏳ Bekleyen talepler ({pending.length})
+          </h3>
+          <ul className="mt-3 space-y-2">
+            {pending.map((r) => {
+              const emp = empById.get(r.employeeId);
+              return (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
+                >
+                  <span>
+                    <strong>{emp?.name ?? "Bilinmeyen"}</strong> ·{" "}
+                    {r.type === "degisim" ? "Vardiya değişimi" : "İzin"} ·{" "}
+                    {r.date}
+                    {r.note ? ` · "${r.note}"` : ""}
+                  </span>
+                  <span className="flex gap-2">
+                    <button
+                      onClick={() => handleRequest(r.id, "approved")}
+                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                    >
+                      Onayla
+                    </button>
+                    <button
+                      onClick={() => handleRequest(r.id, "rejected")}
+                      className="rounded-md border border-zinc-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
+                    >
+                      Reddet
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
@@ -278,7 +378,9 @@ export default function PanelPage() {
                     <td className="sticky left-0 z-10 bg-white px-4 py-2">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`h-2.5 w-2.5 rounded-full ${COLOR_CLASSES[emp.color].dot}`}
+                          className={`h-2.5 w-2.5 rounded-full ${
+                            COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
+                          }`}
                         />
                         <div>
                           <div className="font-medium whitespace-nowrap">{emp.name}</div>
@@ -288,15 +390,16 @@ export default function PanelPage() {
                     </td>
                     {weekDates.map((d) => {
                       const iso = toISODate(d);
-                      const shiftId = data.assignments[assignmentKey(emp.id, iso)] ?? "";
-                      const cls = shiftId
-                        ? COLOR_CLASSES[templateById.get(shiftId)!.color].chip
+                      const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
+                      const template = shiftId ? templateById.get(shiftId) : undefined;
+                      const cls = template
+                        ? COLOR_CLASSES[template.color]?.chip ?? ""
                         : "bg-white text-zinc-400 border-dashed border-zinc-300";
                       return (
                         <td key={iso} className="px-1.5 py-2">
                           <select
                             value={shiftId}
-                            onChange={(e) => setAssignment(emp.id, iso, e.target.value)}
+                            onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
                             className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-zinc-300 ${cls}`}
                           >
                             <option value="">—</option>
@@ -310,9 +413,7 @@ export default function PanelPage() {
                       );
                     })}
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <span
-                        className={`font-semibold ${over ? "text-red-600" : "text-zinc-700"}`}
-                      >
+                      <span className={`font-semibold ${over ? "text-red-600" : "text-zinc-700"}`}>
                         {total} sa
                       </span>
                       {over && (
@@ -325,21 +426,24 @@ export default function PanelPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => sendWhatsApp(emp)}
-                          title="WhatsApp'tan gönder"
                           className="rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700"
                         >
                           Gönder
                         </button>
                         <button
                           onClick={() => copySchedule(emp)}
-                          title="Metni kopyala"
                           className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
                         >
                           Kopyala
                         </button>
                         <button
-                          onClick={() => removeEmployee(emp)}
-                          title="Sil"
+                          onClick={() => copyStaffLink(emp)}
+                          className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                        >
+                          Link
+                        </button>
+                        <button
+                          onClick={() => handleRemoveEmployee(emp)}
                           className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                         >
                           Sil
@@ -361,9 +465,11 @@ export default function PanelPage() {
           {data.shiftTemplates.map((t) => (
             <span
               key={t.id}
-              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${COLOR_CLASSES[t.color].chip}`}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${
+                COLOR_CLASSES[t.color]?.chip ?? ""
+              }`}
             >
-              <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[t.color].dot}`} />
+              <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
               {t.name} · {t.start}–{t.end} · {shiftHours(t)} sa
             </span>
           ))}
@@ -374,7 +480,6 @@ export default function PanelPage() {
         </p>
       </div>
 
-      {/* Bildirim */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg">
           {toast}

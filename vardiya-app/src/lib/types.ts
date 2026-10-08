@@ -49,3 +49,30 @@ export type AppData = {
 export function assignmentKey(employeeId: string, isoDate: string): string {
   return `${employeeId}__${isoDate}`;
 }
+
+/** Sunucudan gelen atama satırı */
+export type AssignmentRow = {
+  employeeId: string;
+  date: string;
+  shiftTemplateId: string;
+};
+
+/** Personelin izin / değişim talebi */
+export type TimeOffRequest = {
+  id: string;
+  employeeId: string;
+  date: string;
+  type: string; // izin | degisim
+  note: string;
+  status: string; // pending | approved | rejected
+  createdAt: string;
+};
+
+/** /api/state yanıtı */
+export type StatePayload = {
+  business: { id: string; name: string };
+  employees: Employee[];
+  shiftTemplates: ShiftTemplate[];
+  assignments: AssignmentRow[];
+  requests: TimeOffRequest[];
+};

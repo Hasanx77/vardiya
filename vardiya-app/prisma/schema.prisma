@@ -1,0 +1,76 @@
+// Prisma şeması — Vardiya
+// SQLite (yerel geliştirme). Yayına alırken Postgres'e çevrilebilir.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// İşletme (çok işletmeye hazır: her kayıt bir businessId taşır)
+model Business {
+  id        String   @id @default(cuid())
+  name      String   @default("İşletmem")
+  createdAt DateTime @default(now())
+
+  employees      Employee[]
+  shiftTemplates ShiftTemplate[]
+  assignments    Assignment[]
+}
+
+model Employee {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  phone      String   @default("")
+  role       String   @default("Personel")
+  color      String   @default("sky")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  requests    TimeOffRequest[]
+}
+
+model ShiftTemplate {
+  id         String @id @default(cuid())
+  businessId String
+  name       String
+  start      String
+  end        String
+  color      String @default("sky")
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+}
+
+model Assignment {
+  id              String @id @default(cuid())
+  businessId      String
+  employeeId      String
+  shiftTemplateId String
+  date            String // YYYY-MM-DD
+
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee      Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shiftTemplate ShiftTemplate @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+}
+
+// Personelin izin / vardiya değişimi talebi
+model TimeOffRequest {
+  id         String   @id @default(cuid())
+  employeeId String
+  date       String // YYYY-MM-DD
+  type       String   @default("izin") // izin | degisim
+  note       String   @default("")
+  status     String   @default("pending") // pending | approved | rejected
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
