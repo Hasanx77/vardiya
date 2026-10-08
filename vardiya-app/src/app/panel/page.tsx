@@ -32,6 +32,7 @@ export default function PanelPage() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
   const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "" });
+  const [showBulk, setShowBulk] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", role: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -468,6 +469,12 @@ export default function PanelPage() {
         >
           🖨 Yazdır / Çizelge
         </Link>
+        <button
+          onClick={() => setShowBulk(true)}
+          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-100"
+        >
+          📤 Tümüne Gönder
+        </button>
       </div>
 
       {/* Bugün kim çalışıyor? */}
@@ -697,6 +704,62 @@ export default function PanelPage() {
           haftalık çalışma süresi).
         </p>
       </div>
+
+      {/* Toplu gönderim modali */}
+      {showBulk && (
+        <div
+          className="fixed inset-0 z-40 grid place-items-center bg-black/40 p-4"
+          onClick={() => setShowBulk(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-semibold">Tüm personele gönder</h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              Her personele kendi programı hazırlanır. Sırayla açıp gönder.
+            </p>
+            <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+              {data.employees.map((emp) => {
+                const text = buildScheduleText(
+                  emp,
+                  weekDates,
+                  Object.fromEntries([...assignMap.entries()]),
+                  data.shiftTemplates,
+                  data.business.name
+                );
+                const link = buildWhatsAppLink(emp.phone, text);
+                return (
+                  <li
+                    key={emp.id}
+                    className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  >
+                    <span>{emp.name}</span>
+                    {emp.phone ? (
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                      >
+                        WhatsApp
+                      </a>
+                    ) : (
+                      <span className="text-xs text-zinc-400">telefon yok</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <button
+              onClick={() => setShowBulk(false)}
+              className="mt-4 w-full rounded-lg border border-zinc-300 py-2 text-sm hover:bg-zinc-100"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg">
