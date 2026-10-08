@@ -97,6 +97,30 @@ prisma/
 
 ---
 
+## ☁️ Yayına alma (Vercel + Postgres)
+
+SQLite yalnızca **yerel geliştirme** içindir; sunucusuz (serverless) ortamda kalıcı olmaz.
+Yayına alırken Postgres'e geçilir:
+
+1. Ücretsiz bir Postgres oluştur (Neon, Supabase veya Vercel Postgres).
+2. `prisma/schema.prisma` içinde sağlayıcıyı değiştir:
+
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+
+3. Ortam değişkenine bağlantı adresini yaz (`.env` ya da Vercel → Environment Variables):
+
+   ```
+   DATABASE_URL="postgresql://kullanici:sifre@host:5432/vardiya?schema=public"
+   ```
+
+4. Tabloları oluştur: `npx.cmd prisma migrate deploy`
+5. Vercel'e deploy et ve `DATABASE_URL`'i ekle. (Build komutu: `npx prisma generate && next build`)
+
 ## 🗺️ Yol haritası
 
 - [ ] Çoklu işletme / kullanıcı hesapları (giriş)

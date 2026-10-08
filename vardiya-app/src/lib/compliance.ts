@@ -128,7 +128,6 @@ export function analyzeWeek(input: WeekAnalysisInput): WeekAnalysis {
   const { employees, shifts, assignments, weekDates, previousDate } = input;
 
   const shiftById = new Map(shifts.map((s) => [s.id, s]));
-  const weekSet = new Set(weekDates);
 
   // employeeId__date -> o güne ait atamalar (dizi; çakışma tespiti için)
   const byEmployeeDay = new Map<string, AssignmentLike[]>();
