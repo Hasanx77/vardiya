@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { StatePayload } from "@/lib/types";
 import { fetchState } from "@/lib/api-client";
 import { DAY_NAMES_TR, formatShort, formatWeekRange, getWeekDates, toISODate } from "@/lib/dates";
+import { getHoliday } from "@/lib/holidays";
 
 export default function PrintPage() {
   const [data, setData] = useState<StatePayload | null>(null);
@@ -71,12 +72,24 @@ export default function PrintPage() {
         <thead>
           <tr>
             <th className="border border-zinc-300 bg-zinc-100 p-2 text-left">Personel</th>
-            {weekDates.map((d) => (
-              <th key={toISODate(d)} className="border border-zinc-300 bg-zinc-100 p-2">
-                {DAY_NAMES_TR[(d.getDay() + 6) % 7]}
-                <span className="block font-normal text-zinc-500">{formatShort(d)}</span>
-              </th>
-            ))}
+            {weekDates.map((d) => {
+              const iso = toISODate(d);
+              const holiday = getHoliday(iso);
+              return (
+                <th
+                  key={iso}
+                  className={`border border-zinc-300 p-2 ${holiday ? "bg-red-50" : "bg-zinc-100"}`}
+                >
+                  {DAY_NAMES_TR[(d.getDay() + 6) % 7]}
+                  <span className="block font-normal text-zinc-500">{formatShort(d)}</span>
+                  {holiday && (
+                    <span className="block text-[10px] font-normal text-red-600" title={holiday.name}>
+                      {holiday.name}
+                    </span>
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>

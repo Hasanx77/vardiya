@@ -7,16 +7,24 @@
 
 import { DAY_SHORT_TR } from "./dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "./shifts";
+import { isFullHoliday } from "./holidays";
 
 /** İki vardiya arası en az dinlenme süresi (saat) — 4857 m.69 */
 export const MIN_DAILY_REST_HOURS = 11;
 /** Fazla mesai çarpanı (normal ücretin %50 fazlası → 1,5x) — 4857 m.41 */
 export const OVERTIME_MULTIPLIER = 1.5;
+/** Gece çalışması azami süre (saat) — 4857 m.69 */
+export const NIGHT_LIMIT_HOURS = 7.5;
+
+const NIGHT_START = 20 * 60; // 20:00 (gün başından dakika)
+const NIGHT_SPAN = 10 * 60; // 20:00 → 06:00
 
 export type ComplianceIssueType =
   | "cift_vardiya"
   | "dinlenme"
-  | "fazla_mesai";
+  | "fazla_mesai"
+  | "gece"
+  | "tatil";
 
 export type ComplianceSeverity = "error" | "warn";
 
@@ -80,6 +88,24 @@ export function shiftBounds(shift: { start: string; end: string }): {
   let end = timeToMinutes(shift.end);
   if (end <= start) end += 24 * 60;
   return { start, end };
+}
+
+/**
+ * Bir vardiyanın gece dönemine (20:00–06:00) denk gelen saat miktarı.
+ * 4857 m.69: gece çalışması 7,5 saati aşamaz.
+ */
+export function nightHours(shift: { start: string; end: string }): number {
+  const { start, end } = shiftBounds(shift);
+  let totalMinutes = 0;
+  const from = Math.floor(start / 1440) - 1;
+  const to = Math.floor(end / 1440) + 1;
+  for (let k = from; k <= to; k++) {
+    const nightStart = k * 1440 + NIGHT_START;
+    const nightEnd = nightStart + NIGHT_SPAN;
+    const overlap = Math.min(end, nightEnd) - Math.max(start, nightStart);
+    if (overlap > 0) totalMinutes += overlap;
+  }
+  return Math.round((totalMinutes / 60) * 10) / 10;
 }
 
 /**
@@ -169,6 +195,34 @@ export function analyzeWeek(input: WeekAnalysisInput): WeekAnalysis {
         date: weekDates[weekDates.length - 1] ?? "",
         message: `Haftalık ${WEEKLY_LIMIT_HOURS} saati ${overtimeHours} saat aştı (fazla mesai).`,
       });
+    }
+
+    // 1b) Gece çalışması (7,5 saat) + resmî tatilde çalışma
+    for (const iso of weekDates) {
+      const list = dayAssignments(iso);
+      for (const a of list) {
+        const nh = nightHours(shiftOf(a));
+        if (nh > NIGHT_LIMIT_HOURS) {
+          issues.push({
+            employeeId: emp.id,
+            type: "gece",
+            severity: "warn",
+            date: iso,
+            message: `${dayLabel(iso)} ${shiftOf(a).name}: gece çalışması ${round1(
+              nh
+            )} saat; en fazla ${NIGHT_LIMIT_HOURS} saat olmalı.`,
+          });
+        }
+      }
+      if (isFullHoliday(iso) && list.length > 0) {
+        issues.push({
+          employeeId: emp.id,
+          type: "tatil",
+          severity: "warn",
+          date: iso,
+          message: `${dayLabel(iso)} resmî tatilde çalışma atanmış (fazla mesai ücreti gerekir).`,
+        });
+      }
     }
 
     // 2) Aynı gün birden fazla vardiya (çakışma)

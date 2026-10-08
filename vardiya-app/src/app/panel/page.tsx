@@ -21,6 +21,7 @@ import { analyzeWeek, MIN_DAILY_REST_HOURS, OVERTIME_MULTIPLIER } from "@/lib/co
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 import TemplateManager from "@/components/TemplateManager";
+import { getHoliday } from "@/lib/holidays";
 
 function keyOf(employeeId: string, iso: string) {
   return `${employeeId}__${iso}`;
@@ -728,12 +729,26 @@ export default function PanelPage() {
                 <th className="sticky left-0 z-10 bg-zinc-50 px-4 py-3 text-left font-medium">
                   Personel
                 </th>
-                {weekDates.map((d) => (
-                  <th key={toISODate(d)} className="px-2 py-3 font-medium whitespace-nowrap">
-                    {DAY_SHORT_TR[(d.getDay() + 6) % 7]}
-                    <span className="block text-[11px] text-zinc-400">{formatShort(d)}</span>
-                  </th>
-                ))}
+                {weekDates.map((d) => {
+                  const iso = toISODate(d);
+                  const holiday = getHoliday(iso);
+                  return (
+                    <th key={iso} className="px-2 py-3 font-medium whitespace-nowrap">
+                      <span className={holiday ? "text-red-600" : ""}>
+                        {DAY_SHORT_TR[(d.getDay() + 6) % 7]}
+                      </span>
+                      <span className="block text-[11px] text-zinc-400">{formatShort(d)}</span>
+                      {holiday && (
+                        <span
+                          className="mt-0.5 block text-[10px] font-normal text-red-500"
+                          title={holiday.name}
+                        >
+                          🎉 {holiday.halfDay ? "Arife" : "Tatil"}
+                        </span>
+                      )}
+                    </th>
+                  );
+                })}
                 <th className="px-3 py-3 font-medium whitespace-nowrap">Toplam</th>
                 <th className="px-3 py-3 font-medium">İşlem</th>
               </tr>

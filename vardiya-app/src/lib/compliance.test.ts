@@ -3,6 +3,8 @@ import {
   analyzeWeek,
   isoDiffDays,
   MIN_DAILY_REST_HOURS,
+  NIGHT_LIMIT_HOURS,
+  nightHours,
   OVERTIME_MULTIPLIER,
   restHoursBetween,
   shiftBounds,
@@ -163,5 +165,48 @@ describe("analyzeWeek", () => {
   it("sabitler mevzuata uygun", () => {
     expect(MIN_DAILY_REST_HOURS).toBe(11);
     expect(OVERTIME_MULTIPLIER).toBe(1.5);
+  });
+
+  it("gece vardiyası 7,5 saati aşınca uyarır", () => {
+    const nightShifts = [...shifts, { id: "gece", name: "Gece", start: "20:00", end: "08:00" }];
+    const result = analyzeWeek({
+      employees: [employees[0]],
+      shifts: nightShifts,
+      assignments: [{ employeeId: "e1", date: "2026-10-05", shiftTemplateId: "gece" }],
+      weekDates,
+    });
+    expect(result.issues.some((i) => i.type === "gece")).toBe(true);
+  });
+
+  it("resmî tatilde çalışmayı işaretler", () => {
+    const holidayWeek = [
+      "2026-10-26",
+      "2026-10-27",
+      "2026-10-28",
+      "2026-10-29", // Cumhuriyet Bayramı
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+    ];
+    const result = analyzeWeek({
+      employees: [employees[0]],
+      shifts,
+      assignments: [{ employeeId: "e1", date: "2026-10-29", shiftTemplateId: "sabah" }],
+      weekDates: holidayWeek,
+    });
+    expect(result.issues.some((i) => i.type === "tatil")).toBe(true);
+  });
+});
+
+describe("nightHours", () => {
+  it("gündüz 09:00–17:00 → 0 saat", () => {
+    expect(nightHours({ start: "09:00", end: "17:00" })).toBe(0);
+  });
+  it("akşam 17:00–01:00 → 5 saat", () => {
+    expect(nightHours({ start: "17:00", end: "01:00" })).toBe(5);
+  });
+  it("20:00–08:00 → 10 saat; sınır 7,5", () => {
+    expect(nightHours({ start: "20:00", end: "08:00" })).toBe(10);
+    expect(NIGHT_LIMIT_HOURS).toBe(7.5);
   });
 });
