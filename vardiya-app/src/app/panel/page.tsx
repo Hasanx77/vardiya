@@ -11,6 +11,7 @@ import {
   fetchState,
   setAssignment as apiSetAssignment,
   updateBusiness as apiUpdateBusiness,
+  updateEmployee as apiUpdateEmployee,
   updateRequest as apiUpdateRequest,
 } from "@/lib/api-client";
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
@@ -29,6 +30,8 @@ export default function PanelPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
+  const [empDraft, setEmpDraft] = useState({ name: "", phone: "", role: "" });
   const [form, setForm] = useState({ name: "", phone: "", role: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -169,6 +172,29 @@ export default function PanelPage() {
       flash(status === "approved" ? "Onaylandı ✅" : "Reddedildi.");
     } catch {
       flash("İşlem başarısız.");
+    }
+  }
+
+  function startEditEmp(emp: Employee) {
+    setEditingEmpId(emp.id);
+    setEmpDraft({ name: emp.name, phone: emp.phone, role: emp.role });
+  }
+
+  async function saveEmp() {
+    if (!editingEmpId) return;
+    const name = empDraft.name.trim();
+    if (!name) return flash("Ad gerekli.");
+    try {
+      await apiUpdateEmployee(editingEmpId, {
+        name,
+        phone: empDraft.phone.trim(),
+        role: empDraft.role.trim(),
+      });
+      setEditingEmpId(null);
+      await load();
+      flash("Personel güncellendi ✅");
+    } catch {
+      flash("Güncellenemedi.");
     }
   }
 
@@ -427,17 +453,40 @@ export default function PanelPage() {
                 return (
                   <tr key={emp.id} className="border-t border-zinc-100">
                     <td className="sticky left-0 z-10 bg-white px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`h-2.5 w-2.5 rounded-full ${
-                            COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
-                          }`}
-                        />
-                        <div>
-                          <div className="font-medium whitespace-nowrap">{emp.name}</div>
-                          <div className="text-[11px] text-zinc-400">{emp.role}</div>
+                      {editingEmpId === emp.id ? (
+                        <div className="flex w-40 flex-col gap-1">
+                          <input
+                            value={empDraft.name}
+                            onChange={(e) => setEmpDraft({ ...empDraft, name: e.target.value })}
+                            placeholder="Ad Soyad"
+                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
+                          />
+                          <input
+                            value={empDraft.role}
+                            onChange={(e) => setEmpDraft({ ...empDraft, role: e.target.value })}
+                            placeholder="Görev"
+                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
+                          />
+                          <input
+                            value={empDraft.phone}
+                            onChange={(e) => setEmpDraft({ ...empDraft, phone: e.target.value })}
+                            placeholder="Telefon"
+                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
+                          />
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ${
+                              COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
+                            }`}
+                          />
+                          <div>
+                            <div className="font-medium whitespace-nowrap">{emp.name}</div>
+                            <div className="text-[11px] text-zinc-400">{emp.role}</div>
+                          </div>
+                        </div>
+                      )}
                     </td>
                     {weekDates.map((d) => {
                       const iso = toISODate(d);
@@ -474,32 +523,55 @@ export default function PanelPage() {
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => sendWhatsApp(emp)}
-                          className="rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700"
-                        >
-                          Gönder
-                        </button>
-                        <button
-                          onClick={() => copySchedule(emp)}
-                          className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-                        >
-                          Kopyala
-                        </button>
-                        <button
-                          onClick={() => copyStaffLink(emp)}
-                          className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-                        >
-                          Link
-                        </button>
-                        <button
-                          onClick={() => handleRemoveEmployee(emp)}
-                          className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                        >
-                          Sil
-                        </button>
-                      </div>
+                      {editingEmpId === emp.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={saveEmp}
+                            className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-700"
+                          >
+                            Kaydet
+                          </button>
+                          <button
+                            onClick={() => setEditingEmpId(null)}
+                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                          >
+                            Vazgeç
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => sendWhatsApp(emp)}
+                            className="rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                          >
+                            Gönder
+                          </button>
+                          <button
+                            onClick={() => copySchedule(emp)}
+                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                          >
+                            Kopyala
+                          </button>
+                          <button
+                            onClick={() => copyStaffLink(emp)}
+                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                          >
+                            Link
+                          </button>
+                          <button
+                            onClick={() => startEditEmp(emp)}
+                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                          >
+                            Düzenle
+                          </button>
+                          <button
+                            onClick={() => handleRemoveEmployee(emp)}
+                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                          >
+                            Sil
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
