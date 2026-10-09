@@ -68,3 +68,20 @@ Sayfalar: `/` · `/panel` · `/ekip` · `/bugun` · `/yazdir`
 2. **Postgres'e geç + Vercel'e yayın** (adımlar README'de) → telefondan test.
 3. **Giriş/kullanıcı hesapları** + çoklu işletme (satışa hazır).
 4. WhatsApp/SMS otomatik hatırlatma.
+
+---
+
+## 🗓️ 9 Ekim 2026 — Otonom tur 2 (orkestra şefi)
+
+> Patron derse gitti; JARVIS birkaç saat daha geliştirdi.
+
+Eklenenler:
+- 🔓 **Açık vardiyalar (havuz)** — personel "vardiyayı bırak" der → patron onaylar → vardiya havuza düşer → başka personel **sahiplenir**
+- 🎯 **Kapsam hedefi** (vardiya başına min. kişi) + eksik kalan gün/vardiyalar için **kapsam uyarıları**
+- 📖 **Yardım kılavuzu** (`/yardim`) + **Gizlilik/KVKK** (`/gizlilik`) sayfaları
+- ✅ **Günlük görev listesi** (açılış/kapanış) — panelden yönet, "Bugün" ekranından tik at
+- 🗓️ **Aylık takvim görünümü** (`/takvim`) — tüm ay tek bakışta
+- 👤 **Panelde kişi detayı** — isme tıkla: aylık saat, maliyet, kalan izin
+
+Yeni sayfalar: `/takvim` · `/yardim` · `/gizlilik`
+Test: 40 test geçiyor · `tsc` temiz · tüm sayfalar 200.
