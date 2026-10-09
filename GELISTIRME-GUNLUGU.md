@@ -85,3 +85,22 @@ Eklenenler:
 
 Yeni sayfalar: `/takvim` · `/yardim` · `/gizlilik`
 Test: 40 test geçiyor · `tsc` temiz · tüm sayfalar 200.
+
+---
+
+## 🗓️ 9 Ekim 2026 — Model değişikliği: işveren-merkezli
+
+> Patron kararı: "İşveren yönetsin, eleman sadece girip baksın; elemanın yapabileceği düzeltme olmasın. Arayüz daha basit olsun."
+
+Kaldırılanlar (eleman aksiyonları):
+- 🔓 Açık vardiyalar (havuz) — tamamen kaldırıldı
+- 📨 İzin / değişim / bırakma talepleri — kaldırıldı
+- 🙋 Müsaitlik işaretleme — kaldırıldı
+- ✅ Günlük görev listesi — kaldırıldı
+- İlgili DB tabloları ve API uçları silindi; `prisma` tek, temiz bir `init` migration'a sadeleşti
+
+Kalan model:
+- İşveren: personel, vardiya ızgarası, şablonlar (+kapsam hedefi), duyurular, gün notları, WhatsApp, yazdır/CSV, raporlar, takvim
+- Personel: **yalnızca salt-okunur** program + izin hakkı + duyurular + `.ics`
+
+Sonuç: kod tabanı sadeleşti, arayüz netleşti. Tüm sayfalar 200, `tsc` temiz.
