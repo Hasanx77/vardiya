@@ -6,9 +6,14 @@ import { addTemplate, deleteTemplate, updateTemplate } from "@/lib/api-client";
 import { COLOR_PALETTE, COLOR_CLASSES } from "@/lib/colors";
 import { shiftHours } from "@/lib/shifts";
 
-type Draft = { name: string; start: string; end: string; color: string };
+type Draft = { name: string; start: string; end: string; color: string; minStaff: string };
 
-const EMPTY: Draft = { name: "", start: "09:00", end: "17:00", color: "sky" };
+const EMPTY: Draft = { name: "", start: "09:00", end: "17:00", color: "sky", minStaff: "0" };
+
+function toNum(v: string): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+}
 
 function ColorPicker({
   value,
@@ -55,7 +60,7 @@ export default function TemplateManager({
     if (busy) return;
     setBusy(true);
     try {
-      await addTemplate(draft);
+      await addTemplate({ ...draft, minStaff: toNum(draft.minStaff) });
       setDraft(EMPTY);
       await onChanged();
       flash("Şablon eklendi ✅");
@@ -71,7 +76,7 @@ export default function TemplateManager({
     if (!d || busy) return;
     setBusy(true);
     try {
-      await updateTemplate(id, d);
+      await updateTemplate(id, { ...d, minStaff: toNum(d.minStaff) });
       setEditing((prev) => {
         const next = { ...prev };
         delete next[id];
@@ -117,6 +122,7 @@ export default function TemplateManager({
                     <strong>{t.name}</strong>
                     <span className="text-zinc-500">
                       {t.start}–{t.end} · {shiftHours(t)} sa
+                      {t.minStaff > 0 ? ` · min ${t.minStaff} kişi` : ""}
                     </span>
                   </span>
                   <span className="flex gap-2">
@@ -124,7 +130,13 @@ export default function TemplateManager({
                       onClick={() =>
                         setEditing((prev) => ({
                           ...prev,
-                          [t.id]: { name: t.name, start: t.start, end: t.end, color: t.color },
+                          [t.id]: {
+                            name: t.name,
+                            start: t.start,
+                            end: t.end,
+                            color: t.color,
+                            minStaff: String(t.minStaff ?? 0),
+                          },
                         }))
                       }
                       className="rounded-md border border-zinc-300 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
@@ -141,37 +153,36 @@ export default function TemplateManager({
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-4">
                     <input
                       value={d.name}
-                      onChange={(e) =>
-                        setEditing((prev) => ({ ...prev, [t.id]: { ...d, name: e.target.value } }))
-                      }
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, name: e.target.value } }))}
                       placeholder="Ad"
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
                     />
                     <input
                       type="time"
                       value={d.start}
-                      onChange={(e) =>
-                        setEditing((prev) => ({ ...prev, [t.id]: { ...d, start: e.target.value } }))
-                      }
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, start: e.target.value } }))}
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
                     />
                     <input
                       type="time"
                       value={d.end}
-                      onChange={(e) =>
-                        setEditing((prev) => ({ ...prev, [t.id]: { ...d, end: e.target.value } }))
-                      }
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, end: e.target.value } }))}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
+                    />
+                    <input
+                      value={d.minStaff}
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, minStaff: e.target.value } }))}
+                      placeholder="Min. kişi"
+                      inputMode="numeric"
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
                     />
                   </div>
                   <ColorPicker
                     value={d.color}
-                    onChange={(c) =>
-                      setEditing((prev) => ({ ...prev, [t.id]: { ...d, color: c } }))
-                    }
+                    onChange={(c) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, color: c } }))}
                   />
                   <div className="flex gap-2">
                     <button
@@ -204,7 +215,7 @@ export default function TemplateManager({
       {/* Yeni şablon */}
       <div className="mt-4 rounded-xl border border-dashed border-zinc-300 p-3">
         <p className="text-xs font-medium text-zinc-500">Yeni şablon ekle</p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        <div className="mt-2 grid gap-2 sm:grid-cols-4">
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
@@ -223,6 +234,13 @@ export default function TemplateManager({
             onChange={(e) => setDraft({ ...draft, end: e.target.value })}
             className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
           />
+          <input
+            value={draft.minStaff}
+            onChange={(e) => setDraft({ ...draft, minStaff: e.target.value })}
+            placeholder="Min. kişi"
+            inputMode="numeric"
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
+          />
         </div>
         <div className="mt-2 flex items-center justify-between gap-3">
           <ColorPicker value={draft.color} onChange={(c) => setDraft({ ...draft, color: c })} />
@@ -238,7 +256,8 @@ export default function TemplateManager({
 
       {msg && <p className="mt-3 text-xs text-emerald-700">{msg}</p>}
       <p className="mt-3 text-xs text-zinc-500">
-        Haftalık 45 saati aşan personel ızgarada kırmızı ile işaretlenir.
+        "Min. kişi", o vardiyada hedeflenen en az personel sayısıdır; eksik kalırsa panelde uyarı
+        görürsün.
       </p>
     </div>
   );

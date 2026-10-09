@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { StatePayload } from "@/lib/types";
-import { createRequest, fetchState, setAvailability } from "@/lib/api-client";
+import { claimOpenShift, createRequest, fetchState, setAvailability } from "@/lib/api-client";
 import { formatWeekRange, getWeekDates, toISODate, DAY_NAMES_TR, formatShort } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
@@ -140,6 +140,17 @@ export default function EmployeePage() {
     }
   }
 
+  async function claimShift(id: string) {
+    if (!window.confirm("Bu açık vardiyayı sahiplenmek istiyor musun?")) return;
+    try {
+      await claimOpenShift(id, employee!.id);
+      setData(await fetchState());
+      setSent("Vardiyayı sahiplendin ✅");
+    } catch {
+      setSent("Sahiplenilemedi, tekrar dene.");
+    }
+  }
+
   return (
     <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-10">
       <Link href="/ekip" className="text-sm text-zinc-500 hover:underline">
@@ -261,6 +272,7 @@ export default function EmployeePage() {
             >
               <option value="izin">İzin</option>
               <option value="degisim">Vardiya değişimi</option>
+              <option value="birak">Vardiyayı bırak</option>
             </select>
           </label>
         </div>
@@ -350,6 +362,39 @@ export default function EmployeePage() {
           </ul>
         )}
       </div>
+
+      {/* Açık vardiyalar */}
+      {data.openShifts.length > 0 && (
+        <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <h2 className="font-semibold text-emerald-900">🔓 Açık vardiyalar</h2>
+          <p className="mt-1 text-xs text-emerald-800">
+            Sahiplenmek istediğin vardiyaya bas; onay beklemeden vardiya senin olur.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {data.openShifts.map((o) => {
+              const t = templateById.get(o.shiftTemplateId);
+              const day = new Date(o.date + "T00:00:00");
+              return (
+                <li
+                  key={o.id}
+                  className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm"
+                >
+                  <span>
+                    {formatShort(day)} · {t?.name ?? "?"} ({t?.start}–{t?.end})
+                    {o.note ? ` · ${o.note}` : ""}
+                  </span>
+                  <button
+                    onClick={() => claimShift(o.id)}
+                    className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                  >
+                    Sahiplen
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </main>
   );
 }

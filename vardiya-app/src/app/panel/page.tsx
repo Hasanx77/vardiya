@@ -5,11 +5,13 @@ import Link from "next/link";
 import type { Employee, StatePayload } from "@/lib/types";
 import {
   addEmployee as apiAddEmployee,
+  addOpenShift as apiAddOpenShift,
   clearWeek as apiClearWeek,
   copyWeek as apiCopyWeek,
   createAnnouncement as apiCreateAnnouncement,
   deleteAnnouncement as apiDeleteAnnouncement,
   deleteEmployee as apiDeleteEmployee,
+  deleteOpenShift as apiDeleteOpenShift,
   fetchState,
   resetData as apiResetData,
   setAssignment as apiSetAssignment,
@@ -46,6 +48,7 @@ export default function PanelPage() {
     annualLeaveDays: "",
   });
   const [announcementDraft, setAnnouncementDraft] = useState("");
+  const [openDraft, setOpenDraft] = useState({ date: "", shiftTemplateId: "", note: "" });
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -140,6 +143,23 @@ export default function PanelPage() {
     data?.dayNotes.forEach((d) => m.set(d.date, d.note));
     return m;
   }, [data]);
+
+  const coverageIssues = useMemo(() => {
+    const list: { date: string; templateId: string; have: number; need: number }[] = [];
+    if (!data) return list;
+    for (const d of weekDates) {
+      const iso = toISODate(d);
+      for (const t of data.shiftTemplates) {
+        if (t.minStaff <= 0) continue;
+        let have = 0;
+        for (const e of data.employees) {
+          if (assignMap.get(`${e.id}__${iso}`) === t.id) have++;
+        }
+        if (have < t.minStaff) list.push({ date: iso, templateId: t.id, have, need: t.minStaff });
+      }
+    }
+    return list;
+  }, [data, weekDates, assignMap]);
 
   async function changeAssignment(employeeId: string, iso: string, shiftTemplateId: string) {
     // Önce ekranda güncelle (hızlı), sonra sunucuya yaz
@@ -334,6 +354,35 @@ export default function PanelPage() {
       flash("Not kaydedildi.");
     } catch {
       flash("Not kaydedilemedi.");
+    }
+  }
+
+  async function handleAddOpenShift() {
+    if (!openDraft.date || !openDraft.shiftTemplateId) {
+      flash("Tarih ve vardiya seç.");
+      return;
+    }
+    try {
+      await apiAddOpenShift({
+        date: openDraft.date,
+        shiftTemplateId: openDraft.shiftTemplateId,
+        note: openDraft.note,
+      });
+      setOpenDraft({ date: "", shiftTemplateId: "", note: "" });
+      await load();
+      flash("Açık vardiya eklendi 🔓");
+    } catch {
+      flash("Eklenemedi.");
+    }
+  }
+
+  async function handleDeleteOpenShift(id: string) {
+    try {
+      await apiDeleteOpenShift(id);
+      await load();
+      flash("Açık vardiya kaldırıldı.");
+    } catch {
+      flash("Kaldırılamadı.");
     }
   }
 
@@ -1135,6 +1184,90 @@ export default function PanelPage() {
           )}
         </div>
       )}
+
+      {/* Kapsam uyarıları */}
+      {coverageIssues.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
+          <h3 className="font-semibold">🎯 Kapsam uyarıları ({coverageIssues.length})</h3>
+          <ul className="mt-2 space-y-1">
+            {coverageIssues.map((c, i) => {
+              const t = templateById.get(c.templateId);
+              const day = new Date(c.date + "T00:00:00");
+              return (
+                <li key={i}>
+                  {formatShort(day)} · {t?.name ?? "?"}: {c.have}/{c.need} kişi (eksik{" "}
+                  {c.need - c.have})
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Açık vardiyalar */}
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-zinc-700">🔓 Açık Vardiyalar (havuz)</h3>
+        <p className="mt-1 text-xs text-zinc-500">
+          Boş vardiyaları havuza koy; personel kendi ekranından sahiplenebilir.
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-4">
+          <input
+            type="date"
+            value={openDraft.date}
+            onChange={(e) => setOpenDraft({ ...openDraft, date: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+          <select
+            value={openDraft.shiftTemplateId}
+            onChange={(e) => setOpenDraft({ ...openDraft, shiftTemplateId: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          >
+            <option value="">Vardiya seç…</option>
+            {data.shiftTemplates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.start}–{t.end})
+              </option>
+            ))}
+          </select>
+          <input
+            placeholder="Not (opsiyonel)"
+            value={openDraft.note}
+            onChange={(e) => setOpenDraft({ ...openDraft, note: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+          <button
+            onClick={handleAddOpenShift}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            Havuza ekle
+          </button>
+        </div>
+        {data.openShifts.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {data.openShifts.map((o) => {
+              const t = templateById.get(o.shiftTemplateId);
+              const day = new Date(o.date + "T00:00:00");
+              return (
+                <li
+                  key={o.id}
+                  className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+                >
+                  <span>
+                    {formatShort(day)} · {t?.name ?? "?"} ({t?.start}–{t?.end})
+                    {o.note ? ` · ${o.note}` : ""}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteOpenShift(o.id)}
+                    className="text-xs text-zinc-400 hover:text-red-600"
+                  >
+                    Kaldır
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
       {/* Şablonlar */}
       <div className="mt-6">

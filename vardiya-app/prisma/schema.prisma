@@ -21,6 +21,7 @@ model Business {
   assignments    Assignment[]
   announcements  Announcement[]
   dayNotes       DayNote[]
+  openShifts     OpenShift[]
 }
 
 model Employee {
@@ -48,9 +49,12 @@ model ShiftTemplate {
   start      String
   end        String
   color      String @default("sky")
+  /** Bu vardiyada hedeflenen en az kişi sayısı (0 = hedef yok) */
+  minStaff   Int    @default(0)
 
   business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   assignments Assignment[]
+  openShifts  OpenShift[]
 }
 
 model Assignment {
@@ -116,4 +120,17 @@ model DayNote {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, date])
+}
+
+// Açık vardiya (havuz): personelin sahiplenebileceği boş vardiya
+model OpenShift {
+  id              String   @id @default(cuid())
+  businessId      String
+  shiftTemplateId String
+  date            String // YYYY-MM-DD
+  note            String   @default("")
+  createdAt       DateTime @default(now())
+
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  shiftTemplate ShiftTemplate @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
 }

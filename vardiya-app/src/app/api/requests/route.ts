@@ -6,7 +6,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const employeeId = String(body?.employeeId ?? "");
   const date = String(body?.date ?? "");
-  const type = body?.type === "degisim" ? "degisim" : "izin";
+  const allowedTypes = ["izin", "degisim", "birak"];
+  const type = allowedTypes.includes(body?.type) ? body.type : "izin";
   const note = String(body?.note ?? "").slice(0, 300);
 
   if (!employeeId || !date) {

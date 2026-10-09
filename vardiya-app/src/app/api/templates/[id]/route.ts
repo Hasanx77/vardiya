@@ -8,7 +8,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
 
-  const data: Record<string, string> = {};
+  const data: Record<string, string | number> = {};
   const name = cleanText(body?.name, 30);
   const start = normalizeTime(body?.start);
   const end = normalizeTime(body?.end);
@@ -16,6 +16,10 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (start) data.start = start;
   if (end) data.end = end;
   if (isValidColor(body?.color)) data.color = String(body.color);
+  if (body?.minStaff !== undefined) {
+    const m = Number(body.minStaff);
+    if (Number.isFinite(m) && m >= 0) data.minStaff = Math.round(m);
+  }
 
   try {
     const t = await prisma.shiftTemplate.update({ where: { id }, data });
@@ -25,6 +29,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
       start: t.start,
       end: t.end,
       color: t.color,
+      minStaff: t.minStaff,
     });
   } catch {
     return NextResponse.json({ error: "Şablon bulunamadı" }, { status: 404 });

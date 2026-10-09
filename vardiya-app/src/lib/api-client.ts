@@ -145,6 +145,7 @@ export function addTemplate(input: {
   start: string;
   end: string;
   color: string;
+  minStaff?: number;
 }) {
   return jsonRequest<{ id: string }>("/api/templates", {
     method: "POST",
@@ -154,7 +155,7 @@ export function addTemplate(input: {
 
 export function updateTemplate(
   id: string,
-  input: { name?: string; start?: string; end?: string; color?: string }
+  input: { name?: string; start?: string; end?: string; color?: string; minStaff?: number }
 ) {
   return jsonRequest<{ id: string }>(`/api/templates/${id}`, {
     method: "PATCH",
@@ -164,6 +165,24 @@ export function updateTemplate(
 
 export function deleteTemplate(id: string) {
   return jsonRequest<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" });
+}
+
+export function addOpenShift(input: { date: string; shiftTemplateId: string; note?: string }) {
+  return jsonRequest<{ id: string }>("/api/open-shifts", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteOpenShift(id: string) {
+  return jsonRequest<{ ok: boolean }>(`/api/open-shifts/${id}`, { method: "DELETE" });
+}
+
+export function claimOpenShift(id: string, employeeId: string) {
+  return jsonRequest<{ ok: boolean }>(`/api/open-shifts/${id}/claim`, {
+    method: "POST",
+    body: JSON.stringify({ employeeId }),
+  });
 }
 
 export function resetData(mode: "demo" | "empty") {

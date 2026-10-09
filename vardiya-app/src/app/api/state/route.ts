@@ -6,8 +6,16 @@ import { ensureBusiness } from "@/lib/server-data";
 export async function GET() {
   const business = await ensureBusiness();
 
-  const [employees, shiftTemplates, assignments, requests, announcements, availabilities, dayNotes] =
-    await Promise.all([
+  const [
+    employees,
+    shiftTemplates,
+    assignments,
+    requests,
+    announcements,
+    availabilities,
+    dayNotes,
+    openShifts,
+  ] = await Promise.all([
       prisma.employee.findMany({
         where: { businessId: business.id, active: true },
         orderBy: { createdAt: "asc" },
@@ -27,6 +35,7 @@ export async function GET() {
         where: { employee: { businessId: business.id } },
       }),
       prisma.dayNote.findMany({ where: { businessId: business.id } }),
+      prisma.openShift.findMany({ where: { businessId: business.id } }),
     ]);
 
   return NextResponse.json({
@@ -46,6 +55,7 @@ export async function GET() {
       start: t.start,
       end: t.end,
       color: t.color,
+      minStaff: t.minStaff,
     })),
     assignments: assignments.map((a) => ({
       employeeId: a.employeeId,
@@ -73,5 +83,11 @@ export async function GET() {
       note: a.note,
     })),
     dayNotes: dayNotes.map((d) => ({ date: d.date, note: d.note })),
+    openShifts: openShifts.map((o) => ({
+      id: o.id,
+      date: o.date,
+      shiftTemplateId: o.shiftTemplateId,
+      note: o.note,
+    })),
   });
 }

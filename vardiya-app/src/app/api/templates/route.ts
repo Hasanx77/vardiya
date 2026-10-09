@@ -19,8 +19,11 @@ export async function POST(request: Request) {
   }
 
   const business = await ensureBusiness();
+  const minStaffRaw = Number(body?.minStaff);
+  const minStaff = Number.isFinite(minStaffRaw) && minStaffRaw > 0 ? Math.round(minStaffRaw) : 0;
+
   const t = await prisma.shiftTemplate.create({
-    data: { businessId: business.id, name, start, end, color },
+    data: { businessId: business.id, name, start, end, color, minStaff },
   });
 
   return NextResponse.json({
@@ -29,5 +32,6 @@ export async function POST(request: Request) {
     start: t.start,
     end: t.end,
     color: t.color,
+    minStaff: t.minStaff,
   });
 }

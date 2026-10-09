@@ -66,6 +66,24 @@ export async function PATCH(request: Request, { params }: Ctx) {
           });
         }
         if (rows.length) await prisma.assignment.createMany({ data: rows });
+      } else if (req.type === "birak") {
+        // Vardiyayı bırakma onaylandı → vardiya havuza (açık vardiya) düşer
+        const mine = await prisma.assignment.findFirst({
+          where: { employeeId: req.employeeId, date: req.date },
+        });
+        if (mine) {
+          await prisma.assignment.deleteMany({
+            where: { employeeId: req.employeeId, date: req.date },
+          });
+          await prisma.openShift.create({
+            data: {
+              businessId: mine.businessId,
+              date: req.date,
+              shiftTemplateId: mine.shiftTemplateId,
+              note: "Personel bıraktı",
+            },
+          });
+        }
       }
     }
 

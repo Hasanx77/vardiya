@@ -36,7 +36,7 @@ describe("buildScheduleText", () => {
     annualLeaveDays: 14,
   };
   const templates: ShiftTemplate[] = [
-    { id: "sabah", name: "Sabah", start: "09:00", end: "17:00", color: "amber" },
+    { id: "sabah", name: "Sabah", start: "09:00", end: "17:00", color: "amber", minStaff: 0 },
   ];
   const week = [new Date(2026, 9, 5)]; // tek gün (Pazartesi)
   const assignments = { "e1__2026-10-05": "sabah" };

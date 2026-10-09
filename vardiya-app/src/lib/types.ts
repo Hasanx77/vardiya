@@ -37,6 +37,16 @@ export type ShiftTemplate = {
   /** "HH:MM" */
   end: string;
   color: ColorKey;
+  /** Hedeflenen en az kişi sayısı (0 = hedef yok) */
+  minStaff: number;
+};
+
+/** Havuzdaki açık vardiya (sahiplenilebilir) */
+export type OpenShift = {
+  id: string;
+  date: string;
+  shiftTemplateId: string;
+  note: string;
 };
 
 /** Atamalar: anahtar = `${employeeId}__${YYYY-MM-DD}`, değer = shiftTemplateId */
@@ -104,4 +114,5 @@ export type StatePayload = {
   announcements: Announcement[];
   availabilities: Availability[];
   dayNotes: DayNote[];
+  openShifts: OpenShift[];
 };

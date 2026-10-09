@@ -2,10 +2,10 @@ import type { ShiftTemplate } from "./types";
 
 /** Varsayılan vardiya şablonları (HORECA dostu) */
 export const DEFAULT_SHIFTS: ShiftTemplate[] = [
-  { id: "sabah", name: "Sabah", start: "09:00", end: "17:00", color: "amber" },
-  { id: "aksam", name: "Akşam", start: "17:00", end: "01:00", color: "violet" },
-  { id: "tamgun", name: "Tam Gün", start: "10:00", end: "22:00", color: "rose" },
-  { id: "ara", name: "Ara Vardiya", start: "12:00", end: "20:00", color: "cyan" },
+  { id: "sabah", name: "Sabah", start: "09:00", end: "17:00", color: "amber", minStaff: 0 },
+  { id: "aksam", name: "Akşam", start: "17:00", end: "01:00", color: "violet", minStaff: 0 },
+  { id: "tamgun", name: "Tam Gün", start: "10:00", end: "22:00", color: "rose", minStaff: 0 },
+  { id: "ara", name: "Ara Vardiya", start: "12:00", end: "20:00", color: "cyan", minStaff: 0 },
 ];
 
 /** Bir vardiyanın saat cinsinden süresi (gece yarısını aşanlar dahil) */
