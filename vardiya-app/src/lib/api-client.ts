@@ -185,6 +185,24 @@ export function claimOpenShift(id: string, employeeId: string) {
   });
 }
 
+export function addTask(title: string) {
+  return jsonRequest<{ id: string }>("/api/tasks", {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  });
+}
+
+export function deleteTask(id: string) {
+  return jsonRequest<{ ok: boolean }>(`/api/tasks/${id}`, { method: "DELETE" });
+}
+
+export function toggleTask(id: string, date: string) {
+  return jsonRequest<{ ok: boolean; done: boolean }>(`/api/tasks/${id}/toggle`, {
+    method: "POST",
+    body: JSON.stringify({ date }),
+  });
+}
+
 export function resetData(mode: "demo" | "empty") {
   return jsonRequest<{ ok: boolean; mode: string }>("/api/reset", {
     method: "POST",

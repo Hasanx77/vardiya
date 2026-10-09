@@ -6,12 +6,14 @@ import type { Employee, StatePayload } from "@/lib/types";
 import {
   addEmployee as apiAddEmployee,
   addOpenShift as apiAddOpenShift,
+  addTask as apiAddTask,
   clearWeek as apiClearWeek,
   copyWeek as apiCopyWeek,
   createAnnouncement as apiCreateAnnouncement,
   deleteAnnouncement as apiDeleteAnnouncement,
   deleteEmployee as apiDeleteEmployee,
   deleteOpenShift as apiDeleteOpenShift,
+  deleteTask as apiDeleteTask,
   fetchState,
   resetData as apiResetData,
   setAssignment as apiSetAssignment,
@@ -49,6 +51,7 @@ export default function PanelPage() {
   });
   const [announcementDraft, setAnnouncementDraft] = useState("");
   const [openDraft, setOpenDraft] = useState({ date: "", shiftTemplateId: "", note: "" });
+  const [taskDraft, setTaskDraft] = useState("");
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -383,6 +386,30 @@ export default function PanelPage() {
       flash("Açık vardiya kaldırıldı.");
     } catch {
       flash("Kaldırılamadı.");
+    }
+  }
+
+  async function handleAddTask() {
+    const title = taskDraft.trim();
+    if (!title) return flash("Görev metni boş.");
+    try {
+      await apiAddTask(title);
+      setTaskDraft("");
+      await load();
+      flash("Görev eklendi ✅");
+    } catch {
+      flash("Eklenemedi.");
+    }
+  }
+
+  async function handleDeleteTask(id: string) {
+    if (!window.confirm("Görev silinsin mi?")) return;
+    try {
+      await apiDeleteTask(id);
+      await load();
+      flash("Görev silindi.");
+    } catch {
+      flash("Silinemedi.");
     }
   }
 
@@ -1265,6 +1292,46 @@ export default function PanelPage() {
                 </li>
               );
             })}
+          </ul>
+        )}
+      </div>
+
+      {/* Günlük görevler */}
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-zinc-700">✅ Günlük Görevler</h3>
+        <p className="mt-1 text-xs text-zinc-500">
+          Açılış/kapanış kontrol listesi. Personel &quot;Bugün&quot; ekranından tik atar.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input
+            value={taskDraft}
+            onChange={(e) => setTaskDraft(e.target.value)}
+            placeholder="Görev (ör. Kahve makinesini temizle)"
+            className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+          />
+          <button
+            onClick={handleAddTask}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            Ekle
+          </button>
+        </div>
+        {data.tasks.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {data.tasks.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+              >
+                <span>{t.title}</span>
+                <button
+                  onClick={() => handleDeleteTask(t.id)}
+                  className="text-xs text-zinc-400 hover:text-red-600"
+                >
+                  Sil
+                </button>
+              </li>
+            ))}
           </ul>
         )}
       </div>

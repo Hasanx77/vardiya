@@ -15,6 +15,8 @@ export async function GET() {
     availabilities,
     dayNotes,
     openShifts,
+    tasks,
+    taskCompletions,
   ] = await Promise.all([
       prisma.employee.findMany({
         where: { businessId: business.id, active: true },
@@ -36,6 +38,8 @@ export async function GET() {
       }),
       prisma.dayNote.findMany({ where: { businessId: business.id } }),
       prisma.openShift.findMany({ where: { businessId: business.id } }),
+      prisma.task.findMany({ where: { businessId: business.id }, orderBy: { createdAt: "asc" } }),
+      prisma.taskCompletion.findMany({ where: { task: { businessId: business.id } } }),
     ]);
 
   return NextResponse.json({
@@ -89,5 +93,7 @@ export async function GET() {
       shiftTemplateId: o.shiftTemplateId,
       note: o.note,
     })),
+    tasks: tasks.map((t) => ({ id: t.id, title: t.title })),
+    taskCompletions: taskCompletions.map((c) => ({ taskId: c.taskId, date: c.date })),
   });
 }

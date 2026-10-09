@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Employee, StatePayload } from "@/lib/types";
-import { fetchState } from "@/lib/api-client";
+import { fetchState, toggleTask } from "@/lib/api-client";
 import { formatDayDate, toISODate } from "@/lib/dates";
 import { COLOR_CLASSES } from "@/lib/colors";
 
@@ -34,8 +34,7 @@ export default function BugunPage() {
 
   const todayISO = toISODate(now);
 
-  const { working, off } = useMemo(() => {
-    const m = new Map<string, Employee[]>();
+  const { working, off } = useMemo(() => {    const m = new Map<string, Employee[]>();
     const off: Employee[] = [];
     if (!data) return { working: m, off };
     const byDay = new Map<string, string>();
@@ -54,6 +53,25 @@ export default function BugunPage() {
     }
     return { working: m, off };
   }, [data, todayISO]);
+
+  const doneSet = useMemo(
+    () =>
+      new Set(
+        (data?.taskCompletions ?? [])
+          .filter((c) => c.date === todayISO)
+          .map((c) => c.taskId)
+      ),
+    [data, todayISO]
+  );
+
+  async function toggle(id: string) {
+    try {
+      await toggleTask(id, todayISO);
+      setData(await fetchState());
+    } catch {
+      /* yoksay */
+    }
+  }
 
   if (!data) {
     return (
@@ -146,6 +164,40 @@ export default function BugunPage() {
           </p>
         )}
       </div>
+
+      {data.tasks.length > 0 && (
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold">
+            ✅ Günlük görevler ({doneSet.size}/{data.tasks.length})
+          </h2>
+          <ul className="mt-3 space-y-1">
+            {data.tasks.map((t) => {
+              const done = doneSet.has(t.id);
+              return (
+                <li key={t.id}>
+                  <button
+                    onClick={() => toggle(t.id)}
+                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-zinc-50"
+                  >
+                    <span
+                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border text-sm ${
+                        done
+                          ? "border-emerald-600 bg-emerald-600 text-white"
+                          : "border-zinc-300"
+                      }`}
+                    >
+                      {done ? "✓" : ""}
+                    </span>
+                    <span className={done ? "text-zinc-400 line-through" : "text-zinc-800"}>
+                      {t.title}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <p className="mt-8 text-center text-xs text-zinc-400">
         Bu ekran her dakika otomatik yenilenir. Kafede bir tablete açık bırakabilirsiniz.

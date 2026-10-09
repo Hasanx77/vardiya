@@ -49,6 +49,18 @@ export type OpenShift = {
   note: string;
 };
 
+/** Günlük görev */
+export type Task = {
+  id: string;
+  title: string;
+};
+
+/** Bir görevin belirli bir gündeki tamamlanma işareti */
+export type TaskCompletion = {
+  taskId: string;
+  date: string;
+};
+
 /** Atamalar: anahtar = `${employeeId}__${YYYY-MM-DD}`, değer = shiftTemplateId */
 export type Assignments = Record<string, string>;
 
@@ -115,4 +127,6 @@ export type StatePayload = {
   availabilities: Availability[];
   dayNotes: DayNote[];
   openShifts: OpenShift[];
+  tasks: Task[];
+  taskCompletions: TaskCompletion[];
 };

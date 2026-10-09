@@ -22,6 +22,7 @@ model Business {
   announcements  Announcement[]
   dayNotes       DayNote[]
   openShifts     OpenShift[]
+  tasks          Task[]
 }
 
 model Employee {
@@ -133,4 +134,25 @@ model OpenShift {
 
   business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   shiftTemplate ShiftTemplate @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
+}
+
+// Günlük görev (açılış/kapanış kontrol listesi)
+model Task {
+  id         String   @id @default(cuid())
+  businessId String
+  title      String
+  createdAt  DateTime @default(now())
+
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  completions TaskCompletion[]
+}
+
+model TaskCompletion {
+  id     String @id @default(cuid())
+  taskId String
+  date   String // YYYY-MM-DD
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, date])
 }
