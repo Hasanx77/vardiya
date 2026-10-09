@@ -48,6 +48,7 @@ Aç: <http://localhost:3000>
 - `/panel` → yönetim paneli
 - `/bugun` → "bugün kim çalışıyor" tahtası (tablet için)
 - `/raporlar` → aylık saat/maliyet/izin raporları
+- `/takvim` → aylık takvim görünümü
 - `/ekip` → personel görünümü
 - `/yazdir` → yazdırılabilir çizelge
 

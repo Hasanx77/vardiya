@@ -76,6 +76,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               >
                 Raporlar
               </Link>
+              <Link
+                href="/takvim"
+                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Takvim
+              </Link>
               <ThemeToggle />
               <Link
                 href="/panel"

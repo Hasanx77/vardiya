@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Employee, StatePayload } from "@/lib/types";
 import {
@@ -56,6 +56,7 @@ export default function PanelPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [search, setSearch] = useState("");
+  const [expandedEmpId, setExpandedEmpId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -134,6 +135,23 @@ export default function PanelPage() {
       .forEach((r) => m.set(r.employeeId, (m.get(r.employeeId) ?? 0) + 1));
     return m;
   }, [data]);
+
+  const empMonthStats = useMemo(() => {
+    const m = new Map<string, { hours: number; days: number }>();
+    if (!data) return m;
+    data.employees.forEach((e) => m.set(e.id, { hours: 0, days: 0 }));
+    const now = new Date();
+    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    for (const a of data.assignments) {
+      if (!a.date.startsWith(prefix)) continue;
+      const t = templateById.get(a.shiftTemplateId);
+      const cur = m.get(a.employeeId);
+      if (!t || !cur) continue;
+      cur.hours += shiftHours(t);
+      cur.days += 1;
+    }
+    return m;
+  }, [data, templateById]);
 
   const unavailableSet = useMemo(() => {
     const s = new Set<string>();
@@ -952,8 +970,10 @@ export default function PanelPage() {
                 const over = total > WEEKLY_LIMIT_HOURS;
                 const leaveUsed = approvedLeaveCount.get(emp.id) ?? 0;
                 const leaveLeft = Math.max(0, (emp.annualLeaveDays ?? 0) - leaveUsed);
+                const stat = empMonthStats.get(emp.id) ?? { hours: 0, days: 0 };
                 return (
-                  <tr key={emp.id} className="border-t border-zinc-100">
+                  <Fragment key={emp.id}>
+                    <tr className="border-t border-zinc-100">
                     <td className="sticky left-0 z-10 bg-white px-4 py-2">
                       {editingEmpId === emp.id ? (
                         <div className="flex w-40 flex-col gap-1">
@@ -993,7 +1013,12 @@ export default function PanelPage() {
                           />
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedEmpId((v) => (v === emp.id ? null : emp.id))}
+                          className="flex items-center gap-2 text-left"
+                          title="Detayları göster/gizle"
+                        >
                           <span
                             className={`h-2.5 w-2.5 rounded-full ${
                               COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
@@ -1005,7 +1030,7 @@ export default function PanelPage() {
                               {emp.role} · İzin {leaveLeft} gün
                             </div>
                           </div>
-                        </div>
+                        </button>
                       )}
                     </td>
                     {weekDates.map((d) => {
@@ -1109,7 +1134,26 @@ export default function PanelPage() {
                         </div>
                       )}
                     </td>
-                  </tr>
+                    </tr>
+                    {expandedEmpId === emp.id && (
+                      <tr className="bg-zinc-50">
+                        <td
+                          colSpan={weekDates.length + 3}
+                          className="px-4 py-3 text-sm text-zinc-600"
+                        >
+                          {emp.phone ? `📞 ${emp.phone} · ` : ""}
+                          Bu ay: <strong>{Math.round(stat.hours * 10) / 10} sa</strong> ·{" "}
+                          {stat.days} gün
+                          {emp.hourlyWage > 0
+                            ? ` · ≈ ${Math.round(stat.hours * emp.hourlyWage).toLocaleString(
+                                "tr-TR"
+                              )} ₺`
+                            : ""}
+                          {" · "}Kalan izin: <strong>{leaveLeft} gün</strong>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
