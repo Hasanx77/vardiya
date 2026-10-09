@@ -90,7 +90,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
           <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-zinc-500 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span>Vardiya — kafe &amp; restoranlar için vardiya yönetimi.</span>
-            <span>MVP · veritabanı (SQLite / Prisma)</span>
+            <span className="flex items-center gap-3">
+              <Link href="/yardim" className="hover:text-zinc-900 hover:underline">
+                Yardım
+              </Link>
+              <Link href="/gizlilik" className="hover:text-zinc-900 hover:underline">
+                Gizlilik
+              </Link>
+              <span>MVP</span>
+            </span>
           </div>
         </footer>
       </body>
