@@ -1,5 +1,6 @@
 // Prisma şeması — Vardiya
 // SQLite (yerel geliştirme). Yayına alırken Postgres'e çevrilebilir.
+// Model: işveren yönetir; personel yalnızca görüntüler (aksiyon almaz).
 
 generator client {
   provider = "prisma-client-js"
@@ -10,7 +11,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// İşletme (çok işletmeye hazır: her kayıt bir businessId taşır)
+// İşletme
 model Business {
   id        String   @id @default(cuid())
   name      String   @default("İşletmem")
@@ -21,8 +22,6 @@ model Business {
   assignments    Assignment[]
   announcements  Announcement[]
   dayNotes       DayNote[]
-  openShifts     OpenShift[]
-  tasks          Task[]
 }
 
 model Employee {
@@ -33,14 +32,13 @@ model Employee {
   role       String   @default("Personel")
   color      String   @default("sky")
   hourlyWage Float    @default(0)
+  /** Yıllık izin hakkı (gün) — işveren belirler */
   annualLeaveDays Int @default(14)
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
 
-  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   assignments Assignment[]
-  requests    TimeOffRequest[]
-  availabilities Availability[]
 }
 
 model ShiftTemplate {
@@ -55,7 +53,6 @@ model ShiftTemplate {
 
   business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   assignments Assignment[]
-  openShifts  OpenShift[]
 }
 
 model Assignment {
@@ -72,22 +69,7 @@ model Assignment {
   @@unique([employeeId, date])
 }
 
-// Personelin izin / vardiya değişimi talebi
-model TimeOffRequest {
-  id         String   @id @default(cuid())
-  employeeId String
-  date       String // YYYY-MM-DD
-  type       String   @default("izin") // izin | degisim
-  note       String   @default("")
-  status     String   @default("pending") // pending | approved | rejected
-  /** Vardiya değişiminde hedef personel (opsiyonel) */
-  targetEmployeeId String?
-  createdAt  DateTime @default(now())
-
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-}
-
-// Patronun ekibe duyurusu
+// İşverenin ekibe duyurusu (personel yalnızca okur)
 model Announcement {
   id         String   @id @default(cuid())
   businessId String
@@ -95,19 +77,6 @@ model Announcement {
   createdAt  DateTime @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-}
-
-// Personelin "müsait değilim" işaretlediği günler
-model Availability {
-  id         String   @id @default(cuid())
-  employeeId String
-  date       String // YYYY-MM-DD
-  note       String   @default("")
-  createdAt  DateTime @default(now())
-
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-
-  @@unique([employeeId, date])
 }
 
 // Gün bazlı notlar (ör. "canlı müzik", "stok sayımı")
@@ -121,38 +90,4 @@ model DayNote {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, date])
-}
-
-// Açık vardiya (havuz): personelin sahiplenebileceği boş vardiya
-model OpenShift {
-  id              String   @id @default(cuid())
-  businessId      String
-  shiftTemplateId String
-  date            String // YYYY-MM-DD
-  note            String   @default("")
-  createdAt       DateTime @default(now())
-
-  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  shiftTemplate ShiftTemplate @relation(fields: [shiftTemplateId], references: [id], onDelete: Cascade)
-}
-
-// Günlük görev (açılış/kapanış kontrol listesi)
-model Task {
-  id         String   @id @default(cuid())
-  businessId String
-  title      String
-  createdAt  DateTime @default(now())
-
-  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  completions TaskCompletion[]
-}
-
-model TaskCompletion {
-  id     String @id @default(cuid())
-  taskId String
-  date   String // YYYY-MM-DD
-
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, date])
 }

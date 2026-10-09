@@ -50,16 +50,13 @@ export default function RaporlarPage() {
         if (t) hours += shiftHours(t);
       }
       hours = Math.round(hours * 10) / 10;
-      const leaveUsed = data.requests.filter(
-        (r) => r.employeeId === e.id && r.status === "approved" && r.type === "izin"
-      ).length;
       return {
         id: e.id,
         name: e.name,
         color: e.color,
         hours,
         cost: Math.round(hours * (e.hourlyWage || 0)),
-        leaveLeft: Math.max(0, (e.annualLeaveDays ?? 0) - leaveUsed),
+        leaveDays: e.annualLeaveDays ?? 0,
       };
     });
   }, [data, monthAssignments, shiftById]);
@@ -81,10 +78,10 @@ export default function RaporlarPage() {
   const maxDaily = Math.max(1, ...dailyHours);
 
   function exportCsv() {
-    const head = ["Personel", "Saat", "Maliyet (TL)", "Kalan İzin (gün)"];
+    const head = ["Personel", "Saat", "Maliyet (TL)", "İzin hakkı (gün)"];
     const lines = [head.join(";")];
     for (const r of rows) {
-      lines.push([r.name, String(r.hours), String(r.cost), String(r.leaveLeft)].join(";"));
+      lines.push([r.name, String(r.hours), String(r.cost), String(r.leaveDays)].join(";"));
     }
     lines.push(["TOPLAM", String(totalHours), String(totalCost), ""].join(";"));
     const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
@@ -186,7 +183,7 @@ export default function RaporlarPage() {
               <th className="px-4 py-3 text-left font-medium">Personel</th>
               <th className="px-4 py-3 text-right font-medium">Saat</th>
               <th className="px-4 py-3 text-right font-medium">Maliyet</th>
-              <th className="px-4 py-3 text-right font-medium">Kalan izin</th>
+              <th className="px-4 py-3 text-right font-medium">İzin hakkı</th>
             </tr>
           </thead>
           <tbody>
@@ -197,7 +194,7 @@ export default function RaporlarPage() {
                 <td className="px-4 py-2 text-right">
                   {r.cost > 0 ? `≈ ${r.cost.toLocaleString("tr-TR")} ₺` : "—"}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-500">{r.leaveLeft} gün</td>
+                <td className="px-4 py-2 text-right text-zinc-500">{r.leaveDays} gün</td>
               </tr>
             ))}
           </tbody>

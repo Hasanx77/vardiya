@@ -36,6 +36,15 @@ export function addEmployee(input: {
   });
 }
 
+export function addEmployeesBulk(
+  employees: { name: string; role: string; phone: string }[]
+) {
+  return jsonRequest<{ ok: boolean; created: number }>("/api/employees/bulk", {
+    method: "POST",
+    body: JSON.stringify({ employees }),
+  });
+}
+
 export function updateEmployee(
   id: string,
   input: {
@@ -54,15 +63,6 @@ export function updateEmployee(
 
 export function deleteEmployee(id: string) {
   return jsonRequest<{ ok: boolean }>(`/api/employees/${id}`, { method: "DELETE" });
-}
-
-export function addEmployeesBulk(
-  employees: { name: string; role: string; phone: string }[]
-) {
-  return jsonRequest<{ ok: boolean; created: number }>("/api/employees/bulk", {
-    method: "POST",
-    body: JSON.stringify({ employees }),
-  });
 }
 
 export function setAssignment(
@@ -87,56 +87,6 @@ export function clearWeek(week: string) {
   return jsonRequest<{ ok: boolean; deleted: number }>("/api/assignments/clear", {
     method: "POST",
     body: JSON.stringify({ week }),
-  });
-}
-
-export function createRequest(input: {
-  employeeId: string;
-  date: string;
-  type: string;
-  note: string;
-  targetEmployeeId?: string;
-}) {
-  return jsonRequest<{ id: string }>("/api/requests", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-}
-
-export function createAnnouncement(message: string) {
-  return jsonRequest<{ id: string }>("/api/announcements", {
-    method: "POST",
-    body: JSON.stringify({ message }),
-  });
-}
-
-export function deleteAnnouncement(id: string) {
-  return jsonRequest<{ ok: boolean }>(`/api/announcements/${id}`, { method: "DELETE" });
-}
-
-export function setAvailability(input: {
-  employeeId: string;
-  date: string;
-  note?: string;
-  remove?: boolean;
-}) {
-  return jsonRequest<{ ok: boolean }>("/api/availability", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-}
-
-export function setDayNote(date: string, note: string) {
-  return jsonRequest<{ ok: boolean }>("/api/day-notes", {
-    method: "POST",
-    body: JSON.stringify({ date, note }),
-  });
-}
-
-export function updateRequest(id: string, status: string) {
-  return jsonRequest<{ ok: boolean }>(`/api/requests/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
   });
 }
 
@@ -167,39 +117,21 @@ export function deleteTemplate(id: string) {
   return jsonRequest<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" });
 }
 
-export function addOpenShift(input: { date: string; shiftTemplateId: string; note?: string }) {
-  return jsonRequest<{ id: string }>("/api/open-shifts", {
+export function createAnnouncement(message: string) {
+  return jsonRequest<{ id: string }>("/api/announcements", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({ message }),
   });
 }
 
-export function deleteOpenShift(id: string) {
-  return jsonRequest<{ ok: boolean }>(`/api/open-shifts/${id}`, { method: "DELETE" });
+export function deleteAnnouncement(id: string) {
+  return jsonRequest<{ ok: boolean }>(`/api/announcements/${id}`, { method: "DELETE" });
 }
 
-export function claimOpenShift(id: string, employeeId: string) {
-  return jsonRequest<{ ok: boolean }>(`/api/open-shifts/${id}/claim`, {
+export function setDayNote(date: string, note: string) {
+  return jsonRequest<{ ok: boolean }>("/api/day-notes", {
     method: "POST",
-    body: JSON.stringify({ employeeId }),
-  });
-}
-
-export function addTask(title: string) {
-  return jsonRequest<{ id: string }>("/api/tasks", {
-    method: "POST",
-    body: JSON.stringify({ title }),
-  });
-}
-
-export function deleteTask(id: string) {
-  return jsonRequest<{ ok: boolean }>(`/api/tasks/${id}`, { method: "DELETE" });
-}
-
-export function toggleTask(id: string, date: string) {
-  return jsonRequest<{ ok: boolean; done: boolean }>(`/api/tasks/${id}/toggle`, {
-    method: "POST",
-    body: JSON.stringify({ date }),
+    body: JSON.stringify({ date, note }),
   });
 }
 

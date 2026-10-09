@@ -11,9 +11,6 @@ export async function POST(request: Request) {
   const business = await ensureBusiness();
 
   await prisma.assignment.deleteMany({ where: { businessId: business.id } });
-  await prisma.timeOffRequest.deleteMany({
-    where: { employee: { businessId: business.id } },
-  });
   await prisma.employee.deleteMany({ where: { businessId: business.id } });
 
   if (mode === "demo") {

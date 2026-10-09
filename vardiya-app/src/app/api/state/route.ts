@@ -2,45 +2,24 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 
-// Tüm uygulama durumunu tek istekte döndürür (panel + personel görünümü kullanır)
+// Tüm uygulama durumu (işveren paneli + personel salt-okunur görünümü)
 export async function GET() {
   const business = await ensureBusiness();
 
-  const [
-    employees,
-    shiftTemplates,
-    assignments,
-    requests,
-    announcements,
-    availabilities,
-    dayNotes,
-    openShifts,
-    tasks,
-    taskCompletions,
-  ] = await Promise.all([
-      prisma.employee.findMany({
-        where: { businessId: business.id, active: true },
-        orderBy: { createdAt: "asc" },
-      }),
-      prisma.shiftTemplate.findMany({ where: { businessId: business.id } }),
-      prisma.assignment.findMany({ where: { businessId: business.id } }),
-      prisma.timeOffRequest.findMany({
-        where: { employee: { businessId: business.id } },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.announcement.findMany({
-        where: { businessId: business.id },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      }),
-      prisma.availability.findMany({
-        where: { employee: { businessId: business.id } },
-      }),
-      prisma.dayNote.findMany({ where: { businessId: business.id } }),
-      prisma.openShift.findMany({ where: { businessId: business.id } }),
-      prisma.task.findMany({ where: { businessId: business.id }, orderBy: { createdAt: "asc" } }),
-      prisma.taskCompletion.findMany({ where: { task: { businessId: business.id } } }),
-    ]);
+  const [employees, shiftTemplates, assignments, announcements, dayNotes] = await Promise.all([
+    prisma.employee.findMany({
+      where: { businessId: business.id, active: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.shiftTemplate.findMany({ where: { businessId: business.id } }),
+    prisma.assignment.findMany({ where: { businessId: business.id } }),
+    prisma.announcement.findMany({
+      where: { businessId: business.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.dayNote.findMany({ where: { businessId: business.id } }),
+  ]);
 
   return NextResponse.json({
     business: { id: business.id, name: business.name },
@@ -66,34 +45,11 @@ export async function GET() {
       date: a.date,
       shiftTemplateId: a.shiftTemplateId,
     })),
-    requests: requests.map((r) => ({
-      id: r.id,
-      employeeId: r.employeeId,
-      date: r.date,
-      type: r.type,
-      note: r.note,
-      status: r.status,
-      targetEmployeeId: r.targetEmployeeId,
-      createdAt: r.createdAt.toISOString(),
-    })),
     announcements: announcements.map((a) => ({
       id: a.id,
       message: a.message,
       createdAt: a.createdAt.toISOString(),
     })),
-    availabilities: availabilities.map((a) => ({
-      employeeId: a.employeeId,
-      date: a.date,
-      note: a.note,
-    })),
     dayNotes: dayNotes.map((d) => ({ date: d.date, note: d.note })),
-    openShifts: openShifts.map((o) => ({
-      id: o.id,
-      date: o.date,
-      shiftTemplateId: o.shiftTemplateId,
-      note: o.note,
-    })),
-    tasks: tasks.map((t) => ({ id: t.id, title: t.title })),
-    taskCompletions: taskCompletions.map((c) => ({ taskId: c.taskId, date: c.date })),
   });
 }

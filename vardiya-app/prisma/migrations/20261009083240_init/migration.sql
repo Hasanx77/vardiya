@@ -13,6 +13,8 @@ CREATE TABLE "Employee" (
     "phone" TEXT NOT NULL DEFAULT '',
     "role" TEXT NOT NULL DEFAULT 'Personel',
     "color" TEXT NOT NULL DEFAULT 'sky',
+    "hourlyWage" REAL NOT NULL DEFAULT 0,
+    "annualLeaveDays" INTEGER NOT NULL DEFAULT 14,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Employee_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -26,6 +28,7 @@ CREATE TABLE "ShiftTemplate" (
     "start" TEXT NOT NULL,
     "end" TEXT NOT NULL,
     "color" TEXT NOT NULL DEFAULT 'sky',
+    "minStaff" INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT "ShiftTemplate_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -42,16 +45,26 @@ CREATE TABLE "Assignment" (
 );
 
 -- CreateTable
-CREATE TABLE "TimeOffRequest" (
+CREATE TABLE "Announcement" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "employeeId" TEXT NOT NULL,
-    "date" TEXT NOT NULL,
-    "type" TEXT NOT NULL DEFAULT 'izin',
-    "note" TEXT NOT NULL DEFAULT '',
-    "status" TEXT NOT NULL DEFAULT 'pending',
+    "businessId" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "TimeOffRequest_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "Announcement_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "DayNote" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "businessId" TEXT NOT NULL,
+    "date" TEXT NOT NULL,
+    "note" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "DayNote_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Assignment_employeeId_date_key" ON "Assignment"("employeeId", "date");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "DayNote_businessId_date_key" ON "DayNote"("businessId", "date");

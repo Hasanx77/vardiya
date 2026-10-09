@@ -9,16 +9,17 @@ Excel ve WhatsApp yerine: 5 dakikada haftalık plan kur, personele tek tıkla Wh
 
 ## ✨ Özellikler
 
-- 👥 **Personel yönetimi** — ekle, düzenle (ad/görev/telefon/saatlik ücret), sil
+> **Model:** İşveren yönetir, personel yalnızca görüntüler. Elemanın yapabileceği bir düzeltme yoktur.
+
+- 👥 **Personel yönetimi** — ekle, düzenle (ad / görev / telefon / saatlik ücret / izin hakkı), sil
 - 🗓️ **Haftalık vardiya ızgarası** — personel × gün, süratle doldur
-- 🎨 **Vardiya şablonları** — Sabah/Akşam/Tam Gün + kendi şablonlarını ekle/düzenle (renkli)
-- ⚖️ **45 saat uyarısı** — İş Kanunu haftalık süreyi aşan personel kırmızı işaretlenir
+- 🎨 **Vardiya şablonları** — ekle/düzenle (renk) + **kapsam hedefi** (min. kişi) ve eksik uyarıları
+- ⚖️ **Mevzuat uyarıları** — 45 saat, 11 saat dinlenme, gece 7,5 saat, resmî tatil
 - 💰 **Tahmini işçilik maliyeti** — saatlik ücret × saat
 - 📲 **WhatsApp gönderimi** — tek tık veya "Tümüne Gönder"
-- 🧑‍🍳 **Personel görünümü** — çalışan kendi programını görür, **izin/değişim talebi** gönderir
-- ⏳ **Talep yönetimi** — patron talebi onaylar/reddeder; onaylanan izin vardiyayı kaldırır
-- 🖨 **Yazdırılabilir çizelge** — duvara asılacak haftalık çizelge
-- ⧉ **Geçen haftayı kopyala** / 🗑 haftayı temizle
+- 🖨 **Yazdırılabilir çizelge** · 🗓️ **Aylık takvim** · 📊 **Raporlar**
+- 📢 **Duyurular** ve 📝 **gün notları** (işveren yönetir; personel okur)
+- 🧑 **Personel görünümü (salt-okunur)** — eleman yalnızca kendi programını görür
 - 🗄️ **Veritabanı** (Prisma + SQLite) — veriler sunucuda, kalıcı
 
 ---
@@ -49,8 +50,10 @@ Aç: <http://localhost:3000>
 - `/bugun` → "bugün kim çalışıyor" tahtası (tablet için)
 - `/raporlar` → aylık saat/maliyet/izin raporları
 - `/takvim` → aylık takvim görünümü
-- `/ekip` → personel görünümü
+- `/ekip` → personel görünümü (salt-okunur)
 - `/yazdir` → yazdırılabilir çizelge
+- `/yardim` → kullanım kılavuzu
+- `/gizlilik` → KVKK / gizlilik
 
 ---
 
@@ -75,7 +78,7 @@ src/
     panel/page.tsx        # yönetim paneli
     ekip/                 # personel görünümü
     yazdir/page.tsx       # yazdırılabilir çizelge
-    api/                  # sunucu uçları (state, employees, assignments, templates, requests, reset)
+    api/                  # sunucu uçları (state, employees, assignments, templates, announcements, day-notes, reset)
   components/
     TemplateManager.tsx   # vardiya şablonu yönetimi
   lib/

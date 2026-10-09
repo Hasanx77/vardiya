@@ -1,5 +1,5 @@
 // Uygulamanın temel veri tipleri
-// (Next.js + TypeScript) — vardiya yönetimi SaaS
+// Model: işveren yönetir; personel yalnızca görüntüler.
 
 export type ColorKey =
   | "sky"
@@ -41,40 +41,8 @@ export type ShiftTemplate = {
   minStaff: number;
 };
 
-/** Havuzdaki açık vardiya (sahiplenilebilir) */
-export type OpenShift = {
-  id: string;
-  date: string;
-  shiftTemplateId: string;
-  note: string;
-};
-
-/** Günlük görev */
-export type Task = {
-  id: string;
-  title: string;
-};
-
-/** Bir görevin belirli bir gündeki tamamlanma işareti */
-export type TaskCompletion = {
-  taskId: string;
-  date: string;
-};
-
 /** Atamalar: anahtar = `${employeeId}__${YYYY-MM-DD}`, değer = shiftTemplateId */
 export type Assignments = Record<string, string>;
-
-export type AppData = {
-  businessName: string;
-  employees: Employee[];
-  shiftTemplates: ShiftTemplate[];
-  assignments: Assignments;
-};
-
-/** Atama anahtarı üretir */
-export function assignmentKey(employeeId: string, isoDate: string): string {
-  return `${employeeId}__${isoDate}`;
-}
 
 /** Sunucudan gelen atama satırı */
 export type AssignmentRow = {
@@ -83,31 +51,11 @@ export type AssignmentRow = {
   shiftTemplateId: string;
 };
 
-/** Personelin izin / değişim talebi */
-export type TimeOffRequest = {
-  id: string;
-  employeeId: string;
-  date: string;
-  type: string; // izin | degisim
-  note: string;
-  status: string; // pending | approved | rejected
-  /** Vardiya değişiminde hedef personel */
-  targetEmployeeId?: string | null;
-  createdAt: string;
-};
-
-/** Patronun ekibe duyurusu */
+/** İşverenin ekibe duyurusu */
 export type Announcement = {
   id: string;
   message: string;
   createdAt: string;
-};
-
-/** Personelin "müsait değilim" işaretlediği gün */
-export type Availability = {
-  employeeId: string;
-  date: string;
-  note: string;
 };
 
 /** Gün bazlı not */
@@ -122,11 +70,11 @@ export type StatePayload = {
   employees: Employee[];
   shiftTemplates: ShiftTemplate[];
   assignments: AssignmentRow[];
-  requests: TimeOffRequest[];
   announcements: Announcement[];
-  availabilities: Availability[];
   dayNotes: DayNote[];
-  openShifts: OpenShift[];
-  tasks: Task[];
-  taskCompletions: TaskCompletion[];
 };
+
+/** Atama anahtarı üretir */
+export function assignmentKey(employeeId: string, isoDate: string): string {
+  return `${employeeId}__${isoDate}`;
+}

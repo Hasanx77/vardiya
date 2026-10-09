@@ -23,19 +23,17 @@ const sections: { id: string; title: string; items: string[] }[] = [
       "Gün başlığındaki '＋ not' ile o güne not ekle (ör. canlı müzik).",
       "Şablonları Yönet'ten vardiya ekle/düzenle ve 'min. kişi' hedefini belirle.",
       "Kapsam uyarıları: hedefin altında kalan gün/vardiyalar kendiliğinden listelenir.",
-      "Açık Vardiyalar: boş vardiyayı havuza koy, personel sahiplensin.",
       "'Tümüne Gönder' ile herkese WhatsApp'tan programını yolla.",
     ],
   },
   {
     id: "personel",
-    title: "🧑‍🍳 Personel Görünümü",
+    title: "🧑 Personel Görünümü (salt-okunur)",
     items: [
-      "Çalışan kendi haftalık programını ve kalan iznini görür.",
-      "İzin / vardiya değişimi / 'vardiyayı bırak' talebi gönderir.",
-      "Müsait olmadığı günleri işaretler; panelde uyarı olarak görünür.",
-      "Açık vardiyaları sahiplenebilir.",
+      "Çalışan yalnızca kendi haftalık programını görür.",
+      "İzin hakkı ve duyurular görünür.",
       "'Telefon takvimine ekle (.ics)' ile programını cebine alır.",
+      "Elemanın veri değiştirebileceği bir alan yoktur.",
     ],
   },
   {

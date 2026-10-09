@@ -5,23 +5,17 @@ import Link from "next/link";
 import type { Employee, StatePayload } from "@/lib/types";
 import {
   addEmployee as apiAddEmployee,
-  addOpenShift as apiAddOpenShift,
-  addTask as apiAddTask,
   clearWeek as apiClearWeek,
   copyWeek as apiCopyWeek,
   createAnnouncement as apiCreateAnnouncement,
   deleteAnnouncement as apiDeleteAnnouncement,
   deleteEmployee as apiDeleteEmployee,
-  deleteOpenShift as apiDeleteOpenShift,
-  deleteTask as apiDeleteTask,
   fetchState,
   resetData as apiResetData,
   setAssignment as apiSetAssignment,
-  setAvailability as apiSetAvailability,
   setDayNote as apiSetDayNote,
   updateBusiness as apiUpdateBusiness,
   updateEmployee as apiUpdateEmployee,
-  updateRequest as apiUpdateRequest,
 } from "@/lib/api-client";
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
@@ -50,8 +44,6 @@ export default function PanelPage() {
     annualLeaveDays: "",
   });
   const [announcementDraft, setAnnouncementDraft] = useState("");
-  const [openDraft, setOpenDraft] = useState({ date: "", shiftTemplateId: "", note: "" });
-  const [taskDraft, setTaskDraft] = useState("");
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -128,14 +120,6 @@ export default function PanelPage() {
     return m;
   }, [data, assignMap, todayISO]);
 
-  const approvedLeaveCount = useMemo(() => {
-    const m = new Map<string, number>();
-    data?.requests
-      .filter((r) => r.status === "approved" && r.type === "izin")
-      .forEach((r) => m.set(r.employeeId, (m.get(r.employeeId) ?? 0) + 1));
-    return m;
-  }, [data]);
-
   const empMonthStats = useMemo(() => {
     const m = new Map<string, { hours: number; days: number }>();
     if (!data) return m;
@@ -152,12 +136,6 @@ export default function PanelPage() {
     }
     return m;
   }, [data, templateById]);
-
-  const unavailableSet = useMemo(() => {
-    const s = new Set<string>();
-    data?.availabilities.forEach((a) => s.add(`${a.employeeId}__${a.date}`));
-    return s;
-  }, [data]);
 
   const dayNoteMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -331,16 +309,6 @@ export default function PanelPage() {
     flash("CSV indirildi ⬇");
   }
 
-  async function handleRequest(id: string, status: string) {
-    try {
-      await apiUpdateRequest(id, status);
-      await load();
-      flash(status === "approved" ? "Onaylandı ✅" : "Reddedildi.");
-    } catch {
-      flash("İşlem başarısız.");
-    }
-  }
-
   async function postAnnouncement() {
     const message = announcementDraft.trim();
     if (!message) return flash("Mesaj boş.");
@@ -375,59 +343,6 @@ export default function PanelPage() {
       flash("Not kaydedildi.");
     } catch {
       flash("Not kaydedilemedi.");
-    }
-  }
-
-  async function handleAddOpenShift() {
-    if (!openDraft.date || !openDraft.shiftTemplateId) {
-      flash("Tarih ve vardiya seç.");
-      return;
-    }
-    try {
-      await apiAddOpenShift({
-        date: openDraft.date,
-        shiftTemplateId: openDraft.shiftTemplateId,
-        note: openDraft.note,
-      });
-      setOpenDraft({ date: "", shiftTemplateId: "", note: "" });
-      await load();
-      flash("Açık vardiya eklendi 🔓");
-    } catch {
-      flash("Eklenemedi.");
-    }
-  }
-
-  async function handleDeleteOpenShift(id: string) {
-    try {
-      await apiDeleteOpenShift(id);
-      await load();
-      flash("Açık vardiya kaldırıldı.");
-    } catch {
-      flash("Kaldırılamadı.");
-    }
-  }
-
-  async function handleAddTask() {
-    const title = taskDraft.trim();
-    if (!title) return flash("Görev metni boş.");
-    try {
-      await apiAddTask(title);
-      setTaskDraft("");
-      await load();
-      flash("Görev eklendi ✅");
-    } catch {
-      flash("Eklenemedi.");
-    }
-  }
-
-  async function handleDeleteTask(id: string) {
-    if (!window.confirm("Görev silinsin mi?")) return;
-    try {
-      await apiDeleteTask(id);
-      await load();
-      flash("Görev silindi.");
-    } catch {
-      flash("Silinemedi.");
     }
   }
 
@@ -551,8 +466,6 @@ export default function PanelPage() {
     );
   }
 
-  const pending = data.requests.filter((r) => r.status === "pending");
-  const resolved = data.requests.filter((r) => r.status !== "pending");
   const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
   const totalCost = data.employees.reduce((s, e) => s + weekTotal(e) * (e.hourlyWage || 0), 0);
   const totalOvertime = analysis?.totalOvertimeHours ?? 0;
@@ -658,75 +571,6 @@ export default function PanelPage() {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Bekleyen talepler */}
-      {pending.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <h3 className="text-sm font-semibold text-amber-900">
-            ⏳ Bekleyen talepler ({pending.length})
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {pending.map((r) => {
-              const emp = empById.get(r.employeeId);
-              return (
-                <li
-                  key={r.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
-                >
-                  <span>
-                    <strong>{emp?.name ?? "Bilinmeyen"}</strong> ·{" "}
-                    {r.type === "degisim" ? "Vardiya değişimi" : "İzin"} ·{" "}
-                    {r.date}
-                    {r.note ? ` · "${r.note}"` : ""}
-                  </span>
-                  <span className="flex gap-2">
-                    <button
-                      onClick={() => handleRequest(r.id, "approved")}
-                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
-                    >
-                      Onayla
-                    </button>
-                    <button
-                      onClick={() => handleRequest(r.id, "rejected")}
-                      className="rounded-md border border-zinc-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
-                    >
-                      Reddet
-                    </button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* Talep geçmişi */}
-      {resolved.length > 0 && (
-        <details className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-zinc-700">
-            Talep geçmişi ({resolved.length})
-          </summary>
-          <ul className="mt-3 space-y-2">
-            {resolved.map((r) => {
-              const emp = empById.get(r.employeeId);
-              return (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
-                >
-                  <span>
-                    <strong>{emp?.name ?? "?"}</strong> ·{" "}
-                    {r.type === "degisim" ? "Değişim" : "İzin"} · {r.date}
-                  </span>
-                  <span className={r.status === "approved" ? "text-emerald-700" : "text-red-600"}>
-                    {r.status === "approved" ? "Onaylandı" : "Reddedildi"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </details>
       )}
 
       {/* Hafta gezinme */}
@@ -968,8 +812,7 @@ export default function PanelPage() {
               {visibleEmployees.map((emp) => {
                 const total = weekTotal(emp);
                 const over = total > WEEKLY_LIMIT_HOURS;
-                const leaveUsed = approvedLeaveCount.get(emp.id) ?? 0;
-                const leaveLeft = Math.max(0, (emp.annualLeaveDays ?? 0) - leaveUsed);
+                const leaveLeft = emp.annualLeaveDays ?? 0;
                 const stat = empMonthStats.get(emp.id) ?? { hours: 0, days: 0 };
                 return (
                   <Fragment key={emp.id}>
@@ -1037,7 +880,6 @@ export default function PanelPage() {
                       const iso = toISODate(d);
                       const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
                       const template = shiftId ? templateById.get(shiftId) : undefined;
-                      const warn = !!shiftId && unavailableSet.has(keyOf(emp.id, iso));
                       const cls = template
                         ? COLOR_CLASSES[template.color]?.chip ?? ""
                         : "bg-white text-zinc-400 border-dashed border-zinc-300";
@@ -1046,12 +888,7 @@ export default function PanelPage() {
                           <select
                             value={shiftId}
                             onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
-                            title={
-                              warn ? "⚠️ Personel bu günü 'müsait değil' işaretlemiş" : undefined
-                            }
-                            className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-zinc-300 ${cls} ${
-                              warn ? "ring-2 ring-red-400" : ""
-                            }`}
+                            className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-zinc-300 ${cls}`}
                           >
                             <option value="">—</option>
                             {data.shiftTemplates.map((t) => (
@@ -1274,111 +1111,6 @@ export default function PanelPage() {
           </ul>
         </div>
       )}
-
-      {/* Açık vardiyalar */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-700">🔓 Açık Vardiyalar (havuz)</h3>
-        <p className="mt-1 text-xs text-zinc-500">
-          Boş vardiyaları havuza koy; personel kendi ekranından sahiplenebilir.
-        </p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-4">
-          <input
-            type="date"
-            value={openDraft.date}
-            onChange={(e) => setOpenDraft({ ...openDraft, date: e.target.value })}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-          />
-          <select
-            value={openDraft.shiftTemplateId}
-            onChange={(e) => setOpenDraft({ ...openDraft, shiftTemplateId: e.target.value })}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-          >
-            <option value="">Vardiya seç…</option>
-            {data.shiftTemplates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} ({t.start}–{t.end})
-              </option>
-            ))}
-          </select>
-          <input
-            placeholder="Not (opsiyonel)"
-            value={openDraft.note}
-            onChange={(e) => setOpenDraft({ ...openDraft, note: e.target.value })}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-          />
-          <button
-            onClick={handleAddOpenShift}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            Havuza ekle
-          </button>
-        </div>
-        {data.openShifts.length > 0 && (
-          <ul className="mt-3 space-y-1">
-            {data.openShifts.map((o) => {
-              const t = templateById.get(o.shiftTemplateId);
-              const day = new Date(o.date + "T00:00:00");
-              return (
-                <li
-                  key={o.id}
-                  className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
-                >
-                  <span>
-                    {formatShort(day)} · {t?.name ?? "?"} ({t?.start}–{t?.end})
-                    {o.note ? ` · ${o.note}` : ""}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteOpenShift(o.id)}
-                    className="text-xs text-zinc-400 hover:text-red-600"
-                  >
-                    Kaldır
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      {/* Günlük görevler */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-700">✅ Günlük Görevler</h3>
-        <p className="mt-1 text-xs text-zinc-500">
-          Açılış/kapanış kontrol listesi. Personel &quot;Bugün&quot; ekranından tik atar.
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input
-            value={taskDraft}
-            onChange={(e) => setTaskDraft(e.target.value)}
-            placeholder="Görev (ör. Kahve makinesini temizle)"
-            className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-          />
-          <button
-            onClick={handleAddTask}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            Ekle
-          </button>
-        </div>
-        {data.tasks.length > 0 && (
-          <ul className="mt-3 space-y-1">
-            {data.tasks.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-sm"
-              >
-                <span>{t.title}</span>
-                <button
-                  onClick={() => handleDeleteTask(t.id)}
-                  className="text-xs text-zinc-400 hover:text-red-600"
-                >
-                  Sil
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
       {/* Şablonlar */}
       <div className="mt-6">
