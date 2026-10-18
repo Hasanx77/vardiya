@@ -104,6 +104,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <Link href="/gizlilik" className="hover:text-zinc-900 hover:underline">
                 Gizlilik
               </Link>
+              <form action="/api/auth/logout" method="post">
+                <button type="submit" className="hover:text-zinc-900 hover:underline">
+                  Çıkış
+                </button>
+              </form>
               <span>MVP</span>
             </span>
           </div>
