@@ -89,61 +89,41 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Fiyatlandırma — sadece iki paket */}
-      <section className="mx-auto max-w-4xl px-4 pb-16">
-        <h2 className="text-center text-2xl font-semibold tracking-tight">Basit fiyat</h2>
+        {/* Fiyatlandırma — tek plan: tamamen ücretsiz */}
+      <section className="mx-auto max-w-3xl px-4 pb-16">
+        <h2 className="text-center text-2xl font-semibold tracking-tight">Tamamen ücretsiz</h2>
         <p className="mt-2 text-center text-zinc-600">
-          İki paket. Gizli ücret yok, uzun taahhüt yok.
+          Kredi kartı yok, abonelik yok, deneme süresi yok. Şimdilik her şey açık.
         </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold">Ücretsiz</h3>
-            <div className="mt-2 text-3xl font-semibold">
-              ₺0
-            </div>
-            <p className="text-sm text-zinc-500">5 çalışana kadar</p>
-            <ul className="mt-4 space-y-2 text-sm text-zinc-600">
-              <li>✓ Haftalık vardiya planı</li>
-              <li>✓ WhatsApp&apos;tan gönder</li>
-              <li>✓ 45 saat / mevzuat uyarısı</li>
-              <li>✓ Yazdırılabilir çizelge</li>
-            </ul>
-            <Link
-              href="/basla"
-              className="mt-6 block rounded-lg border border-zinc-300 py-2.5 text-center font-medium hover:bg-zinc-100"
-            >
-              Ücretsiz başla
-            </Link>
+        <div className="mt-8 rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold">Ücretsiz plan</h3>
+            <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-medium text-white">
+              Şu an ücretsiz
+            </span>
           </div>
-          <div className="rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Pro</h3>
-              <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-[11px] text-white">
-                Önerilen
-              </span>
-            </div>
-            <div className="mt-2 text-3xl font-semibold">
-              ₺399<span className="text-base font-normal text-zinc-500">/ay</span>
-            </div>
-            <p className="text-sm text-zinc-500">Lokasyon başına · sınırsız çalışan</p>
-            <ul className="mt-4 space-y-2 text-sm text-zinc-600">
-              <li>✓ Ücretsiz paketteki her şey</li>
-              <li>✓ Sınırsız personel</li>
-              <li>✓ Personel görünümü + izin talepleri</li>
-              <li>✓ Excel (CSV) dışa aktarım</li>
-              <li>✓ Öncelikli destek + kurulum yardımı</li>
-            </ul>
-            <Link
-              href="/basla"
-              className="mt-6 block rounded-lg bg-zinc-900 py-2.5 text-center font-medium text-white hover:bg-zinc-700"
-            >
-              Pro&apos;ya başla
-            </Link>
+          <div className="mt-3 text-4xl font-semibold">
+            ₺0<span className="text-base font-normal text-zinc-500">/ay</span>
           </div>
+          <p className="mt-1 text-sm text-zinc-500">Sınırsız personel · sınırsız lokasyon</p>
+          <ul className="mt-5 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2">
+            <li>✓ Haftalık vardiya planı</li>
+            <li>✓ WhatsApp&apos;tan tek tıkla gönder</li>
+            <li>✓ 45 saat / 11 saat dinlenme uyarısı</li>
+            <li>✓ Yazdırılabilir çizelge</li>
+            <li>✓ Personel görünümü + izin talepleri</li>
+            <li>✓ Excel (CSV) dışa aktarım</li>
+          </ul>
+          <Link
+            href="/basla"
+            className="mt-6 block rounded-lg bg-zinc-900 py-3 text-center font-medium text-white transition-colors hover:bg-zinc-700"
+          >
+            Hemen başla →
+          </Link>
+          <p className="mt-3 text-center text-xs text-zinc-400">
+            İleride ücretli ek özellikler eklenebilir; bugün kullandığın her şey ücretsiz kalır.
+          </p>
         </div>
-        <p className="mt-4 text-center text-xs text-zinc-400">
-          Fiyat bir hipotezdir; pilot müşteriyle netleşecek. Yıllık ödemede %20 indirim.
-        </p>
       </section>
 
       <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
