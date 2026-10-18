@@ -1,37 +1,46 @@
 /**
- * cPanel (CloudLinux Node.js Selector / Passenger) başlangıç dosyası.
+ * cPanel / CloudLinux Node.js Selector (LiteSpeed "lsnode") başlangıç dosyası.
  *
- * Node.js Selector'daki "Application startup file" alanı bu dosyayı gösterir.
- * Passenger bu dosyayı çalıştırır; biz de Next.js'in üretim sunucusunu
- * (next start) Passenger'ın verdiği PORT üzerinde başlatıyoruz.
- *
- * Neden ayrı dosya: Node.js Selector bir *modül* ister, "next start" ise bir
- * komut satırı aracıdır. Bu küçük sarmalayıcı ikisini birleştirir.
+ * ⚠️ ÖNEMLİ DERS: LiteSpeed uygulamayı bir TCP portunda DEĞİL, bir **UNIX
+ * soketinde** bekler ve yolu `LSNODE_SOCKET` ortam değişkeniyle verir.
+ * `next start` yalnızca TCP dinleyebildiği için uygulama cevap vermiyordu
+ * (istekler zaman aşımına düşüyordu). Bu yüzden Next'in programatik API'siyle
+ * kendi HTTP sunucumuzu kurup soketi dinliyoruz.
  */
 process.env.NODE_ENV = "production";
 
-const path = require("path");
-const { spawn } = require("child_process");
+const fs = require("fs");
+const http = require("http");
+const next = require("next");
 
-const port = process.env.PORT || 3000;
-const nextBin = path.join(__dirname, "node_modules", "next", "dist", "bin", "next");
+const LOG = __dirname + "/baslatma.log";
+const yaz = (m) => {
+  try {
+    fs.appendFileSync(LOG, "[" + new Date().toISOString() + "] " + m + "\n");
+  } catch (e) {
+    /* log yazılamazsa sorun değil */
+  }
+};
 
-console.log(`[app.js] Next.js baslatiliyor: port=${port}`);
+const soket = process.env.LSNODE_SOCKET;
+const port = Number(process.env.PORT) || 3000;
+yaz("BASLADI soket=" + soket + " port=" + port);
 
-const cocuk = spawn(process.execPath, [nextBin, "start", "-p", String(port)], {
-  cwd: __dirname,
-  stdio: "inherit",
-  env: process.env,
-});
+const uygulama = next({ dev: false, dir: __dirname, hostname: "localhost", port });
+const isleyici = uygulama.getRequestHandler();
 
-cocuk.on("exit", (kod, sinyal) => {
-  console.log(`[app.js] Next.js kapandi (kod=${kod}, sinyal=${sinyal})`);
-  process.exit(kod === null ? 1 : kod);
-});
-
-["SIGTERM", "SIGINT"].forEach((sinyal) => {
-  process.on(sinyal, () => {
-    console.log(`[app.js] ${sinyal} alindi, kapatiliyor...`);
-    cocuk.kill(sinyal);
+uygulama
+  .prepare()
+  .then(() => {
+    const sunucu = http.createServer((req, res) => isleyici(req, res));
+    sunucu.on("error", (e) => yaz("SUNUCU HATASI " + e));
+    if (soket) {
+      sunucu.listen(soket, () => yaz("Unix soket dinleniyor: " + soket));
+    } else {
+      sunucu.listen(port, () => yaz("TCP dinleniyor: " + port));
+    }
+  })
+  .catch((e) => {
+    yaz("PREPARE HATASI " + e);
+    process.exit(1);
   });
-});

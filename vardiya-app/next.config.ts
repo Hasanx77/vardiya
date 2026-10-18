@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  // Paylaşımlı hostingde (CloudLinux LVE) eşzamanlı işlem sayısı sınırlı:
+  // Next onlarca işçi süreç başlatınca "spawn EAGAIN" veriyor.
+  // Tek işçiye düşürüyoruz (yerelde de zararsız, sadece biraz yavaş).
+  experimental: {
+    cpus: 1,
+  },
 };
 
 export default nextConfig;
