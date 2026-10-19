@@ -513,11 +513,91 @@ html.dark .btn-ikincil:hover {
   background-color: #292524;
 }
 
+/* @apply ile yazılan bileşen sınıfları, `.text-zinc-*` sınıfı taşımadığı için
+   yukarıdaki koyu tema metin kurallarından etkilenmiyordu. Bu yüzden koyu
+   temada bazı başlık/etiketler neredeyse görünmez oluyordu. */
+html.dark .sayfa-baslik,
+html.dark .bolum-baslik {
+  color: var(--metin);
+}
+html.dark .sayfa-alt,
+html.dark .etiket,
+html.dark .btn-sessiz,
+html.dark .cip {
+  color: var(--soluk);
+}
+html.dark .btn-sessiz:hover {
+  color: var(--metin);
+}
+
+/* Tanıtım sayfasındaki açık renkli vardiya çipleri */
+html.dark .bg-rose-50 {
+  background-color: rgba(136, 19, 55, 0.28);
+}
+html.dark .bg-violet-50 {
+  background-color: rgba(76, 29, 149, 0.28);
+}
+
+/* Amber zeminli son çağrı: yazı her iki temada da koyu kalmalı. */
+html.dark .bg-amber-500 .text-zinc-800 {
+  color: #292524;
+}
+
 /* Tanıtım sayfasındaki yumuşak ışık — koyu temada yanlış parlamasın. */
 .hero-glow {
   background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 45%, transparent 75%);
 }
 html.dark .hero-glow {
   background: radial-gradient(60% 60% at 45% 40%, rgba(180, 83, 9, 0.22), transparent 75%);
+}
+
+/* ============================================================
+   YAZDIRMA (çizelge duvara asılacak)
+   Tarayıcı varsayılanı koyu zemin/başlık/altbilgi basar; temiz çıktı
+   için beyaza zorluyoruz. Satırlar sayfa arasında bölünmesin.
+   ============================================================ */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    display: table-header-group; /* her sayfada başlık tekrar etsin */
+  }
+
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .kart {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
 }
 

@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { addDays, formatShort, getWeekDates, startOfWeek, toISODate } from "./dates";
+import {
+  addDays,
+  formatShort,
+  formatWeekRange,
+  getWeekDates,
+  startOfWeek,
+  toISODate,
+} from "./dates";
 
 describe("toISODate", () => {
   it("yerel tarihi YYYY-MM-DD yapar", () => {
@@ -43,5 +50,22 @@ describe("getWeekDates", () => {
 describe("formatShort", () => {
   it("gün ve kısa ay döner", () => {
     expect(formatShort(new Date(2026, 9, 8))).toBe("8 Eki");
+  });
+});
+
+describe("formatWeekRange", () => {
+  it("aynı ay içindeki haftayı kısa yazar", () => {
+    const gunler = Array.from({ length: 7 }, (_, i) => new Date(2026, 9, 5 + i));
+    expect(formatWeekRange(gunler)).toBe("5 – 11 Eki 2026");
+  });
+
+  it("ay sınırını geçen haftada sol tarafın ayını da yazar", () => {
+    const gunler = Array.from({ length: 7 }, (_, i) => new Date(2026, 8, 29 + i));
+    expect(formatWeekRange(gunler)).toBe("29 Eyl – 5 Eki 2026");
+  });
+
+  it("yıl sınırını geçen haftada iki yılı da yazar", () => {
+    const gunler = Array.from({ length: 7 }, (_, i) => new Date(2025, 11, 29 + i));
+    expect(formatWeekRange(gunler)).toBe("29 Ara 2025 – 4 Oca 2026");
   });
 });

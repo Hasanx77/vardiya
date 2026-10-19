@@ -6,6 +6,7 @@ import type { Employee, StatePayload } from "@/lib/types";
 import { fetchState } from "@/lib/api-client";
 import { formatDayDate, toISODate } from "@/lib/dates";
 import { COLOR_CLASSES } from "@/lib/colors";
+import SayfaBasligi from "@/components/SayfaBasligi";
 
 export default function BugunClient({ initialData }: { initialData: StatePayload }) {
   const [data, setData] = useState<StatePayload | null>(initialData);
@@ -21,14 +22,27 @@ export default function BugunClient({ initialData }: { initialData: StatePayload
         /* yoksay */
       }
     }
-    load();
+
+    // Veri sunucudan hazır geldi; hemen ikinci istek atmıyoruz.
+    // Tablet ekranı açık kaldığı için dakikada bir tazeliyoruz.
     const id = window.setInterval(() => {
       load();
       setNow(new Date());
     }, 60_000);
+
+    // Sekmeye geri dönünce eski programı göstermesin.
+    function gorunur() {
+      if (document.visibilityState === "visible") {
+        load();
+        setNow(new Date());
+      }
+    }
+    document.addEventListener("visibilitychange", gorunur);
+
     return () => {
       alive = false;
       window.clearInterval(id);
+      document.removeEventListener("visibilitychange", gorunur);
     };
   }, []);
 
@@ -67,22 +81,11 @@ export default function BugunClient({ initialData }: { initialData: StatePayload
 
   return (
     <main className="sayfa max-w-4xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-            Bugün
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Kim çalışıyor?
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {data.business.name} · {formatDayDate(now)}
-          </p>
-        </div>
-        <Link href="/panel" className="btn-ikincil btn-kucuk shrink-0">
-          ← Plan
-        </Link>
-      </div>
+      <SayfaBasligi
+        ust="Bugün"
+        baslik="Kim çalışıyor?"
+        alt={`${data.business.name} · ${formatDayDate(now)}`}
+      />
 
       {data.announcements.length > 0 && (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">

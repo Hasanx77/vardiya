@@ -279,7 +279,7 @@ export default function TemplateManager({
 
       {msg && <p className="mt-3 text-xs text-emerald-700">{msg}</p>}
       <p className="mt-3 text-xs text-zinc-500">
-        "Min. kişi", o vardiyada hedeflenen en az personel sayısıdır; eksik kalırsa panelde uyarı
+        &quot;Min. kişi&quot;, o vardiyada hedeflenen en az personel sayısıdır; eksik kalırsa panelde uyarı
         görürsün.
       </p>
     </div>

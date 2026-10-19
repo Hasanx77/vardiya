@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Node tarafındaki yayın betikleri (CommonJS) uygulama kaynağı değil.
+    "app.js",
+    "deploy/**",
   ]),
 ]);
 

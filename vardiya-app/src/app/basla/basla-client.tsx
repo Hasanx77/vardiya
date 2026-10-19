@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StatePayload } from "@/lib/types";
 import {
@@ -28,8 +28,8 @@ function parseEmployees(text: string): ParsedEmployee[] {
 
 export default function BaslaClient({ initialData }: { initialData: StatePayload }) {
   const router = useRouter();
-  const [data, setData] = useState<StatePayload | null>(initialData);
-  const [name, setName] = useState("");
+  const [data, setData] = useState<StatePayload>(initialData);
+  const [name, setName] = useState(initialData.business.name);
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -43,11 +43,6 @@ export default function BaslaClient({ initialData }: { initialData: StatePayload
       setMsg("Sunucuya ulaşılamadı.");
     }
   }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const parsed = useMemo(() => parseEmployees(bulk), [bulk]);
 

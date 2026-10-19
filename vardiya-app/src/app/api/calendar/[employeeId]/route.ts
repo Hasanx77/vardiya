@@ -31,8 +31,8 @@ function escapeText(s: string): string {
 export async function GET(_request: Request, { params }: Ctx) {
   const { employeeId } = await params;
 
-  const employee = await prisma.employee.findUnique({
-    where: { id: employeeId },
+  const employee = await prisma.employee.findFirst({
+    where: { id: employeeId, active: true },
     include: { business: true },
   });
   if (!employee) {
@@ -47,12 +47,15 @@ export async function GET(_request: Request, { params }: Ctx) {
   });
 
   const stamp = utcStamp(new Date());
+  const takvimAdi = escapeText(`${employee.name} · ${employee.business.name}`);
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Vardiya//Vardiya Yonetimi//TR",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
+    `X-WR-CALNAME:${takvimAdi}`,
+    "X-WR-TIMEZONE:Europe/Istanbul",
   ];
 
   for (const a of assignments) {
@@ -77,7 +80,9 @@ export async function GET(_request: Request, { params }: Ctx) {
   return new Response(body, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": 'attachment; filename="vardiya-takvim.ics"',
+      "Content-Disposition": `attachment; filename="vardiya-takvim.ics"; filename*=UTF-8''${encodeURIComponent(
+        `vardiya-${employee.name}.ics`
+      )}`,
       "Cache-Control": "no-store",
     },
   });

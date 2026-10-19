@@ -9,14 +9,15 @@ import { COOKIE_NAME, tokenKullanici } from "@/lib/session";
  *   /giris       → giriş
  *   /kayit       → kayıt ol
  *   /gizlilik, /yardim, /robots.txt, /manifest.webmanifest, /icons/*
- *   /api/auth/*  → giriş/kayıt/çıkış uçları
+ *   /ekip/<id>   → personelin salt-okunur programı (paylaşılabilir bağlantı)
+ *   /api/auth/*, /api/ekip/<id>, /api/calendar/<id> → aynı amaca hizmet eden uçlar
  *
- * Geri kalan her şey (panel, bugun, raporlar, takvim, ekip, yazdir, tüm diğer /api/*)
- * geçerli bir oturum çerezi ister. Aksi halde /giris'e yönlendirilir.
+ * Geri kalan her şey (panel, bugun, raporlar, takvim, /ekip listesi, yazdir,
+ * tüm diğer /api/*) geçerli bir oturum çerezi ister. Aksi halde /giris'e yönlendirilir.
  */
 const PUBLIC_PATHS = new Set(["/", "/giris", "/kayit", "/gizlilik", "/yardim"]);
 
-const PUBLIC_PREFIXES = ["/api/auth/", "/icons/", "/_next/"];
+const PUBLIC_PREFIXES = ["/api/auth/", "/api/ekip/", "/api/calendar/", "/icons/", "/_next/"];
 
 const PUBLIC_FILES = [
   "/favicon.ico",
@@ -25,11 +26,16 @@ const PUBLIC_FILES = [
   "/manifest.webmanifest",
   "/icon.png",
   "/apple-icon.png",
+  "/og.png",
 ];
+
+/** /ekip/<tek-parça-id> → personel bağlantısı. /ekip listesi kapalı kalır. */
+const EKIP_BAGLANTISI = /^\/ekip\/[^/]+\/?$/;
 
 function acikMi(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (PUBLIC_FILES.includes(pathname)) return true;
+  if (EKIP_BAGLANTISI.test(pathname)) return true;
   return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 }
 

@@ -1,71 +1,38 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import type { StatePayload } from "@/lib/types";
-import { fetchState } from "@/lib/api-client";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { toISODate } from "@/lib/dates";
+import SayfaBasligi from "@/components/SayfaBasligi";
 
 export default function EkipClient({ initialData }: { initialData: StatePayload }) {
-  const [data, setData] = useState<StatePayload | null>(initialData);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetchState()
-      .then(setData)
-      .catch(() => setError("Sunucuya ulaşılamadı."));
-  }, []);
+  const data = initialData;
 
   const todayISO = toISODate(new Date());
 
   const templateById = useMemo(() => {
     const m = new Map<string, StatePayload["shiftTemplates"][number]>();
-    data?.shiftTemplates.forEach((t) => m.set(t.id, t));
+    data.shiftTemplates.forEach((t) => m.set(t.id, t));
     return m;
-  }, [data]);
+  }, [data.shiftTemplates]);
 
   const todayByEmployee = useMemo(() => {
     const m = new Map<string, string>();
-    data?.assignments
+    data.assignments
       .filter((a) => a.date === todayISO)
       .forEach((a) => m.set(a.employeeId, a.shiftTemplateId));
     return m;
-  }, [data, todayISO]);
-
-  if (error) {
-    return (
-      <main className="flex-1 grid place-items-center px-4">
-        <p className="text-sm text-red-600">{error}</p>
-      </main>
-    );
-  }
-  if (!data) {
-    return (
-      <main className="flex-1 grid place-items-center">
-        <p className="text-sm text-zinc-500">Yükleniyor…</p>
-      </main>
-    );
-  }
+  }, [data.assignments, todayISO]);
 
   return (
     <main className="sayfa max-w-3xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-            Personel görünümü
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {data.business.name}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Bir isme dokun; bu haftaki programını gör.
-          </p>
-        </div>
-        <Link href="/panel" className="btn-ikincil btn-kucuk shrink-0">
-          ← Plan
-        </Link>
-      </div>
+      <SayfaBasligi
+        ust="Personel görünümü"
+        baslik={data.business.name}
+        alt="Bir isme dokun; bu haftaki programını gör."
+      />
 
       {data.employees.length === 0 ? (
         <div className="kart mt-6 border-dashed p-10 text-center">

@@ -26,17 +26,18 @@ const sections: { id: string; title: string; items: string[] }[] = [
       "Gün başlığındaki kalem simgesiyle o güne not ekle (ör. canlı müzik).",
       "Vardiya şablonlarını 'Yönet' düğmesinden düzenle; 'min. kişi' hedefini belirle.",
       "Kapsam uyarıları: hedefin altında kalan gün/vardiyalar kendiliğinden listelenir.",
-      "'Tümüne Gönder' ile herkese WhatsApp'tan programını yolla.",
+      "Gönder düğmesiyle herkese WhatsApp'tan kendi programını yolla.",
     ],
   },
   {
     id: "personel",
     title: "🧑 Personel Görünümü (salt-okunur)",
     items: [
-      "Çalışan yalnızca kendi haftalık programını görür.",
+      "Personel satırındaki 'Link' düğmesi kişiye özel bir bağlantı kopyalar.",
+      "Çalışan bu bağlantıyı giriş yapmadan açar; yalnızca kendi haftalık programını görür.",
       "İzin hakkı ve duyurular görünür.",
       "'Telefon takvimine ekle (.ics)' ile programını cebine alır.",
-      "Elemanın veri değiştirebileceği bir alan yoktur.",
+      "Elemanın veri değiştirebileceği bir alan yoktur; linki bilen herkes programı görebilir.",
     ],
   },
   {

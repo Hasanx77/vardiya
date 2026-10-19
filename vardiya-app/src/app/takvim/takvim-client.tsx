@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import type { StatePayload } from "@/lib/types";
-import { fetchState } from "@/lib/api-client";
 import { DAY_SHORT_TR, MONTH_SHORT_TR, toISODate } from "@/lib/dates";
 import { getHoliday } from "@/lib/holidays";
 import { COLOR_CLASSES } from "@/lib/colors";
+import SayfaBasligi from "@/components/SayfaBasligi";
 
 export default function TakvimClient({ initialData }: { initialData: StatePayload }) {
-  const [data, setData] = useState<StatePayload | null>(initialData);
+  const data = initialData;
   const [offset, setOffset] = useState(0);
-
-  useEffect(() => {
-    fetchState().then(setData).catch(() => setData(null));
-  }, []);
 
   const { first, days } = useMemo(() => {
     const base = new Date();
@@ -58,18 +53,7 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
 
   return (
     <main className="sayfa max-w-6xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-            Takvim
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Aylık görünüm</h1>
-          <p className="mt-1 text-sm text-zinc-500">{data.business.name}</p>
-        </div>
-        <Link href="/panel" className="btn-ikincil btn-kucuk shrink-0">
-          ← Plan
-        </Link>
-      </div>
+      <SayfaBasligi ust="Takvim" baslik="Aylık görünüm" alt={data.business.name} />
 
       <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-2 py-1.5">
         <button

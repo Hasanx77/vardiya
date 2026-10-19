@@ -1,8 +1,13 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { kaydetZiyaret } from "@/lib/visits";
 
 // Ziyaret sayacı istek başına çalışsın (statik ön-render'a takılmasın).
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const adimlar = [
   {
@@ -61,12 +66,16 @@ function OrnekCizelge() {
   ];
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      role="img"
+      aria-label="Örnek haftalık vardiya çizelgesi: 4 personel, 5 gün, 14 vardiya ve mevzuata uygun rozeti."
+    >
       <div
         aria-hidden
         className="hero-glow absolute -inset-6 -z-10 rounded-[2rem] blur-2xl"
       />
-      <div className="kart overflow-hidden shadow-sm">
+      <div aria-hidden="true" className="kart overflow-hidden shadow-sm">
         <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
           <div>
             <div className="text-[13px] font-semibold">Haftalık plan</div>
@@ -92,7 +101,7 @@ function OrnekCizelge() {
                   key={i}
                   className={`my-1 truncate rounded-md border px-1 py-1 text-center text-[10px] ${
                     v === "—"
-                      ? "border-dashed border-zinc-200 text-zinc-300"
+                      ? "border-dashed border-zinc-200 text-zinc-400"
                       : v === "Sabah"
                         ? "border-amber-200 bg-amber-50 text-amber-800"
                         : v === "Akşam"
@@ -153,7 +162,10 @@ export default async function Home() {
       {/* Üç adım */}
       <section id="nasil" className="border-y border-zinc-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-10">
-          <div className="grid gap-6 sm:grid-cols-3 sm:gap-8">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            Nasıl çalışır?
+          </h2>
+          <div className="mt-5 grid gap-6 sm:grid-cols-3 sm:gap-8">
             {adimlar.map((s) => (
               <div key={s.n} className="flex gap-3.5">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-zinc-900 text-[13px] font-semibold text-white">

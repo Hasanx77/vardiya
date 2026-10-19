@@ -24,6 +24,8 @@ import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 import TemplateManager from "@/components/TemplateManager";
+import Modal from "@/components/Modal";
+import { csvIndir } from "@/lib/csv";
 import { getHoliday } from "@/lib/holidays";
 
 function keyOf(employeeId: string, iso: string) {
@@ -79,12 +81,12 @@ export default function PanelClient({
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStandart, setShowStandart] = useState(false);
-  const [acilisDraft, setAcilisDraft] = useState("09:00");
-  const [kapanisDraft, setKapanisDraft] = useState("23:00");
+  const [acilisDraft, setAcilisDraft] = useState(initialData.business.openTime);
+  const [kapanisDraft, setKapanisDraft] = useState(initialData.business.closeTime);
   const [search, setSearch] = useState("");
   const [expandedEmpId, setExpandedEmpId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", role: "" });
-  const [nameDraft, setNameDraft] = useState("");
+  const [nameDraft, setNameDraft] = useState(initialData.business.name);
   const [nameEdit, setNameEdit] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -106,16 +108,10 @@ export default function PanelClient({
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
   // Modallar ESC ile kapansın
   useEffect(() => {
     function esc(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      setShowSettings(false);
-      setShowBulk(false);
       setShowForm(false);
       setNameEdit(false);
     }
@@ -357,38 +353,24 @@ export default function PanelClient({
 
   function exportCsv() {
     if (!data) return;
-    const head = [
-      "Personel",
-      "Görev",
-      ...weekDates.map((d) => formatShort(d)),
-      "Toplam Saat",
-      "45 saat üstü (sa)",
+    const satirlar: (string | number)[][] = [
+      [
+        "Personel",
+        "Görev",
+        ...weekDates.map((d) => formatShort(d)),
+        "Toplam Saat",
+        "45 saat üstü (sa)",
+      ],
     ];
-    const rows: string[][] = [head];
     for (const emp of data.employees) {
       const cells = weekDates.map((d) => {
         const sid = assignMap.get(keyOf(emp.id, toISODate(d)));
         const t = sid ? templateById.get(sid) : undefined;
         return t ? `${t.name} ${t.start}-${t.end}` : "";
       });
-      rows.push([
-        emp.name,
-        emp.role,
-        ...cells,
-        String(weekTotal(emp)),
-        String(empOvertime(emp)),
-      ]);
+      satirlar.push([emp.name, emp.role, ...cells, weekTotal(emp), empOvertime(emp)]);
     }
-    const csv = rows
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
-      .join("\r\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vardiya-${toISODate(weekDates[0])}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    csvIndir(`vardiya-${toISODate(weekDates[0])}.csv`, satirlar);
     flash("CSV indirildi.");
   }
 
@@ -554,7 +536,6 @@ export default function PanelClient({
   }
 
   const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
-  const totalOvertime = analysis?.totalOvertimeHours ?? 0;
   const issues = analysis?.issues ?? [];
   const uyariSayisi = issues.length + coverageIssues.length;
   const calisanSayisi = data.employees.filter((e) => calistigiGunler(e).length > 0).length;
@@ -1461,92 +1442,72 @@ export default function PanelClient({
       </div>
 
       {/* Ayarlar modali */}
-      {showSettings && (
-        <div
-          className="fixed inset-0 z-40 grid place-items-center bg-black/40 p-4"
-          onClick={() => setShowSettings(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Ayarlar"
-        >
-          <div className="kart w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold">Ayarlar</h3>
-            <p className="mt-1 text-xs text-zinc-500">
-              Veri işlemleri. İşletme adını üstteki başlıktan değiştirebilirsin.
-            </p>
-            <div className="mt-4 space-y-2">
-              <button
-                onClick={() => handleReset("demo")}
-                className="btn-ikincil w-full justify-start"
-              >
-                Örnek veriyi (demo) yükle
-              </button>
-              <button
-                onClick={() => handleReset("empty")}
-                className="btn-tehlike w-full justify-start"
-              >
-                Boş başla (tüm personeli sil)
-              </button>
-            </div>
-            <button onClick={() => setShowSettings(false)} className="btn-ikincil mt-4 w-full">
-              Kapat
-            </button>
-          </div>
+      <Modal
+        acik={showSettings}
+        kapat={() => setShowSettings(false)}
+        baslik="Ayarlar"
+      >
+        <p className="text-sm text-zinc-500">
+          Veri işlemleri. İşletme adını üstteki başlıktan değiştirebilirsin.
+        </p>
+        <div className="mt-4 space-y-2">
+          <button
+            onClick={() => handleReset("demo")}
+            className="btn-ikincil w-full justify-start"
+          >
+            Örnek veriyi (demo) yükle
+          </button>
+          <button
+            onClick={() => handleReset("empty")}
+            className="btn-tehlike w-full justify-start"
+          >
+            Boş başla (tüm personeli sil)
+          </button>
         </div>
-      )}
+      </Modal>
 
       {/* Toplu gönderim modali */}
-      {showBulk && (
-        <div
-          className="fixed inset-0 z-40 grid place-items-center bg-black/40 p-4"
-          onClick={() => setShowBulk(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Tüm personele gönder"
-        >
-          <div className="kart w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold">Tüm personele gönder</h3>
-            <p className="mt-1 text-xs text-zinc-500">
-              Her personele kendi programı hazırlanır. Sırayla açıp gönder.
-            </p>
-            <ul className="mt-3 max-h-80 space-y-1.5 overflow-y-auto">
-              {data.employees.map((emp) => {
-                const text = buildScheduleText(
-                  emp,
-                  weekDates,
-                  Object.fromEntries([...assignMap.entries()]),
-                  data.shiftTemplates,
-                  data.business.name
-                );
-                const link = buildWhatsAppLink(emp.phone, text);
-                return (
-                  <li
-                    key={emp.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+      <Modal
+        acik={showBulk}
+        kapat={() => setShowBulk(false)}
+        baslik="Tüm personele gönder"
+      >
+        <p className="text-sm text-zinc-500">
+          Her personele kendi programı hazırlanır. Sırayla açıp gönder.
+        </p>
+        <ul className="mt-3 max-h-80 space-y-1.5 overflow-y-auto">
+          {data.employees.map((emp) => {
+            const text = buildScheduleText(
+              emp,
+              weekDates,
+              Object.fromEntries([...assignMap.entries()]),
+              data.shiftTemplates,
+              data.business.name
+            );
+            const link = buildWhatsAppLink(emp.phone, text);
+            return (
+              <li
+                key={emp.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              >
+                <span className="truncate">{emp.name}</span>
+                {emp.phone ? (
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-birincil btn-kucuk"
                   >
-                    <span className="truncate">{emp.name}</span>
-                    {emp.phone ? (
-                      <a
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-birincil btn-kucuk"
-                      >
-                        WhatsApp
-                      </a>
-                    ) : (
-                      <span className="text-xs text-zinc-400">telefon yok</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            <button onClick={() => setShowBulk(false)} className="btn-ikincil mt-4 w-full">
-              Kapat
-            </button>
-          </div>
-        </div>
-      )}
+                    WhatsApp
+                  </a>
+                ) : (
+                  <span className="text-xs text-zinc-400">telefon yok</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </Modal>
 
       {toast && (
         <div

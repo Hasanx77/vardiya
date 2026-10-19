@@ -32,11 +32,20 @@ export const metadata: Metadata = {
     description:
       "Haftalık vardiya planını 5 dakikada hazırla, ekibine WhatsApp'tan gönder. Ücretsiz, reklamsız, Türkiye'de barındırılıyor.",
     url: "/",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Vardiya — haftalık vardiya planı, 5 dakikada hazır.",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
     description: "Haftalık vardiya planı, WhatsApp gönderimi ve mevzuat uyarıları. Ücretsiz.",
+    images: ["/og.png"],
   },
   icons: {
     icon: "/icons/icon-32.png",

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { StatePayload } from "@/lib/types";
-import { fetchState } from "@/lib/api-client";
 import { MONTH_SHORT_TR, toISODate } from "@/lib/dates";
 import { shiftHours } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
+import { csvIndir } from "@/lib/csv";
+import SayfaBasligi from "@/components/SayfaBasligi";
 
 function monthRange(offset: number) {
   const base = new Date();
@@ -21,12 +22,8 @@ function monthRange(offset: number) {
 }
 
 export default function RaporlarClient({ initialData }: { initialData: StatePayload }) {
-  const [data, setData] = useState<StatePayload | null>(initialData);
+  const data = initialData;
   const [offset, setOffset] = useState(0);
-
-  useEffect(() => {
-    fetchState().then(setData).catch(() => setData(null));
-  }, []);
 
   const { first, prefix, days } = useMemo(() => monthRange(offset), [offset]);
 
@@ -86,21 +83,12 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
   const maxDaily = Math.max(1, ...dailyHours);
 
   function exportCsv() {
-    const head = ["Personel", "Görev", "Çalışılan gün", "Saat", "İzin hakkı (gün)"];
-    const lines = [head.join(";")];
-    for (const r of rows) {
-      lines.push([r.name, r.role, String(r.workedDays), String(r.hours), String(r.leaveDays)].join(";"));
-    }
-    lines.push(["TOPLAM", "", "", String(totalHours), ""].join(";"));
-    const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vardiya-rapor-${prefix}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const satirlar: (string | number)[][] = [
+      ["Personel", "Görev", "Çalışılan gün", "Saat", "İzin hakkı (gün)"],
+      ...rows.map((r) => [r.name, r.role, r.workedDays, r.hours, r.leaveDays]),
+      ["TOPLAM", "", "", totalHours, ""],
+    ];
+    csvIndir(`vardiya-rapor-${prefix}.csv`, satirlar);
   }
 
   if (!data) {
@@ -113,18 +101,7 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
 
   return (
     <main className="sayfa max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-            Raporlar
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Aylık özet</h1>
-          <p className="mt-1 text-sm text-zinc-500">{data.business.name}</p>
-        </div>
-        <Link href="/panel" className="btn-ikincil btn-kucuk shrink-0">
-          ← Plan
-        </Link>
-      </div>
+      <SayfaBasligi ust="Raporlar" baslik="Aylık özet" alt={data.business.name} />
 
       {/* Ay gezinme */}
       <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-2 py-1.5">

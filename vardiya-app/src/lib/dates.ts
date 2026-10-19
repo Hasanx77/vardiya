@@ -68,12 +68,25 @@ export function formatDayDate(d: Date): string {
   return `${DAY_SHORT_TR[idx]} ${d.getDate()} ${MONTH_SHORT_TR[d.getMonth()]}`;
 }
 
-/** Haftanın okunabilir aralığı: "6 – 12 Eki 2026" */
+/**
+ * Haftanın okunabilir aralığı.
+ *
+ * Ay/yıl sınırını geçen haftalarda sol tarafın ayı da yazılır; aksi halde
+ * "29 – 4 Eki 2026" gibi belirsiz bir metin çıkıyordu.
+ */
 export function formatWeekRange(dates: Date[]): string {
   const first = dates[0];
-  const last = dates[6];
-  const sameMonth = first.getMonth() === last.getMonth();
-  const left = `${first.getDate()}${sameMonth ? "" : " " + MONTH_SHORT_TR[first.getMonth()]}`;
-  const right = `${last.getDate()} ${MONTH_SHORT_TR[last.getMonth()]} ${last.getFullYear()}`;
-  return `${left} – ${right}`;
+  const last = dates[dates.length - 1];
+  const ayniYil = first.getFullYear() === last.getFullYear();
+  const ayniAy = first.getMonth() === last.getMonth();
+
+  if (ayniYil && ayniAy) {
+    return `${first.getDate()} – ${last.getDate()} ${MONTH_SHORT_TR[last.getMonth()]} ${last.getFullYear()}`;
+  }
+
+  const sol = `${first.getDate()} ${MONTH_SHORT_TR[first.getMonth()]}${
+    ayniYil ? "" : ` ${first.getFullYear()}`
+  }`;
+  const sag = `${last.getDate()} ${MONTH_SHORT_TR[last.getMonth()]} ${last.getFullYear()}`;
+  return `${sol} – ${sag}`;
 }
