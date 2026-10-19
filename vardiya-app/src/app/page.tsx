@@ -260,7 +260,7 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-4 pt-10">
         <div className="kart flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-7">
           <span
-            className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-600 text-lg font-bold tracking-tight text-white"
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-700 text-lg font-bold tracking-tight text-white"
             aria-hidden="true"
           >
             HM

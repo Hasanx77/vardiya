@@ -51,7 +51,7 @@ export default async function HakkimizdaPage() {
         <section className="kart mt-8 overflow-hidden">
           <div className="grid gap-6 p-6 sm:grid-cols-[auto_1fr] sm:p-8">
             <div
-              className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-amber-600 text-2xl font-bold tracking-tight text-white"
+              className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-amber-700 text-2xl font-bold tracking-tight text-white"
               aria-hidden="true"
             >
               HM
