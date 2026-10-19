@@ -1,0 +1,71 @@
+name: Uptime — zihnora.com.tr
+
+# Ne yapar: 15 dakikada bir siteyi yoklar. Site düşerse bir "issue" (uyarı kaydı) açar,
+# bu da GitHub üzerinden e-posta bildirimi gönderir. Site düzelince uyarıyı otomatik kapatır.
+#
+# Neden GitHub: ayrı bir servise üye olmak/hesap doğrulamak gerekmiyor; bu depo herkese açık
+# olduğu için Actions dakikaları ücretsiz.
+#
+# ⚠️ Bilinen sınır: GitHub, 60 gün boyunca depoya hiç commit atılmazsa zamanlanmış işleri
+# kendiliğinden durdurur. Yeni bir commit atıldığında yeniden çalışır.
+
+on:
+  schedule:
+    # Her 15 dakikada bir (GitHub yoğunlukta birkaç dakika geciktirebilir)
+    - cron: "*/15 * * * *"
+  # Elle çalıştırma: Actions sekmesi → Uptime → "Run workflow"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  GH_REPO: ${{ github.repository }}
+  SITE: https://zihnora.com.tr
+
+jobs:
+  kontrol:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Siteyi ve uygulamayı yokla
+        id: kontrol
+        run: |
+          set +e
+          ana=$(curl -s -o /dev/null -w "%{http_code}" -m 20 --retry 2 --retry-delay 5 "$SITE/")
+          api=$(curl -s -o /dev/null -w "%{http_code}" -m 20 --retry 2 --retry-delay 5 "$SITE/api/state")
+
+          echo "Ana sayfa : $ana (beklenen 200)"
+          echo "/api/state: $api (beklenen 401 — uygulama ayakta ve şifre kapısı çalışıyor)"
+          echo "ana=$ana" >> "$GITHUB_OUTPUT"
+          echo "api=$api" >> "$GITHUB_OUTPUT"
+
+          if [ "$ana" = "200" ] && [ "$api" = "401" ]; then
+            echo "durum=iyi" >> "$GITHUB_OUTPUT"
+          else
+            echo "durum=bozuk" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Site düştüyse uyarı aç
+        if: steps.kontrol.outputs.durum == 'bozuk'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          acik=$(gh issue list --state open --search "Site erişilemiyor" --json number --jq 'length')
+          if [ "$acik" != "0" ]; then
+            echo "Zaten açık bir uyarı var (#$acik), yenisi açılmadı."
+            exit 0
+          fi
+          gh issue create \
+            --title "🚨 Site erişilemiyor: zihnora.com.tr" \
+            --body "$(printf '**Otomatik kontrol başarısız oldu.**\n\n| Kontrol | Dönen kod | Beklenen |\n|---|---|---|\n| Ana sayfa | `%s` | `200` |\n| /api/state | `%s` | `401` |\n\n- Zaman: %s\n\n**Ne yapmalı?**\n1. cPanel → *Setup Node.js App* → **RESTART** düğmesi (çoğu durumda bu çözer)\n2. Hâlâ açılmıyorsa hosting panelinden ödeme/durum kontrolü\n3. Site düzelince bu kayıt **otomatik kapanır**\n' "${{ steps.kontrol.outputs.ana }}" "${{ steps.kontrol.outputs.api }}" "$(date -u '+%d.%m.%Y %H:%M UTC')")"
+
+      - name: Site düzeldiyse uyarıyı kapat
+        if: steps.kontrol.outputs.durum == 'iyi'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for n in $(gh issue list --state open --search "Site erişilemiyor" --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "✅ Site yeniden çalışıyor ($(date -u '+%d.%m.%Y %H:%M UTC')). Uyarı otomatik kapatıldı."
+          done
+          echo "Her şey yolunda."
