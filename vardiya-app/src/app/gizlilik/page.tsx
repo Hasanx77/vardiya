@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { aktifKullanici } from "@/lib/auth";
 import HesapSilButonu from "@/components/HesapSilButonu";
+import { kaydetZiyaret } from "@/lib/visits";
 
 export const metadata = {
   title: "Gizlilik ve KVKK Aydınlatması — Vardiya",
@@ -8,12 +9,15 @@ export const metadata = {
     "Vardiya'da hangi veriler işlenir, nerede saklanır, nasıl korunur ve haklarınızı nasıl kullanırsınız.",
 };
 
+export const dynamic = "force-dynamic";
+
 /**
  * Gizlilik sayfası.
  * Hesap açıksa "verilerimi indir / hesabımı sil" düğmeleri görünür (taşınabilirlik + unutulma hakkı).
  */
 export default async function GizlilikPage() {
   const kullanici = await aktifKullanici();
+  await kaydetZiyaret();
 
   return (
     <main className="flex-1">
@@ -26,8 +30,9 @@ export default async function GizlilikPage() {
 
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
           <strong>Özet:</strong> Vardiya yalnızca işini yapmak için gereken veriyi toplar. Reklam
-          yok, takip yok, veri satışı yok. Veriler Türkiye&apos;deki sunucuda tutulur; dilediğin an
-          indirip silebilirsin.
+          yok, takip yok, veri satışı yok. Üçüncü taraf analitik yok; yalnızca kendi
+          sunucumuzda çalışan, çerez kullanmayan bir ziyaret sayacı var. Veriler
+          Türkiye&apos;deki sunucuda tutulur; dilediğin an indirip silebilirsin.
         </div>
 
         <section className="mt-8 space-y-3 text-sm leading-relaxed text-zinc-700">
@@ -37,13 +42,20 @@ export default async function GizlilikPage() {
             <li><strong>İşletme:</strong> işletme adı, vardiya şablonları (saat/renk).</li>
             <li><strong>Personel kayıtları:</strong> ad, telefon, görev, yıllık izin hakkı — <em>senin girdiğin kadarıyla</em>. (Ücret/maaş bilgisi <strong>istenmez ve saklanmaz</strong>.)</li>
             <li><strong>Planlama:</strong> vardiya atamaları, duyurular, gün notları.</li>
+            <li>
+              <strong>Ziyaret sayacı:</strong> çerez kullanılmaz; IP adresi ve tarayıcı
+              bilgisi <strong>saklanmaz</strong>. Yalnızca günlük tuzlu bir özet (hash) ve
+              tarih tutulur; 120 gün sonra silinir. Kişisel profil oluşturmak için
+              kullanılmaz.
+            </li>
           </ul>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">2) İşlenmeyen veriler</h2>
           <p>
             T.C. kimlik numarası, konum, ödeme/kredi kartı bilgisi, cihaz parmak izi, reklam kimliği
-            <strong> toplanmaz</strong>. Analitik betiği, reklam pikseli veya üçüncü taraf çerezi
-            kullanılmaz. Tarayıcıda yalnızca <strong>giriş için gerekli tek çerez</strong> bulunur.
+            <strong> toplanmaz</strong>. Üçüncü taraf analitik betiği, reklam pikseli veya çerez
+            kullanılmaz. Tarayıcıda yalnızca <strong>giriş için gerekli tek çerez</strong> bulunur;
+            ziyaret sayacı çerez kullanmaz ve ham IP saklamaz.
           </p>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">3) Nerede ve neden saklanır?</h2>
@@ -65,6 +77,7 @@ export default async function GizlilikPage() {
           <p>
             Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
             (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
+            Ziyaret sayacı kayıtları ise <strong>120 gün</strong> sonra otomatik olarak silinir.
           </p>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Haklarınız (KVKK m.11)</h2>

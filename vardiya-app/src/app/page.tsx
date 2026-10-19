@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { kaydetZiyaret } from "@/lib/visits";
+
+// Ziyaret sayacı istek başına çalışsın (statik ön-render'a takılmasın).
+export const dynamic = "force-dynamic";
 
 const adimlar = [
   {
@@ -38,7 +42,7 @@ const guvenceler = [
   },
   {
     title: "Reklam ve izleme yok",
-    text: "Analitik betiği, reklam pikseli, üçüncü taraf çerezi kullanılmıyor.",
+    text: "Üçüncü taraf analitik betiği, reklam pikseli veya çerez yok. Giriş için tek çerez; çerezsiz ziyaret sayacı kendi sunucumuzda.",
   },
   {
     title: "Türkiye'de barındırılıyor",
@@ -113,7 +117,9 @@ function OrnekCizelge() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  await kaydetZiyaret();
+
   return (
     <main className="flex-1">
       {/* Hero */}

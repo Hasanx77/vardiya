@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { kaydetZiyaret } from "@/lib/visits";
 
 export const metadata = {
   title: "Yardım — Vardiya",
   description: "Vardiya uygulaması nasıl kullanılır? Adım adım kılavuz.",
 };
+
+export const dynamic = "force-dynamic";
 
 const sections: { id: string; title: string; items: string[] }[] = [
   {
@@ -48,7 +51,9 @@ const sections: { id: string; title: string; items: string[] }[] = [
   },
 ];
 
-export default function YardimPage() {
+export default async function YardimPage() {
+  await kaydetZiyaret();
+
   return (
     <main className="sayfa max-w-3xl">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">

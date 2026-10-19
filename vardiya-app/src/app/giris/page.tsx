@@ -1,11 +1,14 @@
 import Link from "next/link";
 import AuthKabuk from "@/components/AuthKabuk";
 import SifreAlani from "@/components/SifreAlani";
+import { kaydetZiyaret } from "@/lib/visits";
 
 export const metadata = {
   title: "Giriş yap — Vardiya",
   robots: { index: false, follow: false },
 };
+
+export const dynamic = "force-dynamic";
 
 /** Giriş formu: e-posta + şifre. Hatalar sunucudan ?hata=... ile döner. */
 export default async function GirisPage({
@@ -15,6 +18,7 @@ export default async function GirisPage({
 }) {
   const { hata, email, next } = await searchParams;
   const hedef = next && next.startsWith("/") && !next.startsWith("//") ? next : "/panel";
+  await kaydetZiyaret();
 
   return (
     <AuthKabuk baslik="Giriş yap" alt="Hesabınla devam et.">

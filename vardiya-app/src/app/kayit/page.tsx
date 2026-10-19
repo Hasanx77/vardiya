@@ -1,12 +1,15 @@
 import Link from "next/link";
 import AuthKabuk from "@/components/AuthKabuk";
 import SifreAlani from "@/components/SifreAlani";
+import { kaydetZiyaret } from "@/lib/visits";
 
 export const metadata = {
   title: "Ücretsiz kayıt ol — Vardiya",
   description:
     "Kafe ve restoranlar için vardiya yönetimi. E-posta ile 30 saniyede ücretsiz hesap aç; kredi kartı istemiyoruz.",
 };
+
+export const dynamic = "force-dynamic";
 
 /** Kayıt formu. Hatalar sunucudan ?hata=... ile döner. */
 export default async function KayitPage({
@@ -16,6 +19,7 @@ export default async function KayitPage({
 }) {
   const { hata, email, isletme, next } = await searchParams;
   const hedef = next && next.startsWith("/") && !next.startsWith("//") ? next : "/basla";
+  await kaydetZiyaret();
 
   return (
     <AuthKabuk baslik="Ücretsiz hesap aç" alt="Kredi kartı istemiyoruz. E-posta ve şifre yeter.">

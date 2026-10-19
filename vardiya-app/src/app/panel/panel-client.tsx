@@ -55,7 +55,14 @@ function OkIkon({ yon = "sag" }: { yon?: "sag" | "sol" }) {
   );
 }
 
-export default function PanelClient({ initialData }: { initialData: StatePayload }) {
+export default function PanelClient({
+  initialData,
+  ziyaret,
+}: {
+  initialData: StatePayload;
+  /** Yalnızca site sahibine gönderilir (panel/page.tsx). */
+  ziyaret?: { bugun: number; hafta: number; ay: number };
+}) {
   const [data, setData] = useState<StatePayload | null>(initialData);
   const [error, setError] = useState("");
   const [weekOffset, setWeekOffset] = useState(0);
@@ -1259,6 +1266,38 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
               })}
             </ul>
           )}
+        </div>
+      )}
+
+      {/* Site trafiği — yalnızca site sahibi görür */}
+      {ziyaret && (
+        <div className="kart mt-4 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="bolum-baslik">Site trafiği</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Çerezsiz sayaç · IP saklanmaz · 120 gün sonra silinir
+              </p>
+            </div>
+            <Link
+              href="/gizlilik"
+              className="text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
+            >
+              Nasıl sayılıyor?
+            </Link>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            {[
+              { etiket: "bugün", deger: ziyaret.bugun },
+              { etiket: "son 7 gün", deger: ziyaret.hafta },
+              { etiket: "bu ay", deger: ziyaret.ay },
+            ].map((k) => (
+              <div key={k.etiket} className="rounded-xl bg-zinc-50 px-2 py-3">
+                <div className="text-2xl font-semibold tabular-nums">{k.deger}</div>
+                <div className="mt-0.5 text-[11px] text-zinc-500">{k.etiket}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
