@@ -1,68 +1,69 @@
 /**
- * Basit oturum/paylaşılan-şifre kapısı.
+ * Hesap katmanı (yalnızca sunucuda çalışır).
  *
- * Neden bu yaklaşım: uygulama tek işletme + tek yönetici (işveren) için yazıldı.
- * Kullanıcı tablosu, e-posta doğrulama, şifre sıfırlama gibi ağır bir kimlik
- * sistemi MVP için gereğinden fazla. Burada:
- *   - Panel şifresi ortam değişkeninde tutulur (APP_PASSWORD).
- *   - Girişte HMAC ile imzalı, son kullanma tarihli bir çerez verilir.
- *   - İmza anahtarı AUTH_SECRET; çerezde şifre geçmez.
+ * - Şifreler **scrypt** ile tuzlanarak özetlenir; düz metin asla saklanmaz.
+ * - Oturum çerezi `lib/session.ts` ile imzalanır (Edge uyumlu).
+ * - `aktifKullanici()` istekteki çerezden kullanıcıyı bulur.
  *
- * Web Crypto (crypto.subtle) kullanılıyor çünkü aynı kod hem Edge (proxy/middleware)
- * hem de Node.js (route handler) tarafında çalışmalı.
+ * Gizlilik notu: şifre özeti ve e-posta dışında kişisel veri toplanmaz.
+ * Veriler yalnızca bu sunucudaki veritabanında tutulur; üçüncü tarafa gönderilmez.
  */
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { cookies } from "next/headers";
+import { prisma } from "./prisma";
+import { COOKIE_NAME, COOKIE_MAX_AGE, tokenKullanici } from "./session";
 
-const enc = new TextEncoder();
+export { COOKIE_NAME, COOKIE_MAX_AGE };
 
-export const COOKIE_NAME = "vardiya_oturum";
-export const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 gün
+const TUZ_UZUNLUK = 16;
+const OZET_UZUNLUK = 64;
 
-function toHex(buf: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+/** Şifreyi `scrypt$tuz$özet` biçiminde saklar. */
+export function sifreOzetle(sifre: string): string {
+  const tuz = randomBytes(TUZ_UZUNLUK).toString("hex");
+  const ozet = scryptSync(sifre, tuz, OZET_UZUNLUK).toString("hex");
+  return `scrypt$${tuz}$${ozet}`;
 }
 
-async function hmac(message: string): Promise<string> {
-  const secret = process.env.AUTH_SECRET ?? "";
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
-  return toHex(sig);
+/** Girilen şifre, kayıtlı özetle uyuşuyor mu? (sabit zamanlı karşılaştırma) */
+export function sifreDogruMu(sifre: string, kayit: string): boolean {
+  const [algo, tuz, ozet] = (kayit || "").split("$");
+  if (algo !== "scrypt" || !tuz || !ozet) return false;
+  const hesaplanan = scryptSync(sifre, tuz, OZET_UZUNLUK);
+  const beklenen = Buffer.from(ozet, "hex");
+  if (hesaplanan.length !== beklenen.length) return false;
+  return timingSafeEqual(hesaplanan, beklenen);
 }
 
-/** Sabit zamanlı karşılaştırma (zamanlama sızıntısını azaltır). */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+/** E-posta biçimi + şifre uzunluğu denetimi. */
+export function girdilerGecerliMi(email: string, sifre: string): string | null {
+  const temiz = (email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(temiz)) return "Geçerli bir e-posta adresi gir.";
+  if (!sifre || sifre.length < 8) return "Şifre en az 8 karakter olmalı.";
+  if (sifre.length > 200) return "Şifre çok uzun.";
+  return null;
 }
 
-/** Şifre doğru mu? (APP_PASSWORD boşsa kapı açılmaz — güvenli varsayılan.) */
-export function checkPassword(input: string): boolean {
-  const expected = process.env.APP_PASSWORD ?? "";
-  if (!expected || !input) return false;
-  return safeEqual(input, expected);
+/** İstekteki oturumdan kullanıcı id'si (yoksa null). */
+export async function aktifKullaniciId(): Promise<string | null> {
+  const c = await cookies();
+  return tokenKullanici(c.get(COOKIE_NAME)?.value);
 }
 
-/** Giriş başarılıysa verilecek çerez değeri: "<son kullanma>.<imza>" */
-export async function createToken(): Promise<string> {
-  const exp = Date.now() + COOKIE_MAX_AGE * 1000;
-  return `${exp}.${await hmac(String(exp))}`;
+/** Oturumdaki kullanıcı kaydı (yoksa null). */
+export async function aktifKullanici() {
+  const id = await aktifKullaniciId();
+  if (!id) return null;
+  return prisma.user.findUnique({ where: { id } });
 }
 
-/** Çerez geçerli mi? (imza doğru + süresi geçmemiş) */
-export async function verifyToken(token: string | undefined): Promise<boolean> {
-  if (!token || !process.env.AUTH_SECRET) return false;
-  const [expStr, sig] = token.split(".");
-  if (!expStr || !sig) return false;
-  const exp = Number(expStr);
-  if (!Number.isFinite(exp) || exp < Date.now()) return false;
-  return safeEqual(sig, await hmac(expStr));
+/** Çerez ayarlarını tek yerde tutar (giriş/kayıt uçları kullanır). */
+export function cerezAyarlari(https: boolean) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: https,
+    path: "/",
+    maxAge: COOKIE_MAX_AGE,
+  };
 }

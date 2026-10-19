@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
-import { COOKIE_NAME } from "@/lib/auth";
+import { COOKIE_NAME } from "@/lib/session";
+import { disAdres } from "@/lib/url";
 
-/**
- * Çıkış: çerezi siler ve tanıtım sayfasına döner.
- * (Ters vekil arkasında olduğumuz için dış adresi x-forwarded-host'tan alıyoruz.)
- */
-function disAdres(req: Request, yol: string): URL {
-  const h = req.headers;
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (host) return new URL(`${proto}://${host}${yol}`);
-  return new URL(yol, req.url);
-}
-
+/** Çıkış: oturum çerezini siler ve tanıtım sayfasına döner. */
 function cikis(req: Request) {
   const res = NextResponse.redirect(disAdres(req, "/"), 303);
   res.cookies.set(COOKIE_NAME, "", { path: "/", maxAge: 0 });

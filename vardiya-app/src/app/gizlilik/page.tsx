@@ -1,81 +1,120 @@
 import Link from "next/link";
+import { aktifKullanici } from "@/lib/auth";
+import HesapSilButonu from "@/components/HesapSilButonu";
 
 export const metadata = {
-  title: "Gizlilik & KVKK — Vardiya",
-  description: "Vardiya uygulamasında kişisel verilerin işlenmesine ilişkin bilgilendirme.",
+  title: "Gizlilik ve KVKK Aydınlatması — Vardiya",
+  description:
+    "Vardiya'da hangi veriler işlenir, nerede saklanır, nasıl korunur ve haklarınızı nasıl kullanırsınız.",
 };
 
-export default function GizlilikPage() {
+/**
+ * Gizlilik sayfası.
+ * Hesap açıksa "verilerimi indir / hesabımı sil" düğmeleri görünür (taşınabilirlik + unutulma hakkı).
+ */
+export default async function GizlilikPage() {
+  const kullanici = await aktifKullanici();
+
   return (
-    <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-10">
-      <h1 className="text-3xl font-semibold tracking-tight">Gizlilik & KVKK</h1>
-      <p className="mt-2 text-sm text-zinc-500">
-        Son güncelleme: 9 Ekim 2026 · <strong>Şablon metindir</strong>, hukuki danışmanlık
-        değildir. Yayına almadan önce kendi bilgilerinizle güncelleyin.
-      </p>
+    <main className="flex-1">
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <h1 className="text-3xl font-semibold tracking-tight">Gizlilik ve KVKK Aydınlatması</h1>
+        <p className="mt-2 text-sm text-zinc-500">Son güncelleme: 19 Ekim 2026</p>
 
-      <div className="mt-8 space-y-6 text-sm leading-relaxed text-zinc-700">
-        <section>
-          <h2 className="text-lg font-semibold text-zinc-900">1. Veri Sorumlusu</h2>
-          <p className="mt-2">
-            Bu uygulama, işletme sahibi (veri sorumlusu) tarafından personel vardiya yönetimi
-            amacıyla kullanılır. Veri sorumlusunun kimlik ve iletişim bilgileri buraya eklenmelidir.
-          </p>
-        </section>
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
+          <strong>Özet:</strong> Vardiya yalnızca işini yapmak için gereken veriyi toplar. Reklam
+          yok, takip yok, veri satışı yok. Veriler Türkiye&apos;deki sunucuda tutulur; dilediğin an
+          indirip silebilirsin.
+        </div>
 
-        <section>
-          <h2 className="text-lg font-semibold text-zinc-900">2. İşlenen Kişisel Veriler</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>Personel kimlik bilgileri: ad-soyad</li>
-            <li>İletişim bilgisi: telefon numarası</li>
-            <li>İş bilgileri: görev/pozisyon, vardiya planı, çalışma saatleri</li>
-            <li>İnsan kaynakları bilgileri: yıllık izin hakkı/kullanımı, izin ve değişim talepleri</li>
-            <li>Ücret bilgisi (opsiyonel): saatlik ücret (yalnızca maliyet tahmini için)</li>
+        <section className="mt-8 space-y-3 text-sm leading-relaxed text-zinc-700">
+          <h2 className="text-lg font-semibold text-zinc-900">1) Hangi veriler işlenir?</h2>
+          <ul className="list-disc space-y-1 pl-5">
+            <li><strong>Hesap:</strong> e-posta adresi, şifrenin geri döndürülemez özeti (hash), hesap oluşturma ve son giriş zamanı.</li>
+            <li><strong>İşletme:</strong> işletme adı, vardiya şablonları (saat/renk).</li>
+            <li><strong>Personel kayıtları:</strong> ad, telefon, görev, saatlik ücret, yıllık izin hakkı — <em>senin girdiğin kadarıyla</em>.</li>
+            <li><strong>Planlama:</strong> vardiya atamaları, duyurular, gün notları.</li>
           </ul>
-        </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-zinc-900">3. İşleme Amaçları</h2>
-          <p className="mt-2">
-            Vardiya planlaması, çalışma sürelerinin ve izinlerin takibi, iş gücü maliyeti
-            tahmini, personelin bilgilendirilmesi ve işletme içi iletişim.
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">2) İşlenmeyen veriler</h2>
+          <p>
+            T.C. kimlik numarası, konum, ödeme/kredi kartı bilgisi, cihaz parmak izi, reklam kimliği
+            <strong> toplanmaz</strong>. Analitik betiği, reklam pikseli veya üçüncü taraf çerezi
+            kullanılmaz. Tarayıcıda yalnızca <strong>giriş için gerekli tek çerez</strong> bulunur.
+          </p>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">3) Nerede ve neden saklanır?</h2>
+          <p>
+            Veriler, Türkiye&apos;deki barındırma sunucusunda (Hosting Dünyam) işletmeye özel bir
+            veritabanında tutulur ve <strong>yurt dışına aktarılmaz</strong>. İşleme amacı tek:
+            vardiya planını oluşturmanı sağlamak ve çizelgeyi ekibine iletebilmen.
+          </p>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">4) Güvenlik</h2>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Şifreler <strong>scrypt</strong> ile tuzlanıp özetlenir; düz metin şifre hiçbir yerde saklanmaz.</li>
+            <li>Oturum çerezi <strong>HMAC-SHA256</strong> ile imzalanır; değiştirilirse geçersiz olur.</li>
+            <li>Tüm trafik <strong>HTTPS</strong> üzerinden şifrelenir (Let&apos;s Encrypt sertifikası).</li>
+            <li><strong>Hesap izolasyonu:</strong> her hesap yalnızca kendi işletmesinin verisini okuyabilir.</li>
+          </ul>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">5) Saklama süresi</h2>
+          <p>
+            Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
+            (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
+          </p>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Haklarınız (KVKK m.11)</h2>
+          <p>
+            Verilerinin işlenip işlenmediğini öğrenme, düzeltilmesini isteme, silinmesini (unutulma)
+            ve taşınabilirliğini talep etme hakkın var. İlk ikisi uygulama içinde tek tıkla kullanılabilir:
           </p>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-zinc-900">4. Aktarım</h2>
-          <p className="mt-2">
-            Uygulama, WhatsApp üzerinden mesaj gönderme özelliği sunar; gönderim personelin kendi
-            cihazı/WhatsApp hesabı üzerinden gerçekleşir. Veriler, yasal zorunluluklar dışında
-            üçüncü kişilerle paylaşılmaz.
+        {kullanici ? (
+          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <p className="text-sm text-zinc-600">
+              Giriş yapmış hesap: <strong>{kullanici.email}</strong>
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a
+                href="/api/hesap/veri"
+                className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+              >
+                Verilerimi indir (JSON)
+              </a>
+              <HesapSilButonu />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+            Verilerini indirmek veya hesabını silmek için{" "}
+            <Link href="/giris" className="font-medium text-zinc-900 underline">
+              giriş yap
+            </Link>
+            .
+          </div>
+        )}
+
+        <section className="mt-8 space-y-3 text-sm leading-relaxed text-zinc-700">
+          <h2 className="text-lg font-semibold text-zinc-900">7) İletişim</h2>
+          <p>
+            Soru, talep veya şikâyet için:{" "}
+            <a href="mailto:hmum117413@gmail.com" className="underline">
+              hmum117413@gmail.com
+            </a>
+            . Talebini en geç 30 gün içinde yanıtlarız.
+          </p>
+          <p className="text-xs text-zinc-500">
+            Not: Bu sayfa bir bilgilendirmedir; veri sorumlusu olarak uygulama sahibi hareket eder.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-zinc-900">5. Saklama Süresi</h2>
-          <p className="mt-2">
-            Veriler, işleme amacının gerektirdiği süre ve ilgili mevzuatta öngörülen asgari süreler
-            boyunca saklanır; süre sonunda silinir veya anonim hale getirilir.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-zinc-900">6. İlgili Kişinin Hakları (KVKK m.11)</h2>
-          <p className="mt-2">
-            Kişisel verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, düzeltilmesini
-            veya silinmesini isteme ve işlemenin kısıtlanmasını talep etme gibi haklara sahipsiniz.
-            Taleplerinizi veri sorumlusuna iletebilirsiniz.
-          </p>
-        </section>
-      </div>
-
-      <div className="mt-10 flex gap-3">
-        <Link
-          href="/"
-          className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100"
-        >
-          ← Ana sayfa
-        </Link>
+        <p className="mt-8 text-sm">
+          <Link href="/" className="underline hover:text-zinc-900">
+            ← Tanıtım sayfasına dön
+          </Link>
+        </p>
       </div>
     </main>
   );

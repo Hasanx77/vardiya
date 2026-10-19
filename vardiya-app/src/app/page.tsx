@@ -45,16 +45,16 @@ export default function Home() {
         <p className="mt-3 text-sm text-zinc-500">PDKS yok · Bordro yok · Sadece vardiya</p>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            href="/basla"
+            href="/kayit"
             className="rounded-lg bg-zinc-900 px-6 py-3 text-white font-medium hover:bg-zinc-700 transition-colors"
           >
-            90 saniyede kur →
+            Ücretsiz kayıt ol →
           </Link>
           <Link
-            href="/panel"
+            href="/giris"
             className="rounded-lg border border-zinc-300 bg-white px-6 py-3 font-medium text-zinc-700 hover:bg-zinc-100 transition-colors"
           >
-            Panele Git
+            Giriş yap
           </Link>
         </div>
       </section>
@@ -89,47 +89,53 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Fiyatlandırma — tek plan: tamamen ücretsiz */}
-      <section className="mx-auto max-w-3xl px-4 pb-16">
-        <h2 className="text-center text-2xl font-semibold tracking-tight">Tamamen ücretsiz</h2>
+        {/* Gizlilik ve güven */}
+      <section className="mx-auto max-w-4xl px-4 pb-16">
+        <h2 className="text-center text-2xl font-semibold tracking-tight">Gelişmiş gizlilik</h2>
         <p className="mt-2 text-center text-zinc-600">
-          Kredi kartı yok, abonelik yok, deneme süresi yok. Şimdilik her şey açık.
+          Verin senin. Reklam yok, takip yok, kimseyle paylaşılmıyor.
         </p>
-        <div className="mt-8 rounded-2xl border-2 border-zinc-900 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold">Ücretsiz plan</h3>
-            <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-medium text-white">
-              Şu an ücretsiz
-            </span>
-          </div>
-          <div className="mt-3 text-4xl font-semibold">
-            ₺0<span className="text-base font-normal text-zinc-500">/ay</span>
-          </div>
-          <p className="mt-1 text-sm text-zinc-500">Sınırsız personel · sınırsız lokasyon</p>
-          <ul className="mt-5 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2">
-            <li>✓ Haftalık vardiya planı</li>
-            <li>✓ WhatsApp&apos;tan tek tıkla gönder</li>
-            <li>✓ 45 saat / 11 saat dinlenme uyarısı</li>
-            <li>✓ Yazdırılabilir çizelge</li>
-            <li>✓ Personel görünümü + izin talepleri</li>
-            <li>✓ Excel (CSV) dışa aktarım</li>
-          </ul>
-          <Link
-            href="/basla"
-            className="mt-6 block rounded-lg bg-zinc-900 py-3 text-center font-medium text-white transition-colors hover:bg-zinc-700"
-          >
-            Hemen başla →
-          </Link>
-          <p className="mt-3 text-center text-xs text-zinc-400">
-            İleride ücretli ek özellikler eklenebilir; bugün kullandığın her şey ücretsiz kalır.
-          </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {[
+            {
+              icon: "🔒",
+              title: "Hesabına kilitli",
+              text: "Her işletmenin verisi kendi hesabına bağlıdır. Başka bir hesap senin personelini, vardiyanı veya notlarını göremez.",
+            },
+            {
+              icon: "🧾",
+              title: "İndir ve sil",
+              text: "Tüm verini tek tıkla JSON olarak indir; istediğin an hesabını ve bütün kayıtları kalıcı olarak sil.",
+            },
+            {
+              icon: "🚫",
+              title: "Reklam ve izleme yok",
+              text: "Analitik betiği, reklam pikseli, üçüncü taraf çerezi kullanmıyoruz. Yalnızca giriş için tek bir çerez var.",
+            },
+            {
+              icon: "🏠",
+              title: "Veriler Türkiye'de",
+              text: "Kayıtlar Türkiye'deki sunucuda tutulur, yurt dışına aktarılmaz. Şifreler geri döndürülemez biçimde şifrelenir.",
+            },
+          ].map((k) => (
+            <div key={k.title} className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="text-3xl">{k.icon}</div>
+              <h3 className="mt-3 font-semibold">{k.title}</h3>
+              <p className="mt-1 text-sm text-zinc-600">{k.text}</p>
+            </div>
+          ))}
         </div>
+        <p className="mt-6 text-center text-sm">
+          <Link href="/gizlilik" className="underline hover:text-zinc-900">
+            Gizlilik ve KVKK aydınlatmasını oku →
+          </Link>
+        </p>
       </section>
 
-      <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-          <strong>Bu bir MVP.</strong> Veriler sunucudaki veritabanında (SQLite) saklanır; panele
-          eklediğin personel anında kaydedilir. Gerçek pilot müşteriyle test edip geri bildirime
-          göre geliştiriyoruz.
+      <div className="mt-10 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-sm text-emerald-900">
+          <strong>Ücretsiz ve kredisiz.</strong> Kredi kartı, abonelik veya deneme süresi yok — e-posta ile
+          hesap açıp hemen kullanmaya başlarsın. Kayıtların Türkiye&apos;deki sunucuda tutulur; dilediğin an
+          indirip silebilirsin.
         </div>
       </section>
     </main>

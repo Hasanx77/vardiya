@@ -1,51 +1,37 @@
 import { NextResponse } from "next/server";
-import { COOKIE_MAX_AGE, COOKIE_NAME, checkPassword, createToken } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { COOKIE_NAME, cerezAyarlari, sifreDogruMu } from "@/lib/auth";
+import { oturumTokeni } from "@/lib/session";
+import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
 
-/** Güvenli olmayan dış adreslere yönlendirmeyi engelle. */
-function guvenliHedef(next: string): string {
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/panel";
-}
-
-/**
- * Yönlendirme adresi.
- *
- * Neden gerekli: uygulama cPanel'de ters vekil (LiteSpeed/Passenger) arkasında
- * ve UNIX soketinde çalışıyor. Bu yüzden isteğin kendi adresi "localhost:3000"
- * olur; tarayıcıyı oraya gönderirsek giriş kırılır. Bu yüzden dışarıdan görünen
- * alan adını (x-forwarded-host) kullanıyoruz.
- */
-function disAdres(req: Request, yol: string): URL {
-  const h = req.headers;
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (host) return new URL(`${proto}://${host}${yol}`);
-  return new URL(yol, req.url);
-}
-
+/** Giriş yap: e-posta + şifre. Şifre özeti scrypt ile karşılaştırılır. */
 export async function POST(req: Request) {
   const form = await req.formData();
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
   const sifre = String(form.get("sifre") ?? "");
   const next = guvenliHedef(String(form.get("next") ?? "/panel"));
 
-  if (!checkPassword(sifre)) {
+  const hata = (mesaj: string) => {
     const url = disAdres(req, "/giris");
-    url.searchParams.set("hata", "1");
+    url.searchParams.set("hata", mesaj);
+    if (email) url.searchParams.set("email", email);
     url.searchParams.set("next", next);
     return NextResponse.redirect(url, 303);
+  };
+
+  if (!email || !sifre) return hata("E-posta ve şifre gerekli.");
+
+  const kullanici = await prisma.user.findUnique({ where: { email } });
+  if (!kullanici || !sifreDogruMu(sifre, kullanici.passwordHash)) {
+    return hata("E-posta veya şifre hatalı.");
   }
 
-  const res = NextResponse.redirect(disAdres(req, next), 303);
-
-  // HTTPS'de güvenli çerez; ama HTTP üzerinden yayına alınırsa kilitlenmeyelim.
-  const proto =
-    req.headers.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", "");
-
-  res.cookies.set(COOKIE_NAME, await createToken(), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: proto === "https",
-    path: "/",
-    maxAge: COOKIE_MAX_AGE,
+  await prisma.user.update({
+    where: { id: kullanici.id },
+    data: { lastLoginAt: new Date() },
   });
+
+  const res = NextResponse.redirect(disAdres(req, next), 303);
+  res.cookies.set(COOKIE_NAME, await oturumTokeni(kullanici.id), cerezAyarlari(httpsMi(req)));
   return res;
 }

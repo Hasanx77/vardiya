@@ -1,19 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { COOKIE_NAME, verifyToken } from "@/lib/auth";
+import { COOKIE_NAME, tokenKullanici } from "@/lib/session";
 
 /**
- * Şifre kapısı.
+ * Oturum kapısı.
  *
  * Açık (herkese görünür) yollar:
  *   /            → tanıtım sayfası
- *   /giris       → şifre ekranı
- *   /api/auth/*  → giriş/çıkış
+ *   /giris       → giriş
+ *   /kayit       → kayıt ol
  *   /gizlilik, /yardim, /robots.txt, /manifest.webmanifest, /icons/*
+ *   /api/auth/*  → giriş/kayıt/çıkış uçları
  *
- * Geri kalan her şey (panel, bugun, raporlar, takvim, ekip, yazdir, tüm /api/*)
- * oturum çerezi ister. Aksi halde /giris'e yönlendirilir.
+ * Geri kalan her şey (panel, bugun, raporlar, takvim, ekip, yazdir, tüm diğer /api/*)
+ * geçerli bir oturum çerezi ister. Aksi halde /giris'e yönlendirilir.
  */
-const PUBLIC_PATHS = new Set(["/", "/giris", "/gizlilik", "/yardim"]);
+const PUBLIC_PATHS = new Set(["/", "/giris", "/kayit", "/gizlilik", "/yardim"]);
 
 const PUBLIC_PREFIXES = ["/api/auth/", "/icons/", "/_next/"];
 
@@ -25,7 +26,7 @@ const PUBLIC_FILES = [
   "/apple-icon.png",
 ];
 
-function isPublic(pathname: string): boolean {
+function acikMi(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (PUBLIC_FILES.includes(pathname)) return true;
   return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
@@ -33,10 +34,10 @@ function isPublic(pathname: string): boolean {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (isPublic(pathname)) return NextResponse.next();
+  if (acikMi(pathname)) return NextResponse.next();
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
-  if (await verifyToken(token)) return NextResponse.next();
+  if (await tokenKullanici(token)) return NextResponse.next();
 
   // API isteklerine HTML sayfası döndürmek anlamsız → 401 JSON
   if (pathname.startsWith("/api/")) {

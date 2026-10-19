@@ -11,11 +11,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Kullanıcı (işletme sahibi) — e-posta + şifre ile giriş yapar.
+// Şifre asla düz metin saklanmaz: scrypt ile tuzlanmış özet (hash) tutulur.
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+
+  business Business?
+}
+
 // İşletme
 model Business {
   id        String   @id @default(cuid())
   name      String   @default("İşletmem")
   createdAt DateTime @default(now())
+
+  // Sahibi: bir kullanıcı yalnızca kendi işletmesini görür (hesap izolasyonu).
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   employees      Employee[]
   shiftTemplates ShiftTemplate[]
