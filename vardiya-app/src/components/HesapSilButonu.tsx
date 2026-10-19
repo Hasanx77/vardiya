@@ -15,7 +15,7 @@ export default function HesapSilButonu() {
     >
       <button
         type="submit"
-        className="rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
+        className="btn-tehlike"
       >
         Hesabımı ve tüm verilerimi sil
       </button>

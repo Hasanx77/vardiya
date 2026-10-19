@@ -20,8 +20,8 @@ const sections: { id: string; title: string; items: string[] }[] = [
     title: "🗓️ Yönetim Paneli",
     items: [
       "Haftalık ızgarada her hücreye tıklayıp vardiya seç.",
-      "Gün başlığındaki '＋ not' ile o güne not ekle (ör. canlı müzik).",
-      "Şablonları Yönet'ten vardiya ekle/düzenle ve 'min. kişi' hedefini belirle.",
+      "Gün başlığındaki kalem simgesiyle o güne not ekle (ör. canlı müzik).",
+      "Vardiya şablonlarını 'Yönet' düğmesinden düzenle; 'min. kişi' hedefini belirle.",
       "Kapsam uyarıları: hedefin altında kalan gün/vardiyalar kendiliğinden listelenir.",
       "'Tümüne Gönder' ile herkese WhatsApp'tan programını yolla.",
     ],
@@ -50,9 +50,12 @@ const sections: { id: string; title: string; items: string[] }[] = [
 
 export default function YardimPage() {
   return (
-    <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-10">
-      <h1 className="text-3xl font-semibold tracking-tight">Yardım Kılavuzu</h1>
-      <p className="mt-2 text-zinc-600">
+    <main className="sayfa max-w-3xl">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+        Yardım
+      </p>
+      <h1 className="sayfa-baslik mt-1">Yardım kılavuzu</h1>
+      <p className="sayfa-alt">
         Vardiya&apos;yı 5 dakikada öğren. Aşağıdaki adımlar işini görür.
       </p>
 
@@ -72,8 +75,8 @@ export default function YardimPage() {
         ))}
       </div>
 
-      <div className="mt-10 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
-        Sorun mu var? Panele dönüp <strong>Ayarlar → Örnek veriye dön</strong> ile demo verisini
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
+        Sorun mu var? Panele dönüp <strong>Ayarlar → Örnek veriyi yükle</strong> ile demo verisini
         yeniden yükleyebilirsin. İşletmeni sıfırdan kurmak için{" "}
         <Link href="/basla" className="text-zinc-900 underline">
           /basla
@@ -81,17 +84,11 @@ export default function YardimPage() {
         sayfasını kullan.
       </div>
 
-      <div className="mt-6 flex gap-3">
-        <Link
-          href="/panel"
-          className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700"
-        >
-          Panele Git →
+      <div className="mt-6 flex gap-2">
+        <Link href="/panel" className="btn-birincil">
+          Panele git →
         </Link>
-        <Link
-          href="/gizlilik"
-          className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100"
-        >
+        <Link href="/gizlilik" className="btn-ikincil">
           Gizlilik
         </Link>
       </div>

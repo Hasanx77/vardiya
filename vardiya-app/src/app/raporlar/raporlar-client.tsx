@@ -6,6 +6,7 @@ import type { StatePayload } from "@/lib/types";
 import { fetchState } from "@/lib/api-client";
 import { MONTH_SHORT_TR, toISODate } from "@/lib/dates";
 import { shiftHours } from "@/lib/shifts";
+import { COLOR_CLASSES } from "@/lib/colors";
 
 function monthRange(offset: number) {
   const base = new Date();
@@ -44,17 +45,21 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
     if (!data) return [];
     return data.employees.map((e) => {
       let hours = 0;
+      let workedDays = 0;
       for (const a of monthAssignments) {
         if (a.employeeId !== e.id) continue;
         const t = shiftById.get(a.shiftTemplateId);
-        if (t) hours += shiftHours(t);
+        if (!t) continue;
+        hours += shiftHours(t);
+        workedDays += 1;
       }
-      hours = Math.round(hours * 10) / 10;
       return {
         id: e.id,
         name: e.name,
+        role: e.role,
         color: e.color,
-        hours,
+        hours: Math.round(hours * 10) / 10,
+        workedDays,
         leaveDays: e.annualLeaveDays ?? 0,
       };
     });
@@ -62,26 +67,31 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
 
   const totalHours = Math.round(rows.reduce((s, r) => s + r.hours, 0) * 10) / 10;
 
-  const dailyHours = useMemo(() => {
-    return days.map((iso) => {
-      let h = 0;
-      for (const a of monthAssignments) {
-        if (a.date !== iso) continue;
-        const t = shiftById.get(a.shiftTemplateId);
-        if (t) h += shiftHours(t);
-      }
-      return h;
-    });
-  }, [days, monthAssignments, shiftById]);
+  const dailyHours = useMemo(
+    () =>
+      days.map((iso) => {
+        let h = 0;
+        for (const a of monthAssignments) {
+          if (a.date !== iso) continue;
+          const t = shiftById.get(a.shiftTemplateId);
+          if (t) h += shiftHours(t);
+        }
+        return h;
+      }),
+    [days, monthAssignments, shiftById]
+  );
+
+  const workedDayCount = dailyHours.filter((h) => h > 0).length;
+  const average = workedDayCount > 0 ? Math.round((totalHours / workedDayCount) * 10) / 10 : 0;
   const maxDaily = Math.max(1, ...dailyHours);
 
   function exportCsv() {
-    const head = ["Personel", "Saat", "İzin hakkı (gün)"];
+    const head = ["Personel", "Görev", "Çalışılan gün", "Saat", "İzin hakkı (gün)"];
     const lines = [head.join(";")];
     for (const r of rows) {
-      lines.push([r.name, String(r.hours), String(r.leaveDays)].join(";"));
+      lines.push([r.name, r.role, String(r.workedDays), String(r.hours), String(r.leaveDays)].join(";"));
     }
-    lines.push(["TOPLAM", String(totalHours), ""].join(";"));
+    lines.push(["TOPLAM", "", "", String(totalHours), ""].join(";"));
     const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
       type: "text/csv;charset=utf-8",
     });
@@ -96,118 +106,154 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
   if (!data) {
     return (
       <main className="flex-1 grid place-items-center">
-        <p className="text-zinc-500">Yükleniyor…</p>
+        <p className="text-sm text-zinc-500">Yükleniyor…</p>
       </main>
     );
   }
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-10">
-      <div className="flex items-center justify-between">
+    <main className="sayfa max-w-5xl">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Raporlar</h1>
-          <p className="mt-1 text-zinc-500">{data.business.name}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+            Raporlar
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Aylık özet</h1>
+          <p className="mt-1 text-sm text-zinc-500">{data.business.name}</p>
         </div>
-        <Link href="/panel" className="text-sm text-zinc-500 hover:underline">
-          ← Panele dön
+        <Link href="/panel" className="btn-ikincil btn-kucuk shrink-0">
+          ← Plan
         </Link>
       </div>
 
       {/* Ay gezinme */}
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-2 py-1.5">
         <button
           onClick={() => setOffset((o) => o - 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          className="btn-sessiz btn-kucuk"
+          aria-label="Önceki ay"
         >
           ←
         </button>
-        <div className="font-semibold">
-          {MONTH_SHORT_TR[first.getMonth()]} {first.getFullYear()}
+        <div className="text-center">
+          <div className="text-sm font-semibold">
+            {MONTH_SHORT_TR[first.getMonth()]} {first.getFullYear()}
+          </div>
+          {offset !== 0 && (
+            <button
+              onClick={() => setOffset(0)}
+              className="text-[11px] text-zinc-500 underline-offset-2 hover:underline"
+            >
+              Bu aya dön
+            </button>
+          )}
         </div>
         <button
           onClick={() => setOffset((o) => o + 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          className="btn-sessiz btn-kucuk"
+          aria-label="Sonraki ay"
         >
           →
         </button>
       </div>
 
       {/* Özet */}
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="kart p-4">
           <div className="text-xs text-zinc-500">Toplam saat</div>
           <div className="mt-1 text-2xl font-semibold">{totalHours} sa</div>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <div className="text-xs text-zinc-500">Ortalama günlük saat</div>
-          <div className="mt-1 text-2xl font-semibold">
-            {dailyHours.length > 0
-              ? Math.round((dailyHours.reduce((s, h) => s + h, 0) / dailyHours.length) * 10) / 10
-              : 0}{" "}
-            sa
-          </div>
+        <div className="kart p-4">
+          <div className="text-xs text-zinc-500">Çalışılan gün</div>
+          <div className="mt-1 text-2xl font-semibold">{workedDayCount}</div>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-col justify-center">
-          <button
-            onClick={exportCsv}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            ⬇ CSV indir
+        <div className="kart p-4">
+          <div className="text-xs text-zinc-500">Ortalama (çalışılan gün)</div>
+          <div className="mt-1 text-2xl font-semibold">{average} sa</div>
+        </div>
+        <div className="kart flex items-center p-4">
+          <button onClick={exportCsv} className="btn-birincil w-full">
+            CSV indir
           </button>
         </div>
       </div>
 
       {/* Günlük dağılım */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-700">Günlük çalışılan saat</h3>
-        <div className="mt-4 flex h-28 items-end gap-[3px]">
+      <div className="kart mt-4 p-4">
+        <h2 className="text-sm font-semibold text-zinc-800">Günlük çalışılan saat</h2>
+        <div className="mt-4 flex h-28 items-end gap-[3px]" role="img" aria-label="Günlük çalışılan saat grafiği">
           {dailyHours.map((h, i) => (
             <div
               key={i}
               title={`${days[i]} · ${h} sa`}
               className="flex-1 rounded-t bg-zinc-900/80"
-              style={{ height: `${Math.max(2, (h / maxDaily) * 100)}%`, opacity: h === 0 ? 0.15 : 1 }}
+              style={{
+                height: `${Math.max(2, (h / maxDaily) * 100)}%`,
+                opacity: h === 0 ? 0.12 : 1,
+              }}
             />
           ))}
         </div>
         <div className="mt-1 flex justify-between text-[10px] text-zinc-400">
           <span>1 {MONTH_SHORT_TR[first.getMonth()]}</span>
-          <span>{days.length} {MONTH_SHORT_TR[first.getMonth()]}</span>
+          <span>
+            {days.length} {MONTH_SHORT_TR[first.getMonth()]}
+          </span>
         </div>
       </div>
 
       {/* Personel tablosu */}
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-zinc-50 text-zinc-500">
-              <th className="px-4 py-3 text-left font-medium">Personel</th>
-              <th className="px-4 py-3 text-right font-medium">Saat</th>
-              <th className="px-4 py-3 text-right font-medium">İzin hakkı</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-zinc-100">
-                <td className="px-4 py-2">{r.name}</td>
-                <td className="px-4 py-2 text-right font-medium">{r.hours} sa</td>
-                <td className="px-4 py-2 text-right text-zinc-500">{r.leaveDays} gün</td>
+      {rows.length === 0 ? (
+        <div className="kart mt-4 border-dashed p-10 text-center">
+          <p className="text-sm font-medium text-zinc-700">Henüz personel yok.</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Personel ekledikten sonra aylık saatler burada görünür.
+          </p>
+          <Link href="/panel" className="btn-birincil mt-4">
+            Panele git
+          </Link>
+        </div>
+      ) : (
+        <div className="kart mt-4 overflow-x-auto">
+          <table className="w-full min-w-[520px] text-sm">
+            <thead>
+              <tr className="border-b border-zinc-100 text-xs text-zinc-500">
+                <th className="px-4 py-2.5 text-left font-semibold">Personel</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Gün</th>
+                <th className="px-4 py-2.5 text-right font-semibold">Saat</th>
+                <th className="px-4 py-2.5 text-right font-semibold">İzin hakkı</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t border-zinc-200 bg-zinc-50 font-semibold">
-              <td className="px-4 py-3">Toplam</td>
-              <td className="px-4 py-3 text-right">{totalHours} sa</td>
-              <td className="px-4 py-3" />
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-zinc-100">
+                  <td className="px-4 py-2.5">
+                    <span className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[r.color]?.dot ?? "bg-zinc-400"}`} />
+                      <span className="font-medium">{r.name}</span>
+                      {r.role && <span className="text-xs text-zinc-400">{r.role}</span>}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right text-zinc-600">{r.workedDays}</td>
+                  <td className="px-4 py-2.5 text-right font-medium">{r.hours} sa</td>
+                  <td className="px-4 py-2.5 text-right text-zinc-500">{r.leaveDays} gün</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-zinc-200 bg-zinc-50 font-semibold">
+                <td className="px-4 py-2.5">Toplam</td>
+                <td className="px-4 py-2.5" />
+                <td className="px-4 py-2.5 text-right">{totalHours} sa</td>
+                <td className="px-4 py-2.5" />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
 
-      <p className="mt-4 text-xs text-zinc-400">
-        Saatler atanmış vardiyalardan hesaplanır. Bu ekranda yalnızca vardiya/saat bilgisi tutulur —
-        ücret veya maliyet kaydı yapılmaz.
+      <p className="mt-3 text-xs text-zinc-400">
+        Saatler atanmış vardiyalardan hesaplanır. Ücret veya maliyet kaydı tutulmaz.
       </p>
     </main>
   );

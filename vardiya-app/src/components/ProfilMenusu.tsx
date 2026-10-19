@@ -61,21 +61,35 @@ export default function ProfilMenusu({ email }: { email: string }) {
               onClick={() => setAcik(false)}
               className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
             >
-              👤 Profilim
+              Profilim
             </Link>
             <Link
               href="/panel"
               onClick={() => setAcik(false)}
               className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
             >
-              🗓️ Panele git
+              Panele git
+            </Link>
+            <Link
+              href="/ekip"
+              onClick={() => setAcik(false)}
+              className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
+            >
+              Personel görünümü
             </Link>
             <Link
               href="/gizlilik"
               onClick={() => setAcik(false)}
               className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
             >
-              🔒 Gizlilik ve verilerim
+              Gizlilik ve verilerim
+            </Link>
+            <Link
+              href="/yardim"
+              onClick={() => setAcik(false)}
+              className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
+            >
+              Yardım
             </Link>
           </div>
           <form action="/api/auth/logout" method="post" className="border-t border-zinc-100">

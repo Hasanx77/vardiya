@@ -30,6 +30,31 @@ function keyOf(employeeId: string, iso: string) {
   return `${employeeId}__${iso}`;
 }
 
+/** Küçük satır içi simgeler (emoji yerine — daha sakin bir arayüz). */
+function KalemIkon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden>
+      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" strokeLinejoin="round" />
+      <path d="m14.5 5.5 3 3" />
+    </svg>
+  );
+}
+
+function OkIkon({ yon = "sag" }: { yon?: "sag" | "sol" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`h-4 w-4 ${yon === "sol" ? "rotate-180" : ""}`}
+      aria-hidden
+    >
+      <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function PanelClient({ initialData }: { initialData: StatePayload }) {
   const [data, setData] = useState<StatePayload | null>(initialData);
   const [error, setError] = useState("");
@@ -49,16 +74,16 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   const [showStandart, setShowStandart] = useState(false);
   const [acilisDraft, setAcilisDraft] = useState("09:00");
   const [kapanisDraft, setKapanisDraft] = useState("23:00");
-  const [showMore, setShowMore] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedEmpId, setExpandedEmpId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", role: "" });
   const [nameDraft, setNameDraft] = useState("");
+  const [nameEdit, setNameEdit] = useState(false);
   const [toast, setToast] = useState("");
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
-    window.setTimeout(() => setToast(""), 2200);
+    window.setTimeout(() => setToast(""), 2400);
   }, []);
 
   const load = useCallback(async () => {
@@ -70,13 +95,26 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       setKapanisDraft(state.business.closeTime);
       setError("");
     } catch {
-      setError("Sunucuya ulaşılamadı. Dev server çalışıyor mu?");
+      setError("Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.");
     }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Modallar ESC ile kapansın
+  useEffect(() => {
+    function esc(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      setShowSettings(false);
+      setShowBulk(false);
+      setShowForm(false);
+      setNameEdit(false);
+    }
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, []);
 
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
@@ -197,7 +235,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       setForm({ name: "", phone: "", role: "" });
       setShowForm(false);
       await load();
-      flash("Personel eklendi ✅");
+      flash("Personel eklendi.");
     } catch {
       flash("Personel eklenemedi.");
     }
@@ -221,7 +259,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     try {
       await apiUpdateBusiness({ openTime: acilisDraft, closeTime: kapanisDraft });
       await load();
-      flash("Standart mesai saatleri kaydedildi ✅");
+      flash("Standart mesai saatleri kaydedildi.");
     } catch {
       flash("Kaydedilemedi.");
     }
@@ -240,15 +278,20 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         sayi++;
       }
       await load();
-      flash(sayi > 0 ? `${sayi} şablon standart saatlere uyduruldu ✅` : "Eşleşen şablon yok.");
+      flash(sayi > 0 ? `${sayi} şablon standart saatlere uyduruldu.` : "Eşleşen şablon yok.");
     } catch {
       flash("Şablonlar güncellenemedi.");
     }
   }
 
-  async function saveBusinessName() {    if (!data) return;
+  async function saveBusinessName() {
+    if (!data) return;
     const name = nameDraft.trim();
-    if (!name || name === data.business.name) return;
+    setNameEdit(false);
+    if (!name || name === data.business.name) {
+      setNameDraft(data.business.name);
+      return;
+    }
     try {
       await apiUpdateBusiness({ name });
       await load();
@@ -271,7 +314,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     try {
       await apiCopyWeek(fromISO, toISO);
       await load();
-      flash("Geçen hafta kopyalandı ✅");
+      flash("Geçen hafta kopyalandı.");
     } catch {
       flash("Kopyalanamadı.");
     }
@@ -339,7 +382,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     a.download = `vardiya-${toISODate(weekDates[0])}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    flash("CSV indirildi ⬇");
+    flash("CSV indirildi.");
   }
 
   async function postAnnouncement() {
@@ -349,7 +392,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       await apiCreateAnnouncement(message);
       setAnnouncementDraft("");
       await load();
-      flash("Duyuru yayınlandı 📢");
+      flash("Duyuru yayınlandı.");
     } catch {
       flash("Yayınlanamadı.");
     }
@@ -381,6 +424,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
 
   function startEditEmp(emp: Employee) {
     setEditingEmpId(emp.id);
+    setExpandedEmpId(emp.id);
     setEmpDraft({
       name: emp.name,
       phone: emp.phone,
@@ -405,7 +449,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       });
       setEditingEmpId(null);
       await load();
-      flash("Personel güncellendi ✅");
+      flash("Personel güncellendi.");
     } catch {
       flash("Güncellenemedi.");
     }
@@ -431,7 +475,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   function calistigiGunler(emp: Employee): string[] {
     return weekDates
       .filter((d) => assignMap.has(keyOf(emp.id, toISODate(d))))
-      .map((d) => DAY_SHORT_TR[d.getDay()]);
+      .map((d) => DAY_SHORT_TR[(d.getDay() + 6) % 7]);
   }
 
   function sendWhatsApp(emp: Employee) {
@@ -460,7 +504,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     );
     try {
       await navigator.clipboard.writeText(text);
-      flash("Program kopyalandı 📋");
+      flash("Program kopyalandı.");
     } catch {
       flash("Kopyalanamadı.");
     }
@@ -470,21 +514,23 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     const url = `${window.location.origin}/ekip/${emp.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      flash("Personel linki kopyalandı 🔗");
+      flash("Personel linki kopyalandı.");
     } catch {
       flash("Kopyalanamadı.");
     }
   }
 
+  /** ⋯ menüsünde bir işlem seçilince menüyü kapat. */
+  function kapatMenu(e: React.MouseEvent<HTMLElement>) {
+    (e.currentTarget as HTMLElement).closest("details")?.removeAttribute("open");
+  }
+
   if (error) {
     return (
       <main className="flex-1 grid place-items-center px-4">
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
-          <p className="font-medium">{error}</p>
-          <button
-            onClick={load}
-            className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
-          >
+        <div className="kart max-w-sm p-6 text-center">
+          <p className="text-sm font-medium text-zinc-800">{error}</p>
+          <button onClick={load} className="btn-birincil mt-4">
             Tekrar dene
           </button>
         </div>
@@ -495,7 +541,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   if (!data) {
     return (
       <main className="flex-1 grid place-items-center">
-        <p className="text-zinc-500">Yükleniyor…</p>
+        <p className="text-sm text-zinc-500">Yükleniyor…</p>
       </main>
     );
   }
@@ -503,6 +549,8 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
   const totalOvertime = analysis?.totalOvertimeHours ?? 0;
   const issues = analysis?.issues ?? [];
+  const uyariSayisi = issues.length + coverageIssues.length;
+  const calisanSayisi = data.employees.filter((e) => calistigiGunler(e).length > 0).length;
 
   const visibleEmployees = data.employees.filter((e) => {
     const q = search.trim().toLowerCase();
@@ -520,390 +568,601 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   const weekEmpty = data.employees.length === 0;
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">
-      {/* Üst bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <label className="text-xs font-medium text-zinc-500">İşletme adı</label>
-          <input
-            value={nameDraft}
-            onChange={(e) => setNameDraft(e.target.value)}
-            onBlur={saveBusinessName}
-            className="mt-1 block w-full sm:w-64 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-lg font-semibold outline-none focus:border-zinc-900"
-          />
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
+      {/* Başlık */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+            İşletme
+          </p>
+          {nameEdit ? (
+            <input
+              autoFocus
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={saveBusinessName}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveBusinessName();
+              }}
+              aria-label="İşletme adı"
+              className="mt-1 w-full max-w-sm rounded-lg border border-zinc-300 bg-white px-2 py-1 text-2xl font-semibold outline-none focus:border-zinc-900 sm:text-3xl"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setNameEdit(true)}
+              className="group mt-1 flex max-w-full items-center gap-2 text-left"
+              title="İşletme adını düzenle"
+            >
+              <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
+                {data.business.name}
+              </h1>
+              <span className="text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
+                <KalemIkon />
+              </span>
+            </button>
+          )}
+          <p className="mt-1 text-sm text-zinc-500">
+            Haftalık vardiya planı · {data.employees.length} personel
+          </p>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/ekip"
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
-          >
-            Personel Görünümü
-          </Link>
-          <button
-            onClick={() => setShowForm((s) => !s)}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            + Personel Ekle
+          <button onClick={handleCopyPrev} className="btn-ikincil">
+            Geçen haftayı kopyala
+          </button>
+          <button onClick={() => setShowForm((s) => !s)} className="btn-birincil">
+            + Personel
           </button>
         </div>
       </div>
 
-      {/* 3 adım rehberi (sadelik) */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-        <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
-          1 · Personel ekle
-        </span>
-        <span>→</span>
-        <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
-          2 · Vardiyaları seç
-        </span>
-        <span>→</span>
-        <span className="rounded-full border border-zinc-200 bg-white px-3 py-1">
-          3 · WhatsApp&apos;tan gönder
-        </span>
-      </div>
-
-      {/* Personel ekleme formu */}
+      {/* Personel ekleme */}
       {showForm && (
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-5">
-            <input
-              placeholder="Ad Soyad *"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-            />
-            <input
-              placeholder="Telefon (05xx…)"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-            />
-            <input
-              placeholder="Görev (Barista, Garson…)"
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-            />
-            <button
-              onClick={handleAddEmployee}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-            >
-              Kaydet
-            </button>
+        <div className="kart mt-4 p-4">
+          <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr_auto]">
+            <div>
+              <label htmlFor="yeni-ad" className="etiket">
+                Ad Soyad <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="yeni-ad"
+                placeholder="Ayşe Yılmaz"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="giris mt-1"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label htmlFor="yeni-tel" className="etiket">
+                Telefon
+              </label>
+              <input
+                id="yeni-tel"
+                placeholder="0532 111 22 33"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="giris mt-1"
+                inputMode="tel"
+              />
+            </div>
+            <div>
+              <label htmlFor="yeni-gorev" className="etiket">
+                Görev
+              </label>
+              <input
+                id="yeni-gorev"
+                placeholder="Barista, garson…"
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className="giris mt-1"
+              />
+            </div>
+            <div className="flex items-end">
+              <button onClick={handleAddEmployee} className="btn-birincil w-full sm:w-auto">
+                Kaydet
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Hafta gezinme */}
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-        <button
-          onClick={() => setWeekOffset((w) => w - 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
-        >
-          ← Önceki
-        </button>
-        <div className="text-center">
-          <div className="font-semibold">{formatWeekRange(weekDates)}</div>
+      {/* Hafta çubuğu */}
+      <div className="sticky top-14 z-20 -mx-4 mt-5 border-y border-zinc-200 bg-zinc-50/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setWeekOffset(0)}
-            className="text-xs text-zinc-500 hover:text-zinc-900 underline-offset-2 hover:underline"
+            onClick={() => setWeekOffset((w) => w - 1)}
+            className="btn-ikincil btn-kucuk"
+            aria-label="Önceki hafta"
           >
-            Bu haftaya dön
+            <OkIkon yon="sol" />
           </button>
-        </div>
-        <button
-          onClick={() => setWeekOffset((w) => w + 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
-        >
-          Sonraki →
-        </button>
-      </div>
-
-      {/* Hızlı işlemler — en sık kullanılanlar görünür, gerisi "Diğer" altında */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          onClick={handleCopyPrev}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
-        >
-          ⧉ Geçen haftayı kopyala
-        </button>
-        <button
-          onClick={() => setShowBulk(true)}
-          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-        >
-          📤 Tümüne Gönder
-        </button>
-        <div className="relative">
-          <button
-            onClick={() => setShowMore((s) => !s)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
-          >
-            ⋯ Diğer
-          </button>
-          {showMore && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowMore(false)} />
-              <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
-                <Link
-                  href="/yazdir"
-                  className="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
-                >
-                  🖨 Yazdır / Çizelge
-                </Link>
-                <button
-                  onClick={() => {
-                    setShowMore(false);
-                    exportCsv();
-                  }}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
-                >
-                  ⬇ Excel (CSV)
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMore(false);
-                    setShowSettings(true);
-                  }}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
-                >
-                  ⚙ Ayarlar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMore(false);
-                    handleClearWeek();
-                  }}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                >
-                  🗑 Bu haftayı temizle
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Bugün kim çalışıyor? */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-base font-semibold text-zinc-800">
-          Bugün kim çalışıyor?{" "}
-          <span className="font-normal text-zinc-400">({formatShort(new Date())})</span>
-        </h3>
-        <div className="mt-3 space-y-2">
-          {data.shiftTemplates.map((t) => {
-            const list = todayByShift.get(t.id) ?? [];
-            if (list.length === 0) return null;
-            return (
-              <div key={t.id} className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-md border px-2 py-0.5 text-xs ${
-                    COLOR_CLASSES[t.color]?.chip ?? ""
-                  }`}
-                >
-                  {t.name} {t.start}–{t.end}
-                </span>
-                {list.map((e) => (
-                  <span key={e.id} className="text-sm text-zinc-700">
-                    {e.name}
-                  </span>
-                ))}
-              </div>
-            );
-          })}
-          {todayByShift.size === 0 && (
-            <p className="text-sm text-zinc-400">Bugün için atanmış vardiya yok.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Duyurular */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-base font-semibold text-zinc-800">📢 Duyurular</h3>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <input
-            value={announcementDraft}
-            onChange={(e) => setAnnouncementDraft(e.target.value)}
-            placeholder="Ekibe bir mesaj yaz… (ör. Cumartesi canlı müzik var)"
-            className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-          />
-          <button
-            onClick={postAnnouncement}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            Yayınla
-          </button>
-        </div>
-        {data.announcements.length > 0 && (
-          <ul className="mt-3 space-y-2">
-            {data.announcements.slice(0, 5).map((a) => (
-              <li
-                key={a.id}
-                className="flex items-start justify-between gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+          <div className="min-w-0 flex-1 text-center sm:text-left">
+            <div className="text-sm font-semibold">{formatWeekRange(weekDates)}</div>
+            {weekOffset !== 0 ? (
+              <button
+                onClick={() => setWeekOffset(0)}
+                className="text-[11px] text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
               >
-                <span className="text-zinc-700">{a.message}</span>
-                <button
-                  onClick={() => removeAnnouncement(a.id)}
-                  className="shrink-0 text-xs text-zinc-400 hover:text-red-600"
-                >
-                  Sil
-                </button>
-              </li>
-            ))}
-          </ul>
+                Bu haftaya dön
+              </button>
+            ) : (
+              <span className="text-[11px] text-zinc-500">Bu hafta</span>
+            )}
+          </div>
+
+          <div className="mr-1 hidden items-center gap-3 border-r border-zinc-200 pr-3 text-xs text-zinc-500 lg:flex">
+            <span>
+              <strong className="font-semibold text-zinc-800">{summaryHours} sa</strong> toplam
+            </span>
+            <span>
+              <strong className="font-semibold text-zinc-800">{calisanSayisi}</strong>/
+              {data.employees.length} kişi
+            </span>
+            {uyariSayisi > 0 ? (
+              <span className="font-medium text-amber-700">{uyariSayisi} uyarı</span>
+            ) : (
+              <span className="font-medium text-emerald-700">✓ uygun</span>
+            )}
+          </div>
+
+          <button
+            onClick={() => setWeekOffset((w) => w + 1)}
+            className="btn-ikincil btn-kucuk"
+            aria-label="Sonraki hafta"
+          >
+            <OkIkon />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobil özet (masaüstünde hafta çubuğunda görünür) */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500 lg:hidden">
+        <span>
+          <strong className="font-semibold text-zinc-700">{summaryHours} sa</strong> toplam
+        </span>
+        <span>
+          <strong className="font-semibold text-zinc-700">{calisanSayisi}</strong>/
+          {data.employees.length} kişi
+        </span>
+        {uyariSayisi > 0 ? (
+          <span className="font-medium text-amber-700">{uyariSayisi} uyarı</span>
+        ) : (
+          <span className="font-medium text-emerald-700">✓ uygun</span>
         )}
       </div>
 
-      {/* Ana ızgara */}
-      {!weekEmpty && (
-        <div className="mt-4 flex items-center gap-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 Personel ara…"
-            className="w-56 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
-          />
-          {search && (
-            <span className="text-xs text-zinc-500">{visibleEmployees.length} sonuç</span>
-          )}
-        </div>
-      )}
+      {/* Bugün — ince şerit */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+          Bugün
+        </span>
+        {data.shiftTemplates.map((t) => {
+          const list = todayByShift.get(t.id) ?? [];
+          if (list.length === 0) return null;
+          return (
+            <span
+              key={t.id}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                COLOR_CLASSES[t.color]?.chip ?? ""
+              }`}
+            >
+              <strong className="font-medium">{t.name}</strong>
+              <span className="opacity-80">{list.map((e) => e.name).join(", ")}</span>
+            </span>
+          );
+        })}
+        {todayByShift.size === 0 && (
+          <span className="text-sm text-zinc-500">Bugün için atanmış vardiya yok.</span>
+        )}
+        <Link
+          href="/bugun"
+          className="ml-auto text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
+        >
+          Tablet görünümü →
+        </Link>
+      </div>
 
+      {/* Plan */}
       {weekEmpty ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
-          <div className="text-4xl">🚀</div>
-          <h3 className="mt-3 text-lg font-semibold">Başlamaya hazırsın</h3>
-          <p className="mt-1 text-sm text-zinc-600">
-            1) Personelini ekle · 2) Haftalık vardiyayı doldur · 3) WhatsApp&apos;tan gönder.
+        <div className="kart mt-4 border-dashed p-10 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-amber-50 text-xl">
+            🗓️
+          </div>
+          <h2 className="mt-4 text-lg font-semibold">Başlamaya hazırsın</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-zinc-600">
+            Önce personelini ekle, sonra günlere vardiya seç. Hepsi bu.
           </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button
-              onClick={() => setShowForm(true)}
-              className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700"
-            >
+            <button onClick={() => setShowForm(true)} className="btn-birincil">
               + İlk personeli ekle
             </button>
-            <button
-              onClick={() => handleReset("demo")}
-              className="rounded-lg border border-zinc-300 px-5 py-2.5 text-sm text-zinc-600 hover:bg-zinc-100"
-            >
+            <button onClick={() => handleReset("demo")} className="btn-ikincil">
               Örnek veriyle dene
             </button>
           </div>
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-zinc-50 text-zinc-500">
-                <th className="sticky left-0 z-10 bg-zinc-50 px-4 py-3 text-left font-medium">
-                  Personel
-                </th>
-                {weekDates.map((d) => {
-                  const iso = toISODate(d);
-                  const holiday = getHoliday(iso);
-                  return (
-                    <th key={iso} className="px-2 py-3 font-semibold whitespace-nowrap">
-                      <span className={holiday ? "text-red-600" : ""}>
-                        {DAY_SHORT_TR[(d.getDay() + 6) % 7]}
-                      </span>
-                      <span className="block text-[11px] text-zinc-400">{formatShort(d)}</span>
-                      {holiday && (
-                        <span
-                          className="mt-0.5 block text-[10px] font-normal text-red-500"
-                          title={holiday.name}
-                        >
-                          🎉 {holiday.halfDay ? "Arife" : "Tatil"}
+        <div className="kart mt-4 overflow-hidden">
+          <div className="kart-baslik">
+            <div className="flex items-center gap-2">
+              <h2 className="bolum-baslik">Haftalık plan</h2>
+              <span className="text-xs text-zinc-400">·</span>
+              <span className="text-xs text-zinc-500">
+                {visibleEmployees.length} kişi
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Personel ara…"
+                aria-label="Personel ara"
+                className="giris h-8 w-32 py-1 sm:w-44"
+              />
+              <button onClick={() => setShowBulk(true)} className="btn-birincil btn-kucuk">
+                Gönder
+              </button>
+              <details className="relative">
+                <summary
+                  className="btn-ikincil btn-kucuk cursor-pointer list-none px-2 [&::-webkit-details-marker]:hidden"
+                  aria-label="Diğer işlemler"
+                >
+                  ⋯
+                </summary>
+                <div className="absolute right-0 z-30 mt-1 w-52 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg" onClick={kapatMenu}>
+                  <Link
+                    href="/yazdir"
+                    className="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+                  >
+                    Yazdır / çizelge
+                  </Link>
+                  <button
+                    onClick={exportCsv}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+                  >
+                    Excel (CSV) indir
+                  </button>
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
+                  >
+                    Ayarlar
+                  </button>
+                  <button
+                    onClick={handleClearWeek}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Bu haftayı temizle
+                  </button>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          {/* Masaüstü ızgara */}
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[840px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-zinc-100 text-zinc-500">
+                  <th className="sticky left-0 z-10 bg-white px-4 py-2.5 text-left text-xs font-semibold">
+                    Personel
+                  </th>
+                  {weekDates.map((d) => {
+                    const iso = toISODate(d);
+                    const holiday = getHoliday(iso);
+                    const not = dayNoteMap.get(iso);
+                    return (
+                      <th key={iso} className="px-1.5 py-2 text-center text-xs font-semibold">
+                        <span className={holiday ? "text-red-600" : "text-zinc-700"}>
+                          {DAY_SHORT_TR[(d.getDay() + 6) % 7]}
                         </span>
+                        <span className="mt-0.5 block text-[10px] font-normal text-zinc-400">
+                          {formatShort(d)}
+                        </span>
+                        {holiday && (
+                          <span
+                            className="mt-0.5 block truncate text-[9px] font-normal text-red-500"
+                            title={holiday.name}
+                          >
+                            {holiday.halfDay ? "Arife" : "Tatil"}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => editDayNote(iso)}
+                          title={not ?? "Gün notu ekle"}
+                          aria-label={`${formatShort(d)} gün notu`}
+                          className={`mx-auto mt-1 flex h-5 max-w-[104px] items-center gap-1 truncate rounded px-1 text-[10px] font-normal transition-colors ${
+                            not
+                              ? "text-amber-700 hover:bg-amber-50"
+                              : "text-zinc-300 hover:bg-zinc-100 hover:text-zinc-600"
+                          }`}
+                        >
+                          <KalemIkon className="h-3 w-3 shrink-0" />
+                          {not ? <span className="truncate">{not}</span> : null}
+                        </button>
+                      </th>
+                    );
+                  })}
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-zinc-500">
+                    Toplam
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleEmployees.map((emp) => {
+                  const total = weekTotal(emp);
+                  const over = total > WEEKLY_LIMIT_HOURS;
+                  const leaveLeft = emp.annualLeaveDays ?? 0;
+                  const stat = empMonthStats.get(emp.id) ?? { hours: 0, days: 0 };
+                  const acik = expandedEmpId === emp.id;
+                  return (
+                    <Fragment key={emp.id}>
+                      <tr className={`border-t border-zinc-100 ${acik ? "bg-zinc-50/60" : ""}`}>
+                        <td className="sticky left-0 z-10 bg-white px-4 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedEmpId(acik ? null : emp.id)}
+                            className="flex w-full items-center gap-2 text-left"
+                            title="Detayları göster/gizle"
+                            aria-expanded={acik}
+                          >
+                            <span
+                              className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                                COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
+                              }`}
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium text-zinc-800">
+                                {emp.name}
+                              </span>
+                              <span className="block truncate text-[11px] text-zinc-400">
+                                {emp.role || "Görev yok"} · izin {leaveLeft} gün
+                              </span>
+                            </span>
+                          </button>
+                        </td>
+                        {weekDates.map((d) => {
+                          const iso = toISODate(d);
+                          const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
+                          const template = shiftId ? templateById.get(shiftId) : undefined;
+                          const cls = template
+                            ? COLOR_CLASSES[template.color]?.chip ?? ""
+                            : "border-dashed border-zinc-200 bg-white text-zinc-400";
+                          return (
+                            <td key={iso} className="px-1.5 py-1.5">
+                              <select
+                                value={shiftId}
+                                onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
+                                aria-label={`${emp.name} ${formatShort(d)} vardiyası`}
+                                className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-[13px] outline-none transition-colors focus:ring-2 focus:ring-zinc-300 ${cls}`}
+                              >
+                                <option value="">—</option>
+                                {data.shiftTemplates.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                          );
+                        })}
+                        <td className="whitespace-nowrap px-3 py-2 text-right">
+                          <span
+                            className={`font-semibold ${
+                              over ? "text-red-600" : "text-zinc-700"
+                            }`}
+                          >
+                            {total} sa
+                          </span>
+                          {over && (
+                            <span className="ml-1 text-red-600" title={`${WEEKLY_LIMIT_HOURS} saati aştı`}>
+                              ⚠
+                            </span>
+                          )}
+                          {empOvertime(emp) > 0 && (
+                            <span className="block text-[10px] text-amber-600">
+                              +{empOvertime(emp)} sa fazla
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+
+                      {acik && (
+                        <tr className="border-t border-zinc-100 bg-zinc-50/60">
+                          <td colSpan={weekDates.length + 2} className="px-4 py-3">
+                            {editingEmpId === emp.id ? (
+                              <div className="flex flex-wrap items-end gap-2">
+                                <div>
+                                  <label className="etiket" htmlFor={`ad-${emp.id}`}>
+                                    Ad
+                                  </label>
+                                  <input
+                                    id={`ad-${emp.id}`}
+                                    value={empDraft.name}
+                                    onChange={(e) =>
+                                      setEmpDraft({ ...empDraft, name: e.target.value })
+                                    }
+                                    className="giris h-8 w-40 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="etiket" htmlFor={`gorev-${emp.id}`}>
+                                    Görev
+                                  </label>
+                                  <input
+                                    id={`gorev-${emp.id}`}
+                                    value={empDraft.role}
+                                    onChange={(e) =>
+                                      setEmpDraft({ ...empDraft, role: e.target.value })
+                                    }
+                                    className="giris h-8 w-32 py-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="etiket" htmlFor={`tel-${emp.id}`}>
+                                    Telefon
+                                  </label>
+                                  <input
+                                    id={`tel-${emp.id}`}
+                                    value={empDraft.phone}
+                                    onChange={(e) =>
+                                      setEmpDraft({ ...empDraft, phone: e.target.value })
+                                    }
+                                    className="giris h-8 w-36 py-1"
+                                    inputMode="tel"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="etiket" htmlFor={`izin-${emp.id}`}>
+                                    Yıllık izin
+                                  </label>
+                                  <input
+                                    id={`izin-${emp.id}`}
+                                    value={empDraft.annualLeaveDays}
+                                    onChange={(e) =>
+                                      setEmpDraft({ ...empDraft, annualLeaveDays: e.target.value })
+                                    }
+                                    className="giris h-8 w-20 py-1"
+                                    inputMode="numeric"
+                                  />
+                                </div>
+                                <button onClick={saveEmp} className="btn-birincil btn-kucuk">
+                                  Kaydet
+                                </button>
+                                <button
+                                  onClick={() => setEditingEmpId(null)}
+                                  className="btn-ikincil btn-kucuk"
+                                >
+                                  Vazgeç
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-600">
+                                {emp.phone ? <span>📞 {emp.phone}</span> : null}
+                                <span>
+                                  Bu ay: <strong className="text-zinc-800">{Math.round(stat.hours * 10) / 10} sa</strong>{" "}
+                                  · {stat.days} gün
+                                </span>
+                                <span>
+                                  Bu hafta:{" "}
+                                  <strong className="text-zinc-800">
+                                    {(() => {
+                                      const gunler = calistigiGunler(emp);
+                                      return gunler.length ? gunler.join(", ") : "atanmamış";
+                                    })()}
+                                  </strong>
+                                </span>
+                                <span className="ml-auto flex flex-wrap gap-1.5">
+                                  <button onClick={() => sendWhatsApp(emp)} className="btn-birincil btn-kucuk">
+                                    WhatsApp
+                                  </button>
+                                  <button onClick={() => copySchedule(emp)} className="btn-ikincil btn-kucuk">
+                                    Kopyala
+                                  </button>
+                                  <button onClick={() => copyStaffLink(emp)} className="btn-ikincil btn-kucuk">
+                                    Link
+                                  </button>
+                                  <button onClick={() => startEditEmp(emp)} className="btn-ikincil btn-kucuk">
+                                    Düzenle
+                                  </button>
+                                  <button onClick={() => handleRemoveEmployee(emp)} className="btn-tehlike btn-kucuk">
+                                    Sil
+                                  </button>
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
                       )}
-                      <button
-                        onClick={() => editDayNote(iso)}
-                        title={dayNoteMap.get(iso) ?? "Gün notu ekle"}
-                        className="mt-0.5 block max-w-[110px] truncate text-[10px] font-normal text-sky-600 hover:underline"
-                      >
-                        {dayNoteMap.get(iso) ? `📝 ${dayNoteMap.get(iso)}` : "＋ not"}
-                      </button>
-                    </th>
+                    </Fragment>
                   );
                 })}
-                <th className="px-3 py-3 font-semibold whitespace-nowrap">Toplam</th>
-                <th className="px-3 py-3 font-medium">İşlem</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleEmployees.map((emp) => {
-                const total = weekTotal(emp);
-                const over = total > WEEKLY_LIMIT_HOURS;
-                const leaveLeft = emp.annualLeaveDays ?? 0;
-                const stat = empMonthStats.get(emp.id) ?? { hours: 0, days: 0 };
-                return (
-                  <Fragment key={emp.id}>
-                    <tr className="border-t border-zinc-100">
-                    <td className="sticky left-0 z-10 bg-white px-4 py-2">
-                      {editingEmpId === emp.id ? (
-                        <div className="flex w-40 flex-col gap-1">
-                          <input
-                            value={empDraft.name}
-                            onChange={(e) => setEmpDraft({ ...empDraft, name: e.target.value })}
-                            placeholder="Ad Soyad"
-                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
-                          />
-                          <input
-                            value={empDraft.role}
-                            onChange={(e) => setEmpDraft({ ...empDraft, role: e.target.value })}
-                            placeholder="Görev"
-                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
-                          />
-                          <input
-                            value={empDraft.phone}
-                            onChange={(e) => setEmpDraft({ ...empDraft, phone: e.target.value })}
-                            placeholder="Telefon"
-                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
-                          />
-                          <input
-                            value={empDraft.annualLeaveDays}
-                            onChange={(e) =>
-                              setEmpDraft({ ...empDraft, annualLeaveDays: e.target.value })
-                            }
-                            placeholder="Yıllık izin gün"
-                            inputMode="numeric"
-                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
-                          />
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setExpandedEmpId((v) => (v === emp.id ? null : emp.id))}
-                          className="flex items-center gap-2 text-left"
-                          title="Detayları göster/gizle"
-                        >
-                          <span
-                            className={`h-2.5 w-2.5 rounded-full ${
-                              COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
-                            }`}
-                          />
-                          <div>
-                            <div className="font-semibold whitespace-nowrap">{emp.name}</div>
-                            <div className="text-[11px] text-zinc-400">
-                              {emp.role} · İzin {leaveLeft} gün
-                            </div>
-                          </div>
-                        </button>
-                      )}
+                {visibleEmployees.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={weekDates.length + 2}
+                      className="px-4 py-10 text-center text-sm text-zinc-500"
+                    >
+                      Aramanla eşleşen personel yok.
                     </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-zinc-100 bg-zinc-50 text-[11px] text-zinc-500">
+                  <td className="sticky left-0 z-10 bg-zinc-50 px-4 py-2 font-medium">
+                    Günlük kapsam
+                  </td>
+                  {dayCounts.map((c, i) => (
+                    <td
+                      key={i}
+                      className={`px-1.5 py-2 text-center font-medium ${
+                        c === 0 ? "text-red-500" : "text-zinc-600"
+                      }`}
+                    >
+                      {c}
+                    </td>
+                  ))}
+                  <td className="px-3 py-2 text-right text-zinc-400">{summaryHours} sa</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Mobil liste */}
+          <div className="divide-y divide-zinc-100 sm:hidden">
+            {visibleEmployees.map((emp) => {
+              const total = weekTotal(emp);
+              const over = total > WEEKLY_LIMIT_HOURS;
+              return (
+                <details key={emp.id} className="group">
+                  <summary className="flex cursor-pointer list-none items-center gap-2.5 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                    <span
+                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                        COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
+                      }`}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{emp.name}</span>
+                      <span className="block truncate text-[11px] text-zinc-400">
+                        {emp.role || "Görev yok"} · izin {emp.annualLeaveDays ?? 0} gün
+                      </span>
+                    </span>
+                    <span className={`text-sm font-semibold ${over ? "text-red-600" : "text-zinc-700"}`}>
+                      {total} sa
+                    </span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4 text-zinc-400 transition-transform group-open:rotate-180"
+                      aria-hidden
+                    >
+                      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </summary>
+
+                  <div className="space-y-1.5 px-4 pb-4">
                     {weekDates.map((d) => {
                       const iso = toISODate(d);
                       const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
                       const template = shiftId ? templateById.get(shiftId) : undefined;
                       const cls = template
                         ? COLOR_CLASSES[template.color]?.chip ?? ""
-                        : "bg-white text-zinc-400 border-dashed border-zinc-300";
+                        : "border-dashed border-zinc-200 bg-white text-zinc-400";
                       return (
-                        <td key={iso} className="px-2 py-2.5">
+                        <div key={iso} className="flex items-center gap-2">
+                          <span className="w-[74px] shrink-0 text-xs text-zinc-500">
+                            {DAY_SHORT_TR[(d.getDay() + 6) % 7]} {formatShort(d)}
+                          </span>
                           <select
                             value={shiftId}
                             onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
-                            className={`w-full min-w-[104px] cursor-pointer rounded-lg border px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-300 ${cls}`}
+                            aria-label={`${emp.name} ${formatShort(d)} vardiyası`}
+                            className={`h-9 min-w-0 flex-1 rounded-lg border px-2 text-[13px] outline-none ${cls}`}
                           >
                             <option value="">—</option>
                             {data.shiftTemplates.map((t) => (
@@ -912,191 +1171,89 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                               </option>
                             ))}
                           </select>
-                        </td>
+                          <button
+                            onClick={() => editDayNote(iso)}
+                            aria-label={`${formatShort(d)} gün notu`}
+                            title={dayNoteMap.get(iso) ?? "Gün notu"}
+                            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg border ${
+                              dayNoteMap.get(iso)
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-transparent text-zinc-300 hover:bg-zinc-100"
+                            }`}
+                          >
+                            <KalemIkon />
+                          </button>
+                        </div>
                       );
                     })}
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span className={`font-semibold ${over ? "text-red-600" : "text-zinc-700"}`}>
-                        {total} sa
-                      </span>
-                      {over && (
-                        <span className="ml-1 text-red-600" title={`${WEEKLY_LIMIT_HOURS} saati aştı`}>
-                          ⚠️
-                        </span>
-                      )}
-                      {empOvertime(emp) > 0 && (
-                        <span className="block text-[11px] text-amber-600">
-                          +{empOvertime(emp)} sa fazla mesai
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      {editingEmpId === emp.id ? (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={saveEmp}
-                            className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-700"
-                          >
-                            Kaydet
-                          </button>
-                          <button
-                            onClick={() => setEditingEmpId(null)}
-                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-                          >
-                            Vazgeç
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => sendWhatsApp(emp)}
-                            className="rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700"
-                          >
-                            Gönder
-                          </button>
-                          <button
-                            onClick={() => copySchedule(emp)}
-                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-                          >
-                            Kopyala
-                          </button>
-                          <button
-                            onClick={() => copyStaffLink(emp)}
-                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-                          >
-                            Link
-                          </button>
-                          <button
-                            onClick={() => startEditEmp(emp)}
-                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-                          >
-                            Düzenle
-                          </button>
-                          <button
-                            onClick={() => handleRemoveEmployee(emp)}
-                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                          >
-                            Sil
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                    </tr>
-                    {expandedEmpId === emp.id && (
-                      <tr className="bg-zinc-50">
-                        <td
-                          colSpan={weekDates.length + 3}
-                          className="px-4 py-3 text-sm text-zinc-600"
-                        >
-                          {emp.phone ? `📞 ${emp.phone} · ` : ""}
-                          Bu ay: <strong>{Math.round(stat.hours * 10) / 10} sa</strong> ·{" "}
-                          {stat.days} gün
-                          {" · "}Kalan izin: <strong>{leaveLeft} gün</strong>
-                          <span className="mt-1 block text-xs">
-                            {(() => {
-                              const gunler = calistigiGunler(emp);
-                              return gunler.length
-                                ? `✅ Çalıştığı günler: ${gunler.join(", ")}`
-                                : "⛔ Bu hafta hiçbir güne atanmamış";
-                            })()}
-                          </span>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-zinc-200 bg-zinc-50 text-xs text-zinc-500">
-                <td className="sticky left-0 z-10 bg-zinc-50 px-4 py-2 font-medium">
-                  Günlük kapsam
-                </td>
-                {dayCounts.map((c, i) => (
-                  <td
-                    key={i}
-                    className={`px-2 py-2 text-center font-medium ${
-                      c === 0 ? "text-red-500" : "text-zinc-600"
-                    }`}
-                  >
-                    {c} kişi
-                  </td>
-                ))}
-                <td colSpan={2} className="px-3 py-2" />
-              </tr>
-            </tfoot>
-          </table>
+
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                      <button onClick={() => sendWhatsApp(emp)} className="btn-birincil btn-kucuk">
+                        WhatsApp
+                      </button>
+                      <button onClick={() => startEditEmp(emp)} className="btn-ikincil btn-kucuk">
+                        Düzenle
+                      </button>
+                      <button onClick={() => copyStaffLink(emp)} className="btn-ikincil btn-kucuk">
+                        Link
+                      </button>
+                      <button onClick={() => handleRemoveEmployee(emp)} className="btn-tehlike btn-kucuk">
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                </details>
+              );
+            })}
+            {visibleEmployees.length === 0 && (
+              <p className="px-4 py-10 text-center text-sm text-zinc-500">
+                Aramanla eşleşen personel yok.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Haftalık özet */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="text-xs text-zinc-500">Bu hafta toplam saat</div>
-          <div className="mt-1 text-2xl font-semibold">{summaryHours} sa</div>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="text-xs text-zinc-500">Bu hafta çalışan kişi</div>
-          <div className="mt-1 text-2xl font-semibold">
-            {data.employees.filter((e) => calistigiGunler(e).length > 0).length}
-            <span className="text-base font-normal text-zinc-500">
-              {" "}
-              / {data.employees.length}
-            </span>
-          </div>
-        </div>
-        <div
-          className={`rounded-2xl border p-4 shadow-sm ${
-            totalOvertime > 0 ? "border-amber-200 bg-amber-50" : "border-zinc-200 bg-white"
-          }`}
-        >
-          <div className="text-xs text-zinc-500">45 saat üstü ({WEEKLY_LIMIT_HOURS} sa sınırı)</div>
-          <div className={`mt-1 text-2xl font-semibold ${totalOvertime > 0 ? "text-amber-700" : ""}`}>
-            {totalOvertime > 0 ? `${totalOvertime} sa` : "—"}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="text-xs text-zinc-500">Personel sayısı</div>
-          <div className="mt-1 text-2xl font-semibold">{data.employees.length}</div>
-        </div>
-      </div>
+      {!weekEmpty && uyariSayisi === 0 && (
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-700">
+          <span aria-hidden>✓</span> Bu hafta mevzuat ve kapsam uyarısı yok.
+        </p>
+      )}
 
-      {/* Mevzuat uyarıları */}
-      {data.employees.length > 0 && (
-        <div
-          className={`mt-4 rounded-2xl border p-4 ${
-            issues.length > 0 ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"
-          }`}
-        >
-          <h3
-            className={`text-sm font-semibold ${
-              issues.length > 0 ? "text-amber-900" : "text-emerald-800"
-            }`}
-          >
-            ⚖️ Mevzuat Uyarıları {issues.length > 0 ? `(${issues.length})` : ""}
+      {/* Uyarılar — yalnızca varsa */}
+      {uyariSayisi > 0 && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <h3 className="text-sm font-semibold text-amber-900">
+            Uyarılar ({uyariSayisi})
           </h3>
-          {issues.length === 0 ? (
-            <p className="mt-2 text-sm text-emerald-800">
-              Bu hafta için çakışma veya mevzuat ihlali yok. (Haftalık {WEEKLY_LIMIT_HOURS} saat ·
-              iki vardiya arası en az {MIN_DAILY_REST_HOURS} saat dinlenme)
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-2">
+          {issues.length > 0 && (
+            <ul className="mt-2 space-y-1.5 text-sm">
               {issues.map((it, idx) => {
                 const emp = empById.get(it.employeeId);
                 const isErr = it.severity === "error";
                 return (
-                  <li
-                    key={`${it.employeeId}-${it.type}-${it.date}-${idx}`}
-                    className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
-                  >
-                    <span aria-hidden>{isErr ? "⛔" : "⚠️"}</span>
-                    <span>
-                      <strong>{emp?.name ?? "Bilinmeyen"}</strong>{" "}
-                      <span className={isErr ? "text-red-700" : "text-amber-700"}>
-                        {it.message}
-                      </span>
+                  <li key={`${it.employeeId}-${it.type}-${it.date}-${idx}`} className="flex gap-2">
+                    <span aria-hidden className={isErr ? "text-red-600" : "text-amber-600"}>
+                      {isErr ? "⛔" : "⚠"}
                     </span>
+                    <span className="text-amber-900">
+                      <strong>{emp?.name ?? "Bilinmeyen"}</strong>{" "}
+                      <span className={isErr ? "text-red-700" : ""}>{it.message}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {coverageIssues.length > 0 && (
+            <ul className="mt-2 space-y-1 border-t border-amber-200 pt-2 text-sm text-amber-900">
+              {coverageIssues.map((c, i) => {
+                const t = templateById.get(c.templateId);
+                const day = new Date(c.date + "T00:00:00");
+                return (
+                  <li key={i}>
+                    <strong>{formatShort(day)}</strong> · {t?.name ?? "?"}: {c.have}/{c.need} kişi
+                    <span className="text-amber-700"> (eksik {c.need - c.have})</span>
                   </li>
                 );
               })}
@@ -1105,132 +1262,163 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         </div>
       )}
 
-      {/* Kapsam uyarıları */}
-      {coverageIssues.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
-          <h3 className="font-semibold">🎯 Kapsam uyarıları ({coverageIssues.length})</h3>
-          <ul className="mt-2 space-y-1">
-            {coverageIssues.map((c, i) => {
-              const t = templateById.get(c.templateId);
-              const day = new Date(c.date + "T00:00:00");
-              return (
-                <li key={i}>
-                  {formatShort(day)} · {t?.name ?? "?"}: {c.have}/{c.need} kişi (eksik{" "}
-                  {c.need - c.have})
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* Şablonlar */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-zinc-800">Vardiya Şablonları</h3>
-          <button
-            onClick={() => setShowTemplates((s) => !s)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"
-          >
-            {showTemplates ? "Kapat" : "Şablonları Yönet"}
-          </button>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {data.shiftTemplates.map((t) => (
-            <span
-              key={t.id}
-              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${
-                COLOR_CLASSES[t.color]?.chip ?? ""
-              }`}
-            >
-              <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
-              {t.name} · {t.start}–{t.end} · {shiftHours(t)} sa
-            </span>
-          ))}
-        </div>
-        {showTemplates && (
-          <div className="mt-4">
-            <TemplateManager
-              templates={data.shiftTemplates}
-              standart={{ openTime: data.business.openTime, closeTime: data.business.closeTime }}
-              onChanged={load}
-            />
-          </div>
-        )}
-        <p className="mt-3 text-xs text-zinc-500">
-          Denetimler: haftalık {WEEKLY_LIMIT_HOURS} saat sınırı, iki vardiya arası en az{" "}
-          {MIN_DAILY_REST_HOURS} saat dinlenme ve aynı gün çift vardiya (İş Kanunu 4857). İhlaller
-          yukarıdaki &quot;Mevzuat Uyarıları&quot; kartında listelenir.
-        </p>
-      </div>
-
-      {/* Standart — mesai saatleri */}
-      <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-zinc-800">📐 Standart</h3>
-            <p className="mt-0.5 text-sm text-zinc-600">
-              Standart mesai saatleriniz:{" "}
-              <strong className="text-zinc-800">
-                {data.business.openTime} – {data.business.closeTime}
-              </strong>
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowStandart((s) => !s)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100"
-          >
-            {showStandart ? "Kapat" : "Mesai saati ayarla"}
-          </button>
-        </div>
-
-        {showStandart && (
-          <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm text-zinc-600">
-              Açılış ve kapanış saatlerini yaz. Yeni vardiya şablonları bu saatlerden türetilir;
-              istersen mevcut şablonları da tek tıkla bu saatlere uydurabilirsin.
-            </p>
-            <div className="mt-3 flex flex-wrap items-end gap-3">
-              <label className="text-sm">
-                <span className="block text-zinc-600">Açılış</span>
-                <input
-                  type="time"
-                  value={acilisDraft}
-                  onChange={(e) => setAcilisDraft(e.target.value)}
-                  className="mt-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
-                />
-              </label>
-              <label className="text-sm">
-                <span className="block text-zinc-600">Kapanış</span>
-                <input
-                  type="time"
-                  value={kapanisDraft}
-                  onChange={(e) => setKapanisDraft(e.target.value)}
-                  className="mt-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={standartKaydet}
-                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-              >
-                Kaydet
-              </button>
-              <button
-                type="button"
-                onClick={sablonlariStandartaUydur}
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100"
-              >
-                Şablonları bu saatlere uydur
+      {/* Alt bölüm: duyurular + ayarlar */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        {/* Duyurular */}
+        <details className="kart self-start" open={data.announcements.length > 0}>
+          <summary className="kart-baslik cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <div>
+              <h2 className="bolum-baslik">Duyurular</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {data.announcements.length > 0
+                  ? `${data.announcements.length} yayında`
+                  : "Ekibe kısa bir mesaj bırak"}
+              </p>
+            </div>
+            <span className="text-xs font-medium text-zinc-500">Aç / kapat</span>
+          </summary>
+          <div className="border-t border-zinc-100 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={announcementDraft}
+                onChange={(e) => setAnnouncementDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") postAnnouncement();
+                }}
+                placeholder="Ör. Cumartesi canlı müzik var"
+                aria-label="Duyuru metni"
+                className="giris flex-1"
+              />
+              <button onClick={postAnnouncement} className="btn-birincil">
+                Yayınla
               </button>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">
-              &quot;Şablonları uydur&quot; Sabah / Akşam / Tam Gün / Ara Vardiya saatlerini günceller —
-              mevcut vardiya atamaları <strong>silinmez</strong>.
+            {data.announcements.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {data.announcements.slice(0, 5).map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-start justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+                  >
+                    <span className="text-zinc-700">{a.message}</span>
+                    <button
+                      onClick={() => removeAnnouncement(a.id)}
+                      className="shrink-0 text-xs text-zinc-400 hover:text-red-600"
+                    >
+                      Sil
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
+
+        {/* Şablonlar + standart */}
+        <div className="kart overflow-hidden">
+          <div className="kart-baslik">
+            <div>
+              <h2 className="bolum-baslik">Vardiya şablonları</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {data.shiftTemplates.length} şablon · {data.business.openTime}–{data.business.closeTime}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowTemplates((s) => !s)}
+              className="btn-ikincil btn-kucuk"
+            >
+              {showTemplates ? "Kapat" : "Yönet"}
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="flex flex-wrap gap-1.5">
+              {data.shiftTemplates.map((t) => (
+                <span
+                  key={t.id}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
+                    COLOR_CLASSES[t.color]?.chip ?? ""
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
+                  {t.name} · {t.start}–{t.end}
+                </span>
+              ))}
+            </div>
+
+            {showTemplates && (
+              <div className="mt-4">
+                <TemplateManager
+                  templates={data.shiftTemplates}
+                  standart={{ openTime: data.business.openTime, closeTime: data.business.closeTime }}
+                  onChanged={load}
+                  gomulu
+                />
+              </div>
+            )}
+
+            <div className="mt-4 border-t border-zinc-100 pt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-zinc-500">
+                  Standart mesai:{" "}
+                  <strong className="text-zinc-700">
+                    {data.business.openTime} – {data.business.closeTime}
+                  </strong>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowStandart((s) => !s)}
+                  className="btn-sessiz btn-kucuk"
+                >
+                  {showStandart ? "Kapat" : "Mesai saati ayarla"}
+                </button>
+              </div>
+
+              {showStandart && (
+                <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <label className="text-xs text-zinc-600">
+                      <span className="block">Açılış</span>
+                      <input
+                        type="time"
+                        value={acilisDraft}
+                        onChange={(e) => setAcilisDraft(e.target.value)}
+                        className="giris mt-1 w-28"
+                      />
+                    </label>
+                    <label className="text-xs text-zinc-600">
+                      <span className="block">Kapanış</span>
+                      <input
+                        type="time"
+                        value={kapanisDraft}
+                        onChange={(e) => setKapanisDraft(e.target.value)}
+                        className="giris mt-1 w-28"
+                      />
+                    </label>
+                    <button type="button" onClick={standartKaydet} className="btn-birincil btn-kucuk">
+                      Kaydet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sablonlariStandartaUydur}
+                      className="btn-ikincil btn-kucuk"
+                    >
+                      Şablonları uydur
+                    </button>
+                  </div>
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    &quot;Şablonları uydur&quot; Sabah / Akşam / Tam Gün / Ara saatlerini günceller;
+                    mevcut atamalar silinmez.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-3 text-[11px] leading-relaxed text-zinc-400">
+              Denetim: haftalık {WEEKLY_LIMIT_HOURS} saat, iki vardiya arası en az{" "}
+              {MIN_DAILY_REST_HOURS} saat dinlenme (İş Kanunu 4857).
             </p>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Ayarlar modali */}
@@ -1238,33 +1426,30 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         <div
           className="fixed inset-0 z-40 grid place-items-center bg-black/40 p-4"
           onClick={() => setShowSettings(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ayarlar"
         >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-semibold">Ayarlar</h3>
+          <div className="kart w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold">Ayarlar</h3>
             <p className="mt-1 text-xs text-zinc-500">
-              Veri işlemleri. İşletme adını üstteki alandan değiştirebilirsin.
+              Veri işlemleri. İşletme adını üstteki başlıktan değiştirebilirsin.
             </p>
             <div className="mt-4 space-y-2">
               <button
                 onClick={() => handleReset("demo")}
-                className="w-full rounded-lg border border-zinc-300 py-2.5 text-sm hover:bg-zinc-100"
+                className="btn-ikincil w-full justify-start"
               >
-                🔄 Örnek veriyi (demo) yükle
+                Örnek veriyi (demo) yükle
               </button>
               <button
                 onClick={() => handleReset("empty")}
-                className="w-full rounded-lg border border-red-300 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                className="btn-tehlike w-full justify-start"
               >
-                🗑 Boş başla (tüm personeli sil)
+                Boş başla (tüm personeli sil)
               </button>
             </div>
-            <button
-              onClick={() => setShowSettings(false)}
-              className="mt-4 w-full rounded-lg border border-zinc-300 py-2 text-sm hover:bg-zinc-100"
-            >
+            <button onClick={() => setShowSettings(false)} className="btn-ikincil mt-4 w-full">
               Kapat
             </button>
           </div>
@@ -1276,16 +1461,16 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         <div
           className="fixed inset-0 z-40 grid place-items-center bg-black/40 p-4"
           onClick={() => setShowBulk(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tüm personele gönder"
         >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-semibold">Tüm personele gönder</h3>
+          <div className="kart w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold">Tüm personele gönder</h3>
             <p className="mt-1 text-xs text-zinc-500">
               Her personele kendi programı hazırlanır. Sırayla açıp gönder.
             </p>
-            <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+            <ul className="mt-3 max-h-80 space-y-1.5 overflow-y-auto">
               {data.employees.map((emp) => {
                 const text = buildScheduleText(
                   emp,
@@ -1298,15 +1483,15 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                 return (
                   <li
                     key={emp.id}
-                    className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                   >
-                    <span>{emp.name}</span>
+                    <span className="truncate">{emp.name}</span>
                     {emp.phone ? (
                       <a
                         href={link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                        className="btn-birincil btn-kucuk"
                       >
                         WhatsApp
                       </a>
@@ -1317,10 +1502,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                 );
               })}
             </ul>
-            <button
-              onClick={() => setShowBulk(false)}
-              className="mt-4 w-full rounded-lg border border-zinc-300 py-2 text-sm hover:bg-zinc-100"
-            >
+            <button onClick={() => setShowBulk(false)} className="btn-ikincil mt-4 w-full">
               Kapat
             </button>
           </div>
@@ -1328,7 +1510,11 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg">
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg sm:bottom-6"
+        >
           {toast}
         </div>
       )}

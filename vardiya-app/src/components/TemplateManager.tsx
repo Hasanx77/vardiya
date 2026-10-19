@@ -55,10 +55,13 @@ export default function TemplateManager({
   templates,
   standart,
   onChanged,
+  gomulu = false,
 }: {
   templates: ShiftTemplate[];
   standart?: { openTime: string; closeTime: string };
   onChanged: () => void;
+  /** true → panel kartının içine gömülür; dış çerçeve ve başlık çizilmez. */
+  gomulu?: boolean;
 }) {
   const [draft, setDraft] = useState<Draft>(() => bosDraft(standart));
   const [editing, setEditing] = useState<Record<string, Draft>>({});
@@ -121,8 +124,14 @@ export default function TemplateManager({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-zinc-700">Vardiya Şablonları</h3>
+    <div
+      className={
+        gomulu
+          ? "rounded-xl border border-zinc-200 bg-zinc-50/60 p-3"
+          : "rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+      }
+    >
+      {!gomulu && <h3 className="text-sm font-semibold text-zinc-700">Vardiya Şablonları</h3>}
 
       <ul className="mt-3 divide-y divide-zinc-100">
         {templates.map((t) => {

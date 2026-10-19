@@ -17,9 +17,12 @@ export default async function GizlilikPage() {
 
   return (
     <main className="flex-1">
-      <div className="mx-auto max-w-3xl px-4 py-12">
-        <h1 className="text-3xl font-semibold tracking-tight">Gizlilik ve KVKK Aydınlatması</h1>
-        <p className="mt-2 text-sm text-zinc-500">Son güncelleme: 19 Ekim 2026</p>
+      <div className="sayfa max-w-3xl">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+          Gizlilik
+        </p>
+        <h1 className="sayfa-baslik mt-1">Gizlilik ve KVKK Aydınlatması</h1>
+        <p className="sayfa-alt">Son güncelleme: 19 Ekim 2026</p>
 
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
           <strong>Özet:</strong> Vardiya yalnızca işini yapmak için gereken veriyi toplar. Reklam
@@ -79,7 +82,7 @@ export default async function GizlilikPage() {
             <div className="mt-4 flex flex-wrap gap-3">
               <a
                 href="/api/hesap/veri"
-                className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+                className="btn-birincil"
               >
                 Verilerimi indir (JSON)
               </a>

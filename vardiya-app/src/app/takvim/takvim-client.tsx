@@ -49,45 +49,61 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
   if (!data) {
     return (
       <main className="flex-1 grid place-items-center">
-        <p className="text-zinc-500">Yükleniyor…</p>
+        <p className="text-sm text-zinc-500">Yükleniyor…</p>
       </main>
     );
   }
 
-  const templateById = new Map(data.shiftTemplates.map((t) => [t.id, t]));
+  const doluGunler = days.filter((iso) => byDay.has(iso));
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-10">
-      <div className="flex items-center justify-between">
+    <main className="sayfa max-w-6xl">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Takvim</h1>
-          <p className="mt-1 text-zinc-500">{data.business.name}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+            Takvim
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Aylık görünüm</h1>
+          <p className="mt-1 text-sm text-zinc-500">{data.business.name}</p>
         </div>
-        <Link href="/panel" className="text-sm text-zinc-500 hover:underline">
-          ← Panele dön
+        <Link href="/panel" className="btn-ikincil btn-kucuk shrink-0">
+          ← Plan
         </Link>
       </div>
 
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-2 py-1.5">
         <button
           onClick={() => setOffset((o) => o - 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          className="btn-sessiz btn-kucuk"
+          aria-label="Önceki ay"
         >
           ←
         </button>
-        <div className="font-semibold">
-          {MONTH_SHORT_TR[first.getMonth()]} {first.getFullYear()}
+        <div className="text-center">
+          <div className="text-sm font-semibold">
+            {MONTH_SHORT_TR[first.getMonth()]} {first.getFullYear()}
+          </div>
+          {offset !== 0 && (
+            <button
+              onClick={() => setOffset(0)}
+              className="text-[11px] text-zinc-500 underline-offset-2 hover:underline"
+            >
+              Bu aya dön
+            </button>
+          )}
         </div>
         <button
           onClick={() => setOffset((o) => o + 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          className="btn-sessiz btn-kucuk"
+          aria-label="Sonraki ay"
         >
           →
         </button>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-        <div className="grid grid-cols-7 border-b border-zinc-200 bg-zinc-50 text-center text-xs font-medium text-zinc-500">
+      {/* Masaüstü takvim */}
+      <div className="kart mt-4 hidden overflow-hidden sm:block">
+        <div className="grid grid-cols-7 border-b border-zinc-100 bg-zinc-50 text-center text-[11px] font-semibold text-zinc-500">
           {DAY_SHORT_TR.map((d) => (
             <div key={d} className="py-2">
               {d}
@@ -96,7 +112,7 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
         </div>
         <div className="grid grid-cols-7">
           {Array.from({ length: startIdx }).map((_, i) => (
-            <div key={`b${i}`} className="min-h-[96px] border-b border-r border-zinc-100 bg-zinc-50/50" />
+            <div key={`b${i}`} className="min-h-[92px] border-b border-r border-zinc-100 bg-zinc-50/50" />
           ))}
           {days.map((iso, i) => {
             const dayNum = Number(iso.slice(-2));
@@ -106,14 +122,12 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
             return (
               <div
                 key={iso}
-                className={`min-h-[96px] border-b border-r border-zinc-100 p-1.5 ${
+                className={`min-h-[92px] border-b border-r border-zinc-100 p-1.5 ${
                   cellIdx % 7 === 0 ? "border-r-0" : ""
                 }`}
               >
                 <div
-                  className={`text-xs font-semibold ${
-                    holiday ? "text-red-600" : "text-zinc-500"
-                  }`}
+                  className={`text-[11px] font-semibold ${holiday ? "text-red-600" : "text-zinc-500"}`}
                   title={holiday?.name}
                 >
                   {dayNum}
@@ -141,19 +155,66 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {data.shiftTemplates.map((t) => (
-          <span
-            key={t.id}
-            className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${
-              COLOR_CLASSES[t.color]?.chip ?? ""
-            }`}
-          >
-            <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
-            {t.name}
-          </span>
-        ))}
+      {/* Mobil ajanda */}
+      <div className="mt-4 space-y-2 sm:hidden">
+        {doluGunler.length === 0 ? (
+          <div className="kart border-dashed p-8 text-center text-sm text-zinc-500">
+            Bu ay için atanmış vardiya yok.
+          </div>
+        ) : (
+          doluGunler.map((iso) => {
+            const dayMap = byDay.get(iso);
+            if (!dayMap) return null;
+            const d = new Date(iso + "T00:00:00");
+            const holiday = getHoliday(iso);
+            return (
+              <div key={iso} className="kart p-3">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-sm font-semibold">
+                    {DAY_SHORT_TR[(d.getDay() + 6) % 7]} {d.getDate()}{" "}
+                    {MONTH_SHORT_TR[d.getMonth()]}
+                  </div>
+                  {holiday && (
+                    <span className="text-[11px] font-medium text-red-600">{holiday.name}</span>
+                  )}
+                </div>
+                <ul className="mt-2 space-y-1.5">
+                  {data.shiftTemplates
+                    .filter((t) => dayMap.has(t.id))
+                    .map((t) => (
+                      <li key={t.id} className="flex items-start gap-2 text-sm">
+                        <span
+                          className={`mt-0.5 shrink-0 rounded border px-1.5 py-0.5 text-[10px] ${
+                            COLOR_CLASSES[t.color]?.chip ?? ""
+                          }`}
+                        >
+                          {t.name} {t.start}–{t.end}
+                        </span>
+                        <span className="text-zinc-700">{(dayMap.get(t.id) ?? []).join(", ")}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            );
+          })
+        )}
       </div>
+
+      {days.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {data.shiftTemplates.map((t) => (
+            <span
+              key={t.id}
+              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${
+                COLOR_CLASSES[t.color]?.chip ?? ""
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
+              {t.name}
+            </span>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

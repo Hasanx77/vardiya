@@ -88,83 +88,99 @@ export default function BaslaClient({ initialData }: { initialData: StatePayload
   }
 
   const existing = data?.employees.length ?? 0;
+  const sablonlar = data?.shiftTemplates.length ? data.shiftTemplates : DEFAULT_SHIFTS;
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-10">
-      <span className="inline-block rounded-full border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-600">
+    <main className="sayfa max-w-2xl">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
         Kurulum
-      </span>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight">90 saniyede kur</h1>
-      <p className="mt-1 text-zinc-600">
+      </p>
+      <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">90 saniyede kur</h1>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-600">
         İşletme adını yaz, personelini yapıştır — hazırsın. Vardiya şablonları
-        (Sabah / Akşam / Tam Gün) zaten tanımlı.
+        (Sabah / Akşam / Tam Gün / Ara) zaten tanımlı.
       </p>
 
-      {/* 1) İşletme adı */}
-      <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <label className="text-sm font-medium text-zinc-700">
-          <span className="text-zinc-400">1.</span> İşletme adı
-        </label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Örn. Kahve Durağı"
-          className="mt-2 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-lg outline-none focus:border-zinc-900"
-        />
-      </section>
-
-      {/* 2) Personel */}
-      <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-zinc-700">
-            <span className="text-zinc-400">2.</span> Personel
+      <div className="kart mt-6 divide-y divide-zinc-100">
+        {/* 1) İşletme adı */}
+        <section className="p-5">
+          <label htmlFor="isletme-ad" className="flex items-center gap-2 text-sm font-medium text-zinc-700">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-zinc-900 text-[11px] font-semibold text-white">
+              1
+            </span>
+            İşletme adı
           </label>
-          {existing > 0 && (
-            <span className="text-xs text-zinc-500">Şu an {existing} personel var</span>
-          )}
-        </div>
-        <p className="mt-2 text-xs text-zinc-500">
-          Her satıra bir personel: <code className="rounded bg-zinc-100 px-1">Ad; Görev; Telefon</code>
-          <br />
-          Örnek: <code className="rounded bg-zinc-100 px-1">Ayşe Yılmaz; Barista; 0532 111 22 33</code>
-        </p>
-        <textarea
-          value={bulk}
-          onChange={(e) => setBulk(e.target.value)}
-          rows={6}
-          placeholder={"Ayşe Yılmaz; Barista; 0532 111 22 33\nMehmet Kaya; Garson; 0533 222 33 44\nZeynep Demir; Şef"}
-          className="mt-3 block w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm outline-none focus:border-zinc-900"
-        />
-        {parsed.length > 0 && (
-          <p className="mt-2 text-xs text-emerald-700">✓ {parsed.length} personel algılandı</p>
-        )}
-      </section>
+          <input
+            id="isletme-ad"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Örn. Kahve Durağı"
+            className="giris mt-2 text-base"
+          />
+        </section>
 
-      {/* 3) Bitir */}
-      <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <button
-          onClick={handleFinish}
-          disabled={busy}
-          className="rounded-lg bg-zinc-900 px-6 py-3 font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
-        >
-          3. Kur ve başla →
-        </button>
-        <button
-          onClick={handleReset}
-          disabled={busy}
-          className="rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-        >
-          Demo verisini temizle (sıfırdan başla)
-        </button>
+        {/* 2) Personel */}
+        <section className="p-5">
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="personel-liste" className="flex items-center gap-2 text-sm font-medium text-zinc-700">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-zinc-900 text-[11px] font-semibold text-white">
+                2
+              </span>
+              Personel <span className="font-normal text-zinc-400">(isteğe bağlı)</span>
+            </label>
+            {existing > 0 && (
+              <span className="text-xs text-zinc-500">Şu an {existing} personel var</span>
+            )}
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            Her satıra bir personel:{" "}
+            <code className="rounded bg-zinc-100 px-1 py-0.5">Ad; Görev; Telefon</code>
+            <br />
+            Örnek:{" "}
+            <code className="rounded bg-zinc-100 px-1 py-0.5">
+              Ayşe Yılmaz; Barista; 0532 111 22 33
+            </code>
+          </p>
+          <textarea
+            id="personel-liste"
+            value={bulk}
+            onChange={(e) => setBulk(e.target.value)}
+            rows={6}
+            placeholder={"Ayşe Yılmaz; Barista; 0532 111 22 33\nMehmet Kaya; Garson; 0533 222 33 44\nZeynep Demir; Şef"}
+            className="giris mt-3 font-mono text-[13px]"
+          />
+          {parsed.length > 0 && (
+            <p className="mt-2 text-xs font-medium text-emerald-700">
+              ✓ {parsed.length} personel algılandı
+            </p>
+          )}
+        </section>
+
+        {/* 3) Bitir */}
+        <section className="p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <button
+              onClick={handleFinish}
+              disabled={busy}
+              className="btn-birincil h-11 px-6 text-sm"
+            >
+              3. Kur ve başla →
+            </button>
+            <button
+              onClick={handleReset}
+              disabled={busy}
+              className="btn-tehlike h-11 text-sm"
+            >
+              Sıfırdan başla
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-zinc-500">
+            Hazır şablonlar: {sablonlar.map((s) => `${s.name} ${s.start}–${s.end}`).join(" · ")}
+          </p>
+        </section>
       </div>
 
       {msg && <p className="mt-4 text-sm text-zinc-600">{msg}</p>}
-
-      {/* Hazır şablonlar */}
-      <div className="mt-8 rounded-2xl border border-dashed border-zinc-300 p-4 text-xs text-zinc-500">
-        Hazır vardiya şablonları:{" "}
-        {DEFAULT_SHIFTS.map((s) => `${s.name} ${s.start}–${s.end}`).join(" · ")}
-      </div>
     </main>
   );
 }

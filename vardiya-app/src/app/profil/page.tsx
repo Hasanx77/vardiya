@@ -42,14 +42,17 @@ export default async function ProfilPage({
 
   return (
     <main className="flex-1">
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight">Profilim</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+      <div className="sayfa max-w-3xl">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+          Hesap
+        </p>
+        <h1 className="sayfa-baslik mt-1">Profilim</h1>
+        <p className="sayfa-alt">
           Hesabına ait bilgiler. Bu veriler yalnızca sana görünür.
         </p>
 
         {/* Hesap bilgileri */}
-        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
           <div className="flex items-center gap-4">
             <span className="grid h-14 w-14 place-items-center rounded-full bg-zinc-900 text-lg font-semibold text-white">
               {(kullanici.email[0] ?? "?").toUpperCase()}
@@ -126,7 +129,8 @@ export default async function ProfilPage({
               required
               autoComplete="current-password"
               placeholder="Mevcut şifre"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              aria-label="Mevcut şifre"
+              className="giris"
             />
             <input
               type="password"
@@ -135,7 +139,8 @@ export default async function ProfilPage({
               minLength={8}
               autoComplete="new-password"
               placeholder="Yeni şifre"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              aria-label="Yeni şifre"
+              className="giris"
             />
             <input
               type="password"
@@ -144,11 +149,12 @@ export default async function ProfilPage({
               minLength={8}
               autoComplete="new-password"
               placeholder="Yeni şifre (tekrar)"
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+              aria-label="Yeni şifre tekrar"
+              className="giris"
             />
             <button
               type="submit"
-              className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 sm:col-span-3 sm:justify-self-start"
+              className="btn-birincil sm:col-span-3 sm:justify-self-start"
             >
               Şifremi güncelle
             </button>
@@ -164,7 +170,7 @@ export default async function ProfilPage({
           <div className="mt-4 flex flex-wrap gap-3">
             <a
               href="/api/hesap/veri"
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+              className="btn-ikincil"
             >
               Verilerimi indir (JSON)
             </a>
@@ -175,20 +181,20 @@ export default async function ProfilPage({
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/panel"
-            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+            className="btn-birincil"
           >
             Panele git →
           </Link>
           <Link
             href="/gizlilik"
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+            className="btn-ikincil"
           >
             Gizlilik aydınlatması
           </Link>
           <form action="/api/auth/logout" method="post">
             <button
               type="submit"
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+              className="btn-tehlike"
             >
               Çıkış yap
             </button>

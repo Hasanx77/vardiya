@@ -42,14 +42,14 @@ export default function EmployeePage() {
   if (error) {
     return (
       <main className="flex-1 grid place-items-center px-4">
-        <p className="text-red-600">{error}</p>
+        <p className="text-sm text-red-600">{error}</p>
       </main>
     );
   }
   if (!data) {
     return (
       <main className="flex-1 grid place-items-center">
-        <p className="text-zinc-500">Yükleniyor…</p>
+        <p className="text-sm text-zinc-500">Yükleniyor…</p>
       </main>
     );
   }
@@ -57,8 +57,8 @@ export default function EmployeePage() {
     return (
       <main className="flex-1 grid place-items-center px-4">
         <div className="text-center">
-          <p className="text-zinc-600">Personel bulunamadı.</p>
-          <Link href="/ekip" className="mt-2 inline-block text-sm text-zinc-500 underline">
+          <p className="text-sm text-zinc-600">Personel bulunamadı.</p>
+          <Link href="/ekip" className="btn-ikincil mt-3">
             ← Geri dön
           </Link>
         </div>
@@ -74,29 +74,32 @@ export default function EmployeePage() {
   const overtime = Math.round(Math.max(0, total - WEEKLY_LIMIT_HOURS) * 10) / 10;
 
   return (
-    <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-10">
-      <Link href="/ekip" className="text-sm text-zinc-500 hover:underline">
-        ← Geri dön
+    <main className="sayfa max-w-2xl">
+      <Link
+        href="/ekip"
+        className="text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
+      >
+        ← Personel listesi
       </Link>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-3 flex items-center gap-3">
         <span className={`h-3 w-3 rounded-full ${COLOR_CLASSES[employee.color]?.dot ?? ""}`} />
         <div>
-          <h1 className="text-2xl font-semibold">{employee.name}</h1>
-          <p className="text-sm text-zinc-500">
-            {employee.role} · {data.business.name}
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{employee.name}</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            {employee.role || "Görev yok"} · {data.business.name}
           </p>
         </div>
       </div>
 
-      <p className="mt-3 text-sm text-zinc-500">
-        🌴 Yıllık izin hakkı: <strong className="text-zinc-800">{employee.annualLeaveDays} gün</strong>
+      <p className="mt-2 text-sm text-zinc-500">
+        Yıllık izin hakkı: <strong className="text-zinc-800">{employee.annualLeaveDays} gün</strong>
       </p>
 
       {data.announcements.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <div className="font-semibold">📢 Duyurular</div>
-          <ul className="mt-2 space-y-1">
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">Duyurular</div>
+          <ul className="mt-1.5 space-y-1">
             {data.announcements.slice(0, 3).map((a) => (
               <li key={a.id}>• {a.message}</li>
             ))}
@@ -105,35 +108,32 @@ export default function EmployeePage() {
       )}
 
       {/* Hafta gezinme */}
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-2 py-1.5">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          className="btn-sessiz btn-kucuk"
+          aria-label="Önceki hafta"
         >
           ←
         </button>
         <div className="text-center">
-          <div className="font-semibold">{formatWeekRange(weekDates)}</div>
-          <div className="text-xs text-zinc-500">
-            Toplam {total} saat
-            {overtime > 0 && (
-              <span className="text-amber-600">
-                {" "}
-                · ⚠️ {overtime} sa fazla mesai ({WEEKLY_LIMIT_HOURS} sa üstü)
-              </span>
-            )}
+          <div className="text-sm font-semibold">{formatWeekRange(weekDates)}</div>
+          <div className={`text-[11px] ${overtime > 0 ? "text-amber-700" : "text-zinc-500"}`}>
+            {total} saat
+            {overtime > 0 ? ` · ${overtime} sa fazla mesai` : ""}
           </div>
         </div>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          className="btn-sessiz btn-kucuk"
+          aria-label="Sonraki hafta"
         >
           →
         </button>
       </div>
 
       {/* Günlük program */}
-      <ul className="mt-4 space-y-2">
+      <ul className="kart mt-3 divide-y divide-zinc-100 overflow-hidden">
         {weekDates.map((d) => {
           const iso = toISODate(d);
           const shiftId = assignMap.get(`${employee.id}__${iso}`);
@@ -141,17 +141,18 @@ export default function EmployeePage() {
           const dayName = DAY_NAMES_TR[(d.getDay() + 6) % 7];
           const holiday = getHoliday(iso);
           return (
-            <li
-              key={iso}
-              className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3"
-            >
+            <li key={iso} className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="text-sm text-zinc-600">
                 {dayName} <span className="text-zinc-400">{formatShort(d)}</span>
-                {holiday && <span className="ml-1 text-red-500" title={holiday.name}>🎉</span>}
+                {holiday && (
+                  <span className="ml-1 text-red-500" title={holiday.name}>
+                    🎉
+                  </span>
+                )}
               </span>
               {t ? (
                 <span
-                  className={`rounded-lg border px-3 py-1 text-xs ${
+                  className={`rounded-lg border px-2.5 py-1 text-xs ${
                     COLOR_CLASSES[t.color]?.chip ?? ""
                   }`}
                 >
@@ -167,13 +168,13 @@ export default function EmployeePage() {
 
       <a
         href={`/api/calendar/${employee.id}`}
-        className="mt-6 inline-block rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+        className="btn-ikincil mt-5"
       >
-        📅 Telefon takvimine ekle (.ics)
+        Telefon takvimine ekle (.ics)
       </a>
 
       <p className="mt-6 text-xs text-zinc-400">
-        Bu ekran yalnızca görüntüleme içindir. Değişiklikler için işletme ile iletişime geç.
+        Bu ekran yalnızca görüntüleme içindir. Değişiklik için işletme ile iletişime geç.
       </p>
     </main>
   );

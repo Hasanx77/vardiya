@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
+import { AltMenu, UstMenu } from "@/components/Menu";
 import { aktifKullanici } from "@/lib/auth";
 import "./globals.css";
 
@@ -18,10 +19,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://zihnora.com.tr"),
   title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
   description:
     "5 dakikada haftalık vardiya planla, personele WhatsApp'tan tek tıkla gönder. Türkçe, mevzuata uygun, cebinde.",
   applicationName: "Vardiya",
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    siteName: "Vardiya",
+    title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
+    description:
+      "Haftalık vardiya planını 5 dakikada hazırla, ekibine WhatsApp'tan gönder. Ücretsiz, reklamsız, Türkiye'de barındırılıyor.",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
+    description: "Haftalık vardiya planı, WhatsApp gönderimi ve mevzuat uyarıları. Ücretsiz.",
+  },
   icons: {
     icon: "/icons/icon-32.png",
     apple: "/icons/apple-icon.png",
@@ -38,8 +54,9 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Sağ üst menü oturuma göre değişir (giriş yapılmış / yapılmamış).
+  // Sağ üst menü ve alt menü oturuma göre değişir (giriş yapılmış / yapılmamış).
   const kullanici = await aktifKullanici();
+  const yil = new Date().getFullYear();
 
   return (
     <html
@@ -47,7 +64,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
+      <body
+        className={`flex min-h-full flex-col ${
+          kullanici ? "pb-16 sm:pb-0" : ""
+        }`}
+      >
         {/* Tema tercihini ilk boyamadan önce uygula (flicker önleyici) */}
         <script
           dangerouslySetInnerHTML={{
@@ -55,85 +76,66 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               "try{var t=localStorage.getItem('vardiya-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
           }}
         />
-        <header className="border-b border-zinc-200 bg-white/80 backdrop-blur sticky top-0 z-30 print:hidden">
-          <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-zinc-900 text-white text-sm">
-                V
-              </span>
-              <span className="tracking-tight">Vardiya</span>
-            </Link>
-            <nav className="flex items-center gap-1 text-sm">
-              <Link
-                href="/"
-                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Ana Sayfa
-              </Link>
 
+        <a
+          href="#icerik"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-zinc-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+        >
+          İçeriğe geç
+        </a>
+
+        <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
+            <div className="flex min-w-0 items-center gap-6">
+              <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-600 text-[13px] font-bold text-white">
+                  V
+                </span>
+                <span className="tracking-tight">Vardiya</span>
+              </Link>
+              {kullanici ? <UstMenu /> : null}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <ThemeToggle />
               {kullanici ? (
-                <>
-                  <Link
-                    href="/bugun"
-                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                  >
-                    Bugün
-                  </Link>
-                  <Link
-                    href="/raporlar"
-                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                  >
-                    Raporlar
-                  </Link>
-                  <Link
-                    href="/takvim"
-                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                  >
-                    Takvim
-                  </Link>
-                  <ThemeToggle />
-                  <ProfilMenusu email={kullanici.email} />
-                </>
+                <ProfilMenusu email={kullanici.email} />
               ) : (
-                <>
-                  <ThemeToggle />
-                  <Link
-                    href="/giris"
-                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                  >
-                    Giriş yap
+                <div className="flex items-center gap-1.5">
+                  <Link href="/giris" className="btn-sessiz">
+                    Giriş
                   </Link>
-                  <Link
-                    href="/kayit"
-                    className="rounded-md bg-zinc-900 px-3 py-1.5 font-medium text-white hover:bg-zinc-700"
-                  >
-                    Ücretsiz kayıt ol
+                  <Link href="/kayit" className="btn-birincil">
+                    Ücretsiz başla
                   </Link>
-                </>
+                </div>
               )}
-            </nav>
+            </div>
           </div>
         </header>
-        {children}
+
+        <div id="icerik" className="flex flex-1 flex-col">
+          {children}
+        </div>
+
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
-          <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-zinc-500 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span>Vardiya — kafe &amp; restoranlar için vardiya yönetimi.</span>
-            <span className="flex items-center gap-3">
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Vardiya — kafe &amp; restoranlar için vardiya yönetimi.
+            </span>
+            <span className="flex items-center gap-4">
               <Link href="/yardim" className="hover:text-zinc-900 hover:underline">
                 Yardım
               </Link>
               <Link href="/gizlilik" className="hover:text-zinc-900 hover:underline">
                 Gizlilik
               </Link>
-              <form action="/api/auth/logout" method="post">
-                <button type="submit" className="hover:text-zinc-900 hover:underline">
-                  Çıkış
-                </button>
-              </form>
-              <span>MVP</span>
+              <span className="text-zinc-400">© {yil}</span>
             </span>
           </div>
         </footer>
+
+        {kullanici ? <AltMenu /> : null}
       </body>
     </html>
   );

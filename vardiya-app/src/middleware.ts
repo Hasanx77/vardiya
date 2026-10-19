@@ -21,6 +21,7 @@ const PUBLIC_PREFIXES = ["/api/auth/", "/icons/", "/_next/"];
 const PUBLIC_FILES = [
   "/favicon.ico",
   "/robots.txt",
+  "/sitemap.xml",
   "/manifest.webmanifest",
   "/icon.png",
   "/apple-icon.png",
