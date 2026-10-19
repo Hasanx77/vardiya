@@ -256,6 +256,38 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Kurucu */}
+      <section className="mx-auto max-w-6xl px-4 pt-10">
+        <div className="kart flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-7">
+          <span
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-600 text-lg font-bold tracking-tight text-white"
+            aria-hidden="true"
+          >
+            HM
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+              Kurucu
+            </p>
+            <h2 className="mt-0.5 text-lg font-semibold tracking-tight">
+              Hasan Mum{" "}
+              <span className="font-normal text-zinc-500">
+                · Kurucu &amp; Geliştirici
+              </span>
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">
+              Vardiya&apos;yı, kafe ve restoran sektöründe çalışırken gördüğü
+              planlama karmaşasını çözmek için geliştirdi. Ürün hâlâ tek bir
+              soruyla şekilleniyor: &quot;Bu, işletmenin işini gerçekten
+              kolaylaştırıyor mu?&quot;
+            </p>
+          </div>
+          <Link href="/hakkimizda" className="btn-ikincil shrink-0">
+            Hikâyeyi oku →
+          </Link>
+        </div>
+      </section>
+
       {/* Son çağrı */}
       <section className="mx-auto max-w-6xl px-4 py-14">
         <div className="flex flex-col items-start justify-between gap-5 rounded-2xl bg-amber-500 px-6 py-8 sm:flex-row sm:items-center sm:px-8">

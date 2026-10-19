@@ -529,6 +529,12 @@ html.dark .cip {
 html.dark .btn-sessiz:hover {
   color: var(--metin);
 }
+html.dark .hover\:text-zinc-900:hover {
+  color: #fafafa;
+}
+html.dark .hover\:text-zinc-800:hover {
+  color: #e4e4e7;
+}
 
 /* Tanıtım sayfasındaki açık renkli vardiya çipleri */
 html.dark .bg-rose-50 {

@@ -133,6 +133,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               Vardiya — kafe &amp; restoranlar için vardiya yönetimi.
             </span>
             <span className="flex items-center gap-4">
+              <Link href="/hakkimizda" className="hover:text-zinc-900 hover:underline">
+                Hakkımızda
+              </Link>
               <Link href="/yardim" className="hover:text-zinc-900 hover:underline">
                 Yardım
               </Link>

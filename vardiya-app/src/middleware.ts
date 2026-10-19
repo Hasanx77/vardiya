@@ -8,14 +8,14 @@ import { COOKIE_NAME, tokenKullanici } from "@/lib/session";
  *   /            → tanıtım sayfası
  *   /giris       → giriş
  *   /kayit       → kayıt ol
- *   /gizlilik, /yardim, /robots.txt, /manifest.webmanifest, /icons/*
+ *   /gizlilik, /yardim, /hakkimizda, /robots.txt, /manifest.webmanifest, /icons/*
  *   /ekip/<id>   → personelin salt-okunur programı (paylaşılabilir bağlantı)
  *   /api/auth/*, /api/ekip/<id>, /api/calendar/<id> → aynı amaca hizmet eden uçlar
  *
  * Geri kalan her şey (panel, bugun, raporlar, takvim, /ekip listesi, yazdir,
  * tüm diğer /api/*) geçerli bir oturum çerezi ister. Aksi halde /giris'e yönlendirilir.
  */
-const PUBLIC_PATHS = new Set(["/", "/giris", "/kayit", "/gizlilik", "/yardim"]);
+const PUBLIC_PATHS = new Set(["/", "/giris", "/kayit", "/gizlilik", "/yardim", "/hakkimizda"]);
 
 const PUBLIC_PREFIXES = ["/api/auth/", "/api/ekip/", "/api/calendar/", "/icons/", "/_next/"];
 
