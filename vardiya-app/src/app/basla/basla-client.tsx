@@ -75,7 +75,7 @@ export default function BaslaClient({ initialData }: { initialData: StatePayload
     setBusy(true);
     try {
       if (!data || cleanName !== data.business.name) {
-        await updateBusiness(cleanName);
+        await updateBusiness({ name: cleanName });
       }
       if (parsed.length > 0) {
         await addEmployeesBulk(parsed);

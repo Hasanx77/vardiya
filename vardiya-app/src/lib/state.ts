@@ -30,7 +30,12 @@ export async function getStatePayload(): Promise<StatePayload> {
     ]);
 
   return {
-    business: { id: business.id, name: business.name },
+    business: {
+      id: business.id,
+      name: business.name,
+      openTime: business.openTime,
+      closeTime: business.closeTime,
+    },
     employees: employees.map((e) => ({
       id: e.id,
       name: e.name,

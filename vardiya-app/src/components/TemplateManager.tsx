@@ -8,7 +8,19 @@ import { shiftHours } from "@/lib/shifts";
 
 type Draft = { name: string; start: string; end: string; color: string; minStaff: string };
 
-const EMPTY: Draft = { name: "", start: "09:00", end: "17:00", color: "sky", minStaff: "0" };
+/**
+ * Yeni şablon taslağı. Saatler **standart mesai saatlerinden** gelir:
+ * açılış → kapanış (işletme "Standart" ayarında ne yazdıysa o).
+ */
+function bosDraft(standart?: { openTime: string; closeTime: string }): Draft {
+  return {
+    name: "",
+    start: standart?.openTime ?? "09:00",
+    end: standart?.closeTime ?? "23:00",
+    color: "sky",
+    minStaff: "0",
+  };
+}
 
 function toNum(v: string): number {
   const n = Number(v);
@@ -41,12 +53,14 @@ function ColorPicker({
 
 export default function TemplateManager({
   templates,
+  standart,
   onChanged,
 }: {
   templates: ShiftTemplate[];
+  standart?: { openTime: string; closeTime: string };
   onChanged: () => void;
 }) {
-  const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [draft, setDraft] = useState<Draft>(() => bosDraft(standart));
   const [editing, setEditing] = useState<Record<string, Draft>>({});
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,7 +75,7 @@ export default function TemplateManager({
     setBusy(true);
     try {
       await addTemplate({ ...draft, minStaff: toNum(draft.minStaff) });
-      setDraft(EMPTY);
+      setDraft(bosDraft(standart));
       await onChanged();
       flash("Şablon eklendi ✅");
     } catch {

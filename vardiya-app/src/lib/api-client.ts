@@ -17,11 +17,18 @@ export function fetchState(): Promise<StatePayload> {
   return jsonRequest<StatePayload>("/api/state");
 }
 
-export function updateBusiness(name: string) {
-  return jsonRequest<{ id: string; name: string }>("/api/business", {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
+export function updateBusiness(input: {
+  name?: string;
+  openTime?: string;
+  closeTime?: string;
+}) {
+  return jsonRequest<{ id: string; name: string; openTime: string; closeTime: string }>(
+    "/api/business",
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }
+  );
 }
 
 export function addEmployee(input: {

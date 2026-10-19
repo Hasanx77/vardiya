@@ -64,7 +64,7 @@ export type DayNote = {
 
 /** /api/state yanıtı */
 export type StatePayload = {
-  business: { id: string; name: string };
+  business: { id: string; name: string; openTime: string; closeTime: string };
   employees: Employee[];
   shiftTemplates: ShiftTemplate[];
   assignments: AssignmentRow[];

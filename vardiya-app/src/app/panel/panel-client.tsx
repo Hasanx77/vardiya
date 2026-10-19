@@ -16,9 +16,10 @@ import {
   setDayNote as apiSetDayNote,
   updateBusiness as apiUpdateBusiness,
   updateEmployee as apiUpdateEmployee,
+  updateTemplate as apiUpdateTemplate,
 } from "@/lib/api-client";
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
-import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
+import { shiftHours, WEEKLY_LIMIT_HOURS, standartSablonlar } from "@/lib/shifts";
 import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
@@ -45,6 +46,9 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   const [announcementDraft, setAnnouncementDraft] = useState("");
   const [showBulk, setShowBulk] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStandart, setShowStandart] = useState(false);
+  const [acilisDraft, setAcilisDraft] = useState("09:00");
+  const [kapanisDraft, setKapanisDraft] = useState("23:00");
   const [showMore, setShowMore] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedEmpId, setExpandedEmpId] = useState<string | null>(null);
@@ -62,6 +66,8 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       const state = await fetchState();
       setData(state);
       setNameDraft(state.business.name);
+      setAcilisDraft(state.business.openTime);
+      setKapanisDraft(state.business.closeTime);
       setError("");
     } catch {
       setError("Sunucuya ulaşılamadı. Dev server çalışıyor mu?");
@@ -208,12 +214,43 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     }
   }
 
-  async function saveBusinessName() {
+  /** Standart mesai saatlerini kaydet */
+  async function standartKaydet() {
     if (!data) return;
+    if (acilisDraft === kapanisDraft) return flash("Açılış ve kapanış aynı olamaz.");
+    try {
+      await apiUpdateBusiness({ openTime: acilisDraft, closeTime: kapanisDraft });
+      await load();
+      flash("Standart mesai saatleri kaydedildi ✅");
+    } catch {
+      flash("Kaydedilemedi.");
+    }
+  }
+
+  /** Mevcut şablonları standart saatlere uydur (atamalar silinmez) */
+  async function sablonlariStandartaUydur() {
+    if (!data) return;
+    const hedef = standartSablonlar(acilisDraft, kapanisDraft);
+    let sayi = 0;
+    try {
+      for (const s of hedef) {
+        const mevcut = data.shiftTemplates.find((t) => t.name === s.name);
+        if (!mevcut) continue;
+        await apiUpdateTemplate(mevcut.id, { start: s.start, end: s.end });
+        sayi++;
+      }
+      await load();
+      flash(sayi > 0 ? `${sayi} şablon standart saatlere uyduruldu ✅` : "Eşleşen şablon yok.");
+    } catch {
+      flash("Şablonlar güncellenemedi.");
+    }
+  }
+
+  async function saveBusinessName() {    if (!data) return;
     const name = nameDraft.trim();
     if (!name || name === data.business.name) return;
     try {
-      await apiUpdateBusiness(name);
+      await apiUpdateBusiness({ name });
       await load();
       flash("İşletme adı kaydedildi.");
     } catch {
@@ -1113,7 +1150,11 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         </div>
         {showTemplates && (
           <div className="mt-4">
-            <TemplateManager templates={data.shiftTemplates} onChanged={load} />
+            <TemplateManager
+              templates={data.shiftTemplates}
+              standart={{ openTime: data.business.openTime, closeTime: data.business.closeTime }}
+              onChanged={load}
+            />
           </div>
         )}
         <p className="mt-3 text-xs text-zinc-500">
@@ -1121,6 +1162,75 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
           {MIN_DAILY_REST_HOURS} saat dinlenme ve aynı gün çift vardiya (İş Kanunu 4857). İhlaller
           yukarıdaki &quot;Mevzuat Uyarıları&quot; kartında listelenir.
         </p>
+      </div>
+
+      {/* Standart — mesai saatleri */}
+      <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-zinc-800">📐 Standart</h3>
+            <p className="mt-0.5 text-sm text-zinc-600">
+              Standart mesai saatleriniz:{" "}
+              <strong className="text-zinc-800">
+                {data.business.openTime} – {data.business.closeTime}
+              </strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowStandart((s) => !s)}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100"
+          >
+            {showStandart ? "Kapat" : "Mesai saati ayarla"}
+          </button>
+        </div>
+
+        {showStandart && (
+          <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+            <p className="text-sm text-zinc-600">
+              Açılış ve kapanış saatlerini yaz. Yeni vardiya şablonları bu saatlerden türetilir;
+              istersen mevcut şablonları da tek tıkla bu saatlere uydurabilirsin.
+            </p>
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <label className="text-sm">
+                <span className="block text-zinc-600">Açılış</span>
+                <input
+                  type="time"
+                  value={acilisDraft}
+                  onChange={(e) => setAcilisDraft(e.target.value)}
+                  className="mt-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="block text-zinc-600">Kapanış</span>
+                <input
+                  type="time"
+                  value={kapanisDraft}
+                  onChange={(e) => setKapanisDraft(e.target.value)}
+                  className="mt-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={standartKaydet}
+                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+              >
+                Kaydet
+              </button>
+              <button
+                type="button"
+                onClick={sablonlariStandartaUydur}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100"
+              >
+                Şablonları bu saatlere uydur
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              &quot;Şablonları uydur&quot; Sabah / Akşam / Tam Gün / Ara Vardiya saatlerini günceller —
+              mevcut vardiya atamaları <strong>silinmez</strong>.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Ayarlar modali */}

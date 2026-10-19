@@ -29,6 +29,10 @@ model Business {
   name      String   @default("İşletmem")
   createdAt DateTime @default(now())
 
+  // Standart mesai saatleri — vardiya şablonları bu saatlerden türetilir.
+  openTime  String   @default("09:00")
+  closeTime String   @default("23:00")
+
   // Sahibi: bir kullanıcı yalnızca kendi işletmesini görür (hesap izolasyonu).
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)

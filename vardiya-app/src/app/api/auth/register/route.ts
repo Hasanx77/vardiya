@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { COOKIE_NAME, cerezAyarlari, girdilerGecerliMi, sifreOzetle } from "@/lib/auth";
 import { oturumTokeni } from "@/lib/session";
-import { DEFAULT_SHIFTS } from "@/lib/shifts";
+import { standartSablonlar } from "@/lib/shifts";
+import { normalizeTime } from "@/lib/validate";
 import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
 
 /**
@@ -39,12 +40,22 @@ export async function POST(req: Request) {
     data: { email, passwordHash: sifreOzetle(sifre), lastLoginAt: new Date() },
   });
 
+  // Standart mesai saatleri (kayıt formundan gelir; yoksa 09:00–23:00)
+  const acilis = normalizeTime(String(form.get("acilis") ?? "")) ?? "09:00";
+  const kapanis = normalizeTime(String(form.get("kapanis") ?? "")) ?? "23:00";
+
   const business = await prisma.business.create({
-    data: { userId: kullanici.id, name: isletme || "İşletmem" },
+    data: {
+      userId: kullanici.id,
+      name: isletme || "İşletmem",
+      openTime: acilis,
+      closeTime: kapanis === acilis ? "23:59" : kapanis,
+    },
   });
 
+  // Vardiya şablonları doğrudan standart saatlerden üretilir
   await prisma.shiftTemplate.createMany({
-    data: DEFAULT_SHIFTS.map((s) => ({
+    data: standartSablonlar(business.openTime, business.closeTime).map((s) => ({
       businessId: business.id,
       name: s.name,
       start: s.start,
