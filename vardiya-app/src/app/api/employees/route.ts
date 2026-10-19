@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { nextColor } from "@/lib/colors";
 
+/**
+ * Yeni personel ekle.
+ * Not: Saatlik ücret/maliyet bilgisi **toplanmaz** (ürün yalnızca vardiya planlar).
+ */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const name = String(body?.name ?? "").trim();
@@ -12,8 +16,6 @@ export async function POST(request: Request) {
 
   const business = await ensureBusiness();
   const count = await prisma.employee.count({ where: { businessId: business.id } });
-  const wageRaw = Number(body?.hourlyWage);
-  const hourlyWage = Number.isFinite(wageRaw) && wageRaw >= 0 ? wageRaw : 0;
   const leaveRaw = Number(body?.annualLeaveDays);
   const annualLeaveDays = Number.isFinite(leaveRaw) && leaveRaw >= 0 ? Math.round(leaveRaw) : 14;
 
@@ -24,7 +26,6 @@ export async function POST(request: Request) {
       phone: String(body?.phone ?? "").trim().slice(0, 30),
       role: String(body?.role ?? "").trim().slice(0, 40) || "Personel",
       color: nextColor(count),
-      hourlyWage,
       annualLeaveDays,
     },
   });
@@ -35,7 +36,6 @@ export async function POST(request: Request) {
     phone: emp.phone,
     role: emp.role,
     color: emp.color,
-    hourlyWage: emp.hourlyWage,
     annualLeaveDays: emp.annualLeaveDays,
   });
 }

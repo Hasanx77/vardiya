@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
+import ProfilMenusu from "@/components/ProfilMenusu";
+import { aktifKullanici } from "@/lib/auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,7 +37,10 @@ export const viewport: Viewport = {
   themeColor: "#18181b",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Sağ üst menü oturuma göre değişir (giriş yapılmış / yapılmamış).
+  const kullanici = await aktifKullanici();
+
   return (
     <html
       lang="tr"
@@ -65,31 +70,47 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               >
                 Ana Sayfa
               </Link>
-              <Link
-                href="/bugun"
-                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Bugün
-              </Link>
-              <Link
-                href="/raporlar"
-                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Raporlar
-              </Link>
-              <Link
-                href="/takvim"
-                className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-              >
-                Takvim
-              </Link>
-              <ThemeToggle />
-              <Link
-                href="/panel"
-                className="rounded-md px-3 py-1.5 font-medium bg-zinc-900 text-white hover:bg-zinc-700"
-              >
-                Panele Git
-              </Link>
+
+              {kullanici ? (
+                <>
+                  <Link
+                    href="/bugun"
+                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                  >
+                    Bugün
+                  </Link>
+                  <Link
+                    href="/raporlar"
+                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                  >
+                    Raporlar
+                  </Link>
+                  <Link
+                    href="/takvim"
+                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                  >
+                    Takvim
+                  </Link>
+                  <ThemeToggle />
+                  <ProfilMenusu email={kullanici.email} />
+                </>
+              ) : (
+                <>
+                  <ThemeToggle />
+                  <Link
+                    href="/giris"
+                    className="rounded-md px-3 py-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                  >
+                    Giriş yap
+                  </Link>
+                  <Link
+                    href="/kayit"
+                    className="rounded-md bg-zinc-900 px-3 py-1.5 font-medium text-white hover:bg-zinc-700"
+                  >
+                    Ücretsiz kayıt ol
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         </header>

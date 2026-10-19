@@ -32,7 +32,7 @@ export default async function GizlilikPage() {
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>Hesap:</strong> e-posta adresi, şifrenin geri döndürülemez özeti (hash), hesap oluşturma ve son giriş zamanı.</li>
             <li><strong>İşletme:</strong> işletme adı, vardiya şablonları (saat/renk).</li>
-            <li><strong>Personel kayıtları:</strong> ad, telefon, görev, saatlik ücret, yıllık izin hakkı — <em>senin girdiğin kadarıyla</em>.</li>
+            <li><strong>Personel kayıtları:</strong> ad, telefon, görev, yıllık izin hakkı — <em>senin girdiğin kadarıyla</em>. (Ücret/maaş bilgisi <strong>istenmez ve saklanmaz</strong>.)</li>
             <li><strong>Planlama:</strong> vardiya atamaları, duyurular, gün notları.</li>
           </ul>
 

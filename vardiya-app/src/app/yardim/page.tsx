@@ -41,7 +41,7 @@ const sections: { id: string; title: string; items: string[] }[] = [
     title: "🧰 Diğer",
     items: [
       "Bugün: kafede tablete açılabilecek 'bugün kim çalışıyor' tahtası.",
-      "Raporlar: aylık saat / maliyet / izin özeti + CSV.",
+      "Raporlar: aylık saat / izin özeti + CSV.",
       "Yazdır: duvara asılacak haftalık çizelge.",
       "Sağ üstteki 🌙/☀️ ile koyu/açık tema.",
     ],

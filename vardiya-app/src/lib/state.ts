@@ -37,7 +37,6 @@ export async function getStatePayload(): Promise<StatePayload> {
       phone: e.phone,
       role: e.role,
       color: e.color as ColorKey,
-      hourlyWage: e.hourlyWage,
       annualLeaveDays: e.annualLeaveDays,
     })),
     shiftTemplates: shiftTemplates.map((t) => ({

@@ -55,14 +55,12 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
         name: e.name,
         color: e.color,
         hours,
-        cost: Math.round(hours * (e.hourlyWage || 0)),
         leaveDays: e.annualLeaveDays ?? 0,
       };
     });
   }, [data, monthAssignments, shiftById]);
 
   const totalHours = Math.round(rows.reduce((s, r) => s + r.hours, 0) * 10) / 10;
-  const totalCost = rows.reduce((s, r) => s + r.cost, 0);
 
   const dailyHours = useMemo(() => {
     return days.map((iso) => {
@@ -78,12 +76,12 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
   const maxDaily = Math.max(1, ...dailyHours);
 
   function exportCsv() {
-    const head = ["Personel", "Saat", "Maliyet (TL)", "İzin hakkı (gün)"];
+    const head = ["Personel", "Saat", "İzin hakkı (gün)"];
     const lines = [head.join(";")];
     for (const r of rows) {
-      lines.push([r.name, String(r.hours), String(r.cost), String(r.leaveDays)].join(";"));
+      lines.push([r.name, String(r.hours), String(r.leaveDays)].join(";"));
     }
-    lines.push(["TOPLAM", String(totalHours), String(totalCost), ""].join(";"));
+    lines.push(["TOPLAM", String(totalHours), ""].join(";"));
     const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
       type: "text/csv;charset=utf-8",
     });
@@ -141,9 +139,12 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
           <div className="mt-1 text-2xl font-semibold">{totalHours} sa</div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <div className="text-xs text-zinc-500">Tahmini işçilik maliyeti</div>
+          <div className="text-xs text-zinc-500">Ortalama günlük saat</div>
           <div className="mt-1 text-2xl font-semibold">
-            {totalCost > 0 ? `≈ ${totalCost.toLocaleString("tr-TR")} ₺` : "—"}
+            {dailyHours.length > 0
+              ? Math.round((dailyHours.reduce((s, h) => s + h, 0) / dailyHours.length) * 10) / 10
+              : 0}{" "}
+            sa
           </div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-col justify-center">
@@ -182,7 +183,6 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
             <tr className="bg-zinc-50 text-zinc-500">
               <th className="px-4 py-3 text-left font-medium">Personel</th>
               <th className="px-4 py-3 text-right font-medium">Saat</th>
-              <th className="px-4 py-3 text-right font-medium">Maliyet</th>
               <th className="px-4 py-3 text-right font-medium">İzin hakkı</th>
             </tr>
           </thead>
@@ -191,9 +191,6 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
               <tr key={r.id} className="border-t border-zinc-100">
                 <td className="px-4 py-2">{r.name}</td>
                 <td className="px-4 py-2 text-right font-medium">{r.hours} sa</td>
-                <td className="px-4 py-2 text-right">
-                  {r.cost > 0 ? `≈ ${r.cost.toLocaleString("tr-TR")} ₺` : "—"}
-                </td>
                 <td className="px-4 py-2 text-right text-zinc-500">{r.leaveDays} gün</td>
               </tr>
             ))}
@@ -202,9 +199,6 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
             <tr className="border-t border-zinc-200 bg-zinc-50 font-semibold">
               <td className="px-4 py-3">Toplam</td>
               <td className="px-4 py-3 text-right">{totalHours} sa</td>
-              <td className="px-4 py-3 text-right">
-                {totalCost > 0 ? `≈ ${totalCost.toLocaleString("tr-TR")} ₺` : "—"}
-              </td>
               <td className="px-4 py-3" />
             </tr>
           </tfoot>
@@ -212,8 +206,8 @@ export default function RaporlarClient({ initialData }: { initialData: StatePayl
       </div>
 
       <p className="mt-4 text-xs text-zinc-400">
-        Saatler atanmış vardiyalardan hesaplanır. Maliyet, personelin saatlik ücreti girilmişse
-        gösterilir.
+        Saatler atanmış vardiyalardan hesaplanır. Bu ekranda yalnızca vardiya/saat bilgisi tutulur —
+        ücret veya maliyet kaydı yapılmaz.
       </p>
     </main>
   );

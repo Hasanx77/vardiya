@@ -5,7 +5,6 @@ import {
   MIN_DAILY_REST_HOURS,
   NIGHT_LIMIT_HOURS,
   nightHours,
-  OVERTIME_MULTIPLIER,
   restHoursBetween,
   shiftBounds,
   timeToMinutes,
@@ -164,7 +163,7 @@ describe("analyzeWeek", () => {
 
   it("sabitler mevzuata uygun", () => {
     expect(MIN_DAILY_REST_HOURS).toBe(11);
-    expect(OVERTIME_MULTIPLIER).toBe(1.5);
+    expect(NIGHT_LIMIT_HOURS).toBe(7.5);
   });
 
   it("gece vardiyası 7,5 saati aşınca uyarır", () => {

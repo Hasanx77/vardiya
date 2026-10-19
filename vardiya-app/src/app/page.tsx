@@ -22,7 +22,7 @@ const features = [
   { icon: "🗓️", title: "Haftalık ızgara", text: "Personel × gün; süratle doldur, toplam saati anında gör." },
   { icon: "📲", title: "WhatsApp gönderimi", text: "Tek tık ya da tüm ekibe birden. Uygulama indirmeye gerek yok." },
   { icon: "⚖️", title: "Mevzuat uyarısı", text: "Haftalık 45 saat sınırını aşanı otomatik işaretler." },
-  { icon: "💰", title: "Maliyet tahmini", text: "Saatlik ücret × saat = haftalık işçilik maliyeti." },
+  { icon: "✅", title: "Kim hangi gün çalışıyor?", text: "Her personelin çalıştığı ve boş günlerini tek bakışta gör." },
   { icon: "🧑‍🍳", title: "Personel görünümü", text: "Çalışan kendi programını görür, izin talebi gönderir." },
   { icon: "🖨️", title: "Yazdırılabilir çizelge", text: "Duvara asılacak temiz haftalık çizelge." },
 ];

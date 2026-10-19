@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureBusiness } from "@/lib/server-data";
 import { cleanText, isValidColor, normalizeTime } from "@/lib/validate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+/**
+ * Vardiya şablonu güncelle / sil.
+ * 🔒 Kayıt oturumdaki kullanıcının işletmesine ait değilse işlem yapılmaz.
+ */
 export async function PATCH(request: Request, { params }: Ctx) {
   const { id } = await params;
+  const business = await ensureBusiness();
   const body = await request.json().catch(() => ({}));
 
   const data: Record<string, string | number> = {};
@@ -21,27 +27,34 @@ export async function PATCH(request: Request, { params }: Ctx) {
     if (Number.isFinite(m) && m >= 0) data.minStaff = Math.round(m);
   }
 
-  try {
-    const t = await prisma.shiftTemplate.update({ where: { id }, data });
-    return NextResponse.json({
-      id: t.id,
-      name: t.name,
-      start: t.start,
-      end: t.end,
-      color: t.color,
-      minStaff: t.minStaff,
-    });
-  } catch {
+  const sonuc = await prisma.shiftTemplate.updateMany({
+    where: { id, businessId: business.id },
+    data,
+  });
+  if (sonuc.count === 0) {
     return NextResponse.json({ error: "Şablon bulunamadı" }, { status: 404 });
   }
+
+  const t = await prisma.shiftTemplate.findUnique({ where: { id } });
+  return NextResponse.json({
+    id: t?.id,
+    name: t?.name,
+    start: t?.start,
+    end: t?.end,
+    color: t?.color,
+    minStaff: t?.minStaff,
+  });
 }
 
 export async function DELETE(_request: Request, { params }: Ctx) {
   const { id } = await params;
-  try {
-    await prisma.shiftTemplate.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
-  } catch {
+  const business = await ensureBusiness();
+
+  const sonuc = await prisma.shiftTemplate.deleteMany({
+    where: { id, businessId: business.id },
+  });
+  if (sonuc.count === 0) {
     return NextResponse.json({ error: "Şablon bulunamadı" }, { status: 404 });
   }
+  return NextResponse.json({ ok: true });
 }

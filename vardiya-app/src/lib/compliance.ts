@@ -1,9 +1,11 @@
 // Mevzuat / çakışma kuralları — saf (yan etkisiz) fonksiyonlar.
 // İş Kanunu (4857) referansları:
 //   • Haftalık çalışma süresi: 45 saat (m.63)
-//   • Fazla mesai ücreti: %50 zamlı (m.41)
 //   • Günlük (iki vardiya arası) en az dinlenme: 11 saat (m.69)
+//   • Gece çalışması azami süre: 7,5 saat (m.69)
 // Bu modül sunucuya bağımlı değildir; panelde de, testlerde de kullanılabilir.
+//
+// Not: Uygulama ücret/maliyet hesabı **yapmaz**; burada yalnızca süre kuralları denetlenir.
 
 import { DAY_SHORT_TR } from "./dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "./shifts";
@@ -11,8 +13,6 @@ import { isFullHoliday } from "./holidays";
 
 /** İki vardiya arası en az dinlenme süresi (saat) — 4857 m.69 */
 export const MIN_DAILY_REST_HOURS = 11;
-/** Fazla mesai çarpanı (normal ücretin %50 fazlası → 1,5x) — 4857 m.41 */
-export const OVERTIME_MULTIPLIER = 1.5;
 /** Gece çalışması azami süre (saat) — 4857 m.69 */
 export const NIGHT_LIMIT_HOURS = 7.5;
 
@@ -220,7 +220,7 @@ export function analyzeWeek(input: WeekAnalysisInput): WeekAnalysis {
           type: "tatil",
           severity: "warn",
           date: iso,
-          message: `${dayLabel(iso)} resmî tatilde çalışma atanmış (fazla mesai ücreti gerekir).`,
+          message: `${dayLabel(iso)} resmî tatilde çalışma atanmış.`,
         });
       }
     }

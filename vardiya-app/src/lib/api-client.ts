@@ -28,7 +28,6 @@ export function addEmployee(input: {
   name: string;
   phone: string;
   role: string;
-  hourlyWage?: number;
 }) {
   return jsonRequest<{ id: string }>("/api/employees", {
     method: "POST",
@@ -51,7 +50,6 @@ export function updateEmployee(
     name?: string;
     phone?: string;
     role?: string;
-    hourlyWage?: number;
     annualLeaveDays?: number;
   }
 ) {

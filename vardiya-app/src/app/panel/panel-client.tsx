@@ -19,7 +19,7 @@ import {
 } from "@/lib/api-client";
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
 import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
-import { analyzeWeek, MIN_DAILY_REST_HOURS, OVERTIME_MULTIPLIER } from "@/lib/compliance";
+import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 import TemplateManager from "@/components/TemplateManager";
@@ -40,7 +40,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     name: "",
     phone: "",
     role: "",
-    hourlyWage: "",
     annualLeaveDays: "",
   });
   const [announcementDraft, setAnnouncementDraft] = useState("");
@@ -49,7 +48,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   const [showMore, setShowMore] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedEmpId, setExpandedEmpId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", role: "", hourlyWage: "" });
+  const [form, setForm] = useState({ name: "", phone: "", role: "" });
   const [nameDraft, setNameDraft] = useState("");
   const [toast, setToast] = useState("");
 
@@ -188,9 +187,8 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         name,
         phone: form.phone.trim(),
         role: form.role.trim(),
-        hourlyWage: Number(form.hourlyWage) || 0,
       });
-      setForm({ name: "", phone: "", role: "", hourlyWage: "" });
+      setForm({ name: "", phone: "", role: "" });
       setShowForm(false);
       await load();
       flash("Personel eklendi ✅");
@@ -277,8 +275,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       "Görev",
       ...weekDates.map((d) => formatShort(d)),
       "Toplam Saat",
-      "Fazla Mesai (sa)",
-      "Maliyet (TL)",
+      "45 saat üstü (sa)",
     ];
     const rows: string[][] = [head];
     for (const emp of data.employees) {
@@ -293,7 +290,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         ...cells,
         String(weekTotal(emp)),
         String(empOvertime(emp)),
-        String(Math.round(weekCost(emp))),
       ]);
     }
     const csv = rows
@@ -352,7 +348,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       name: emp.name,
       phone: emp.phone,
       role: emp.role,
-      hourlyWage: emp.hourlyWage ? String(emp.hourlyWage) : "",
       annualLeaveDays: emp.annualLeaveDays != null ? String(emp.annualLeaveDays) : "14",
     });
   }
@@ -366,7 +361,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
         name,
         phone: empDraft.phone.trim(),
         role: empDraft.role.trim(),
-        hourlyWage: Number(empDraft.hourlyWage) || 0,
         annualLeaveDays:
           empDraft.annualLeaveDays.trim() === ""
             ? 14
@@ -391,13 +385,16 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
     return total;
   }
 
-  function weekCost(emp: Employee): number {
-    return weekTotal(emp) * (emp.hourlyWage || 0);
-  }
-
   /** Personelin haftalık fazla mesai saati (45 sa üstü) */
   function empOvertime(emp: Employee): number {
     return analysis?.perEmployee.get(emp.id)?.overtimeHours ?? 0;
+  }
+
+  /** Personelin bu hafta çalıştığı günlerin kısa adları (ör. "Pzt, Çar, Cum") */
+  function calistigiGunler(emp: Employee): string[] {
+    return weekDates
+      .filter((d) => assignMap.has(keyOf(emp.id, toISODate(d))))
+      .map((d) => DAY_SHORT_TR[d.getDay()]);
   }
 
   function sendWhatsApp(emp: Employee) {
@@ -467,12 +464,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
   }
 
   const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
-  const totalCost = data.employees.reduce((s, e) => s + weekTotal(e) * (e.hourlyWage || 0), 0);
   const totalOvertime = analysis?.totalOvertimeHours ?? 0;
-  const overtimeCost = data.employees.reduce(
-    (s, e) => s + empOvertime(e) * (e.hourlyWage || 0) * OVERTIME_MULTIPLIER,
-    0
-  );
   const issues = analysis?.issues ?? [];
 
   const visibleEmployees = data.employees.filter((e) => {
@@ -554,13 +546,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
               placeholder="Görev (Barista, Garson…)"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
-            />
-            <input
-              placeholder="Saatlik ücret ₺"
-              inputMode="decimal"
-              value={form.hourlyWage}
-              onChange={(e) => setForm({ ...form, hourlyWage: e.target.value })}
               className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900"
             />
             <button
@@ -839,13 +824,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                             className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
                           />
                           <input
-                            value={empDraft.hourlyWage}
-                            onChange={(e) => setEmpDraft({ ...empDraft, hourlyWage: e.target.value })}
-                            placeholder="Saatlik ₺"
-                            inputMode="decimal"
-                            className="rounded border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-900"
-                          />
-                          <input
                             value={empDraft.annualLeaveDays}
                             onChange={(e) =>
                               setEmpDraft({ ...empDraft, annualLeaveDays: e.target.value })
@@ -914,11 +892,6 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                           +{empOvertime(emp)} sa fazla mesai
                         </span>
                       )}
-                      {emp.hourlyWage > 0 && (
-                        <span className="block text-[11px] text-zinc-500">
-                          ≈ {weekCost(emp).toLocaleString("tr-TR")} ₺
-                        </span>
-                      )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {editingEmpId === emp.id ? (
@@ -981,12 +954,15 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                           {emp.phone ? `📞 ${emp.phone} · ` : ""}
                           Bu ay: <strong>{Math.round(stat.hours * 10) / 10} sa</strong> ·{" "}
                           {stat.days} gün
-                          {emp.hourlyWage > 0
-                            ? ` · ≈ ${Math.round(stat.hours * emp.hourlyWage).toLocaleString(
-                                "tr-TR"
-                              )} ₺`
-                            : ""}
                           {" · "}Kalan izin: <strong>{leaveLeft} gün</strong>
+                          <span className="mt-1 block text-xs">
+                            {(() => {
+                              const gunler = calistigiGunler(emp);
+                              return gunler.length
+                                ? `✅ Çalıştığı günler: ${gunler.join(", ")}`
+                                : "⛔ Bu hafta hiçbir güne atanmamış";
+                            })()}
+                          </span>
                         </td>
                       </tr>
                     )}
@@ -1023,9 +999,13 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
           <div className="mt-1 text-2xl font-semibold">{summaryHours} sa</div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <div className="text-xs text-zinc-500">Tahmini işçilik maliyeti</div>
+          <div className="text-xs text-zinc-500">Bu hafta çalışan kişi</div>
           <div className="mt-1 text-2xl font-semibold">
-            {totalCost > 0 ? `≈ ${totalCost.toLocaleString("tr-TR")} ₺` : "—"}
+            {data.employees.filter((e) => calistigiGunler(e).length > 0).length}
+            <span className="text-base font-normal text-zinc-500">
+              {" "}
+              / {data.employees.length}
+            </span>
           </div>
         </div>
         <div
@@ -1033,15 +1013,10 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
             totalOvertime > 0 ? "border-amber-200 bg-amber-50" : "border-zinc-200 bg-white"
           }`}
         >
-          <div className="text-xs text-zinc-500">Fazla mesai ({WEEKLY_LIMIT_HOURS} sa üstü)</div>
+          <div className="text-xs text-zinc-500">45 saat üstü ({WEEKLY_LIMIT_HOURS} sa sınırı)</div>
           <div className={`mt-1 text-2xl font-semibold ${totalOvertime > 0 ? "text-amber-700" : ""}`}>
             {totalOvertime > 0 ? `${totalOvertime} sa` : "—"}
           </div>
-          {overtimeCost > 0 && (
-            <div className="text-[11px] text-amber-600">
-              ≈ {Math.round(overtimeCost).toLocaleString("tr-TR")} ₺ ({OVERTIME_MULTIPLIER}x)
-            </div>
-          )}
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="text-xs text-zinc-500">Personel sayısı</div>
