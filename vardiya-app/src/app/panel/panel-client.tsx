@@ -528,7 +528,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
 
       {/* Personel ekleme formu */}
       {showForm && (
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="grid gap-3 sm:grid-cols-5">
             <input
               placeholder="Ad Soyad *"
@@ -648,8 +648,8 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       </div>
 
       {/* Bugün kim çalışıyor? */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-700">
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h3 className="text-base font-semibold text-zinc-800">
           Bugün kim çalışıyor?{" "}
           <span className="font-normal text-zinc-400">({formatShort(new Date())})</span>
         </h3>
@@ -681,8 +681,8 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       </div>
 
       {/* Duyurular */}
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-700">📢 Duyurular</h3>
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h3 className="text-base font-semibold text-zinc-800">📢 Duyurular</h3>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
             value={announcementDraft}
@@ -766,7 +766,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                   const iso = toISODate(d);
                   const holiday = getHoliday(iso);
                   return (
-                    <th key={iso} className="px-2 py-3 font-medium whitespace-nowrap">
+                    <th key={iso} className="px-2 py-3 font-semibold whitespace-nowrap">
                       <span className={holiday ? "text-red-600" : ""}>
                         {DAY_SHORT_TR[(d.getDay() + 6) % 7]}
                       </span>
@@ -789,7 +789,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                     </th>
                   );
                 })}
-                <th className="px-3 py-3 font-medium whitespace-nowrap">Toplam</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Toplam</th>
                 <th className="px-3 py-3 font-medium">İşlem</th>
               </tr>
             </thead>
@@ -846,7 +846,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                             }`}
                           />
                           <div>
-                            <div className="font-medium whitespace-nowrap">{emp.name}</div>
+                            <div className="font-semibold whitespace-nowrap">{emp.name}</div>
                             <div className="text-[11px] text-zinc-400">
                               {emp.role} · İzin {leaveLeft} gün
                             </div>
@@ -862,11 +862,11 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
                         ? COLOR_CLASSES[template.color]?.chip ?? ""
                         : "bg-white text-zinc-400 border-dashed border-zinc-300";
                       return (
-                        <td key={iso} className="px-1.5 py-2">
+                        <td key={iso} className="px-2 py-2.5">
                           <select
                             value={shiftId}
                             onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
-                            className={`w-full min-w-[92px] cursor-pointer rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-zinc-300 ${cls}`}
+                            className={`w-full min-w-[104px] cursor-pointer rounded-lg border px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-300 ${cls}`}
                           >
                             <option value="">—</option>
                             {data.shiftTemplates.map((t) => (
@@ -994,11 +994,11 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
 
       {/* Haftalık özet */}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="text-xs text-zinc-500">Bu hafta toplam saat</div>
           <div className="mt-1 text-2xl font-semibold">{summaryHours} sa</div>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="text-xs text-zinc-500">Bu hafta çalışan kişi</div>
           <div className="mt-1 text-2xl font-semibold">
             {data.employees.filter((e) => calistigiGunler(e).length > 0).length}
@@ -1018,7 +1018,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
             {totalOvertime > 0 ? `${totalOvertime} sa` : "—"}
           </div>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="text-xs text-zinc-500">Personel sayısı</div>
           <div className="mt-1 text-2xl font-semibold">{data.employees.length}</div>
         </div>
@@ -1090,7 +1090,7 @@ export default function PanelClient({ initialData }: { initialData: StatePayload
       {/* Şablonlar */}
       <div className="mt-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-700">Vardiya Şablonları</h3>
+          <h3 className="text-base font-semibold text-zinc-800">Vardiya Şablonları</h3>
           <button
             onClick={() => setShowTemplates((s) => !s)}
             className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100"

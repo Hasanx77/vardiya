@@ -263,6 +263,76 @@ html.dark select option {
 }
 
 /* ============================================================
+   OKUNABİLİRLİK KATMANI (19 Eki 2026)
+   Amaç: çok küçük puntoları ve soluk renkleri yukarı çekmek;
+   telefondan da rahat okunan, göz yormayan bir arayüz.
+   ============================================================ */
+
+/* 1) En küçük yazı boyutlarını yukarı taşı */
+.text-\[10px\] {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.text-\[11px\] {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.text-xs {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* 2) Gövde satır aralığı — sıkışık metin zor okunur */
+body {
+  line-height: 1.6;
+}
+
+/* 3) Soluk yazıları koyulaştır (kontrast) */
+.text-zinc-400 {
+  color: #71717a; /* zinc-500 */
+}
+.text-zinc-500 {
+  color: #52525b; /* zinc-600 */
+}
+
+/* 4) Klavye odağı her zaman görünür olsun */
+:focus-visible {
+  outline: 2px solid #18181b;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+html.dark :focus-visible {
+  outline-color: #fafafa;
+}
+
+/* 5) Form öğeleri okunaklı punto */
+select,
+input,
+textarea {
+  font-size: 13px;
+}
+
+/* 6) Dokunmatik cihazlarda daha büyük hedefler (parmakla basmak kolay olsun) */
+@media (pointer: coarse) {
+  button,
+  select {
+    min-height: 40px;
+  }
+}
+
+/* 7) Tablo satırları arasında nefes payı */
+table td,
+table th {
+  vertical-align: middle;
+}
+
+/* 8) Uzun metinlerde kelime kesilmesin */
+p,
+li {
+  overflow-wrap: break-word;
+}
+
+/* ============================================================
    AKICILIK / YUMUŞAK GEÇİŞLER
    ============================================================ */
 html {
