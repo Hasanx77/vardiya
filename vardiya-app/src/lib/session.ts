@@ -16,6 +16,28 @@ export const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 gün
 
 const enc = new TextEncoder();
 
+/**
+ * Oturum imzası için ortam değişkeni.
+ *
+ * 🔒 Bu değer yoksa (veya çok kısaysa) imzalı çerez üretilemez. Sessizce boş
+ * anahtarla imzalamak "giriş yaptım ama giriş yapılmamış görünüyor" hatasına
+ * yol açıyordu; bu yüzden burada açıkça hata veriyoruz ve giriş/kayıt uçları
+ * önceden kontrol ediyor.
+ */
+const ASGARI_ANAHTAR_UZUNLUGU = 16;
+
+export function oturumAltyapisiHazir(): boolean {
+  return (process.env.AUTH_SECRET ?? "").trim().length >= ASGARI_ANAHTAR_UZUNLUGU;
+}
+
+function gizliAnahtar(): string {
+  const anahtar = (process.env.AUTH_SECRET ?? "").trim();
+  if (anahtar.length < ASGARI_ANAHTAR_UZUNLUGU) {
+    throw new Error("AUTH_SECRET tanımlı değil veya çok kısa (en az 16 karakter).");
+  }
+  return anahtar;
+}
+
 function hex(buf: ArrayBuffer): string {
   return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, "0"))
@@ -23,10 +45,9 @@ function hex(buf: ArrayBuffer): string {
 }
 
 async function imzaUret(veri: string): Promise<string> {
-  const sir = process.env.AUTH_SECRET ?? "";
   const anahtar = await crypto.subtle.importKey(
     "raw",
-    enc.encode(sir),
+    enc.encode(gizliAnahtar()),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -51,7 +72,7 @@ export async function oturumTokeni(kullaniciId: string): Promise<string> {
 
 /** Çerez geçerliyse kullanıcı id'sini döner, aksi halde null. */
 export async function tokenKullanici(token: string | undefined): Promise<string | null> {
-  if (!token || !process.env.AUTH_SECRET) return null;
+  if (!token || !oturumAltyapisiHazir()) return null;
   const parcalar = token.split(".");
   if (parcalar.length !== 3) return null;
   const [kullaniciId, sonStr, imza] = parcalar;

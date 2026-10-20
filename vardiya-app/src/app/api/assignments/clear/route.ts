@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { addDays, toISODate } from "@/lib/dates";
+import { isValidISODate } from "@/lib/validate";
 
 function weekDatesFrom(startISO: string): string[] {
   const [y, m, d] = startISO.split("-").map(Number);
@@ -15,6 +16,12 @@ export async function POST(request: Request) {
   const week = String(body?.week ?? "");
   if (!week) {
     return NextResponse.json({ error: "week gerekli" }, { status: 400 });
+  }
+  if (!isValidISODate(week)) {
+    return NextResponse.json(
+      { error: "week YYYY-MM-DD biçiminde olmalı" },
+      { status: 400 },
+    );
   }
 
   const business = await ensureBusiness();

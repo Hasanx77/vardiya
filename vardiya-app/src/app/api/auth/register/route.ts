@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { COOKIE_NAME, cerezAyarlari, girdilerGecerliMi, sifreOzetle } from "@/lib/auth";
-import { oturumTokeni } from "@/lib/session";
+import { oturumAltyapisiHazir, oturumTokeni } from "@/lib/session";
 import { standartSablonlar } from "@/lib/shifts";
 import { normalizeTime } from "@/lib/validate";
 import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
@@ -46,37 +46,61 @@ export async function POST(req: Request) {
   if (bicimHatasi) return hataYonlendir(bicimHatasi);
   if (sifre !== sifreTekrar) return hataYonlendir("Şifreler birbiriyle uyuşmuyor.");
 
+  // Oturum anahtarı yoksa hesap açmak anlamsız: kullanıcı giriş yapamaz.
+  if (!oturumAltyapisiHazir()) {
+    return hataYonlendir("Sunucu yapılandırması eksik (oturum anahtarı). Lütfen yöneticiye bildir.");
+  }
+
   const varOlan = await prisma.user.findUnique({ where: { email } });
   if (varOlan) return hataYonlendir("Bu e-posta ile bir hesap var. Giriş yapmayı dene.");
 
-  const kullanici = await prisma.user.create({
-    data: { email, passwordHash: sifreOzetle(sifre), lastLoginAt: new Date() },
-  });
+  // ⚠️ normalizeTime geçersiz girişte "" döner (null değil). Bu yüzden
+  // `??` yerine `||` kullanılmalı; aksi halde openTime "" kalıyor ve
+  // şablonlar 00:00–12:00 gibi anlamsız saatlerle üretiliyordu.
+  const acilis = normalizeTime(String(form.get("acilis") ?? "")) || "09:00";
+  const kapanisHam = normalizeTime(String(form.get("kapanis") ?? "")) || "23:00";
+  const kapanis = kapanisHam === acilis ? "23:59" : kapanisHam;
 
-  // Standart mesai saatleri (kayıt formundan gelir; yoksa 09:00–23:00)
-  const acilis = normalizeTime(String(form.get("acilis") ?? "")) ?? "09:00";
-  const kapanis = normalizeTime(String(form.get("kapanis") ?? "")) ?? "23:00";
+  let kullanici: { id: string };
+  try {
+    // Kullanıcı + işletme + şablonlar tek işlemde: yarıda hata olursa
+    // "işletmesi olmayan hesap" kalmaz.
+    kullanici = await prisma.$transaction(async (tx) => {
+      const yeni = await tx.user.create({
+        data: { email, passwordHash: sifreOzetle(sifre), lastLoginAt: new Date() },
+      });
 
-  const business = await prisma.business.create({
-    data: {
-      userId: kullanici.id,
-      name: isletme || "İşletmem",
-      openTime: acilis,
-      closeTime: kapanis === acilis ? "23:59" : kapanis,
-    },
-  });
+      const business = await tx.business.create({
+        data: {
+          userId: yeni.id,
+          name: isletme || "İşletmem",
+          openTime: acilis,
+          closeTime: kapanis,
+        },
+      });
 
-  // Vardiya şablonları doğrudan standart saatlerden üretilir
-  await prisma.shiftTemplate.createMany({
-    data: standartSablonlar(business.openTime, business.closeTime).map((s) => ({
-      businessId: business.id,
-      name: s.name,
-      start: s.start,
-      end: s.end,
-      color: s.color,
-      minStaff: s.minStaff,
-    })),
-  });
+      await tx.shiftTemplate.createMany({
+        data: standartSablonlar(business.openTime, business.closeTime).map((s) => ({
+          businessId: business.id,
+          name: s.name,
+          start: s.start,
+          end: s.end,
+          color: s.color,
+          minStaff: s.minStaff,
+        })),
+      });
+
+      return yeni;
+    });
+  } catch (e) {
+    // Aynı e-posta ile eşzamanlı iki kayıt geldiyse (unique yarışı):
+    const kod = (e as { code?: string })?.code;
+    if (kod === "P2002") {
+      return hataYonlendir("Bu e-posta ile bir hesap var. Giriş yapmayı dene.");
+    }
+    console.error("kayıt:", e);
+    return hataYonlendir("Hesap oluşturulamadı. Lütfen tekrar dene.");
+  }
 
   const res = NextResponse.redirect(disAdres(req, next), 303);
   res.cookies.set(COOKIE_NAME, await oturumTokeni(kullanici.id), cerezAyarlari(httpsMi(req)));

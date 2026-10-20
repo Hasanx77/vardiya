@@ -49,6 +49,11 @@ export default async function GizlilikPage() {
               tarih tutulur; 120 gün sonra silinir. Kişisel profil oluşturmak için
               kullanılmaz.
             </li>
+            <li>
+              <strong>İletişim mesajları:</strong> iletişim formunu kullandığında adın,
+              e-posta adresin ve mesaj metnin kaydedilir. Amaç yalnızca talebini
+              yanıtlamaktır; pazarlama listesine eklenmez, üçüncü tarafla paylaşılmaz.
+            </li>
           </ul>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">2) İşlenmeyen veriler</h2>
@@ -110,7 +115,9 @@ export default async function GizlilikPage() {
           <p>
             Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
             (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
-            Ziyaret sayacı kayıtları ise <strong>120 gün</strong> sonra otomatik olarak silinir.
+            Ziyaret sayacı kayıtları <strong>120 gün</strong> sonra otomatik olarak silinir.
+            İletişim formu mesajları ise talep yanıtlandıktan sonra en geç <strong>12 ay</strong> içinde
+            silinir; daha erken silinmesini istersen destek adresimize yazman yeterli.
           </p>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">7) Haklarınız (KVKK m.11)</h2>

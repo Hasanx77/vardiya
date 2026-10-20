@@ -88,7 +88,11 @@ export default async function YardimPage() {
         <Link href="/basla" className="text-zinc-900 underline">
           /basla
         </Link>{" "}
-        sayfasını kullan.
+        sayfasını kullan. Cevap bulamadıysan{" "}
+        <Link href="/iletisim" className="text-zinc-900 underline">
+          bize yaz
+        </Link>
+        ; genellikle aynı gün dönüyoruz.
       </div>
 
       <div className="mt-6 flex gap-2">

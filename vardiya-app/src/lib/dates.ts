@@ -35,6 +35,41 @@ export function toISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/* ============================================================
+   TÜRKİYE SAATİ (sunucu UTC olsa bile doğru gün)
+   Sunucu saat dilimi UTC ise gece 00:00–03:00 arası "bugün" bir gün
+   geride kalıyordu. Bu yardımcılar Europe/Istanbul'a göre hesaplar.
+   ============================================================ */
+
+const ISTANBUL = "Europe/Istanbul";
+
+/** Türkiye saatine göre bugün: "YYYY-MM-DD" */
+export function istanbulGunu(d = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: ISTANBUL,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/** "YYYY-MM-DD" metnine gün ekler (saat dilimi kayması olmadan) */
+export function gunEkleISO(iso: string, gun: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const t = new Date(Date.UTC(y, (m || 1) - 1, (d || 1) + gun));
+  return t.toISOString().slice(0, 10);
+}
+
+/** Türkiye saatine göre bu haftanın pazartesi günü: "YYYY-MM-DD" */
+export function haftaBasiISO(d = new Date()): string {
+  const gun = istanbulGunu(d);
+  const [y, m, day] = gun.split("-").map(Number);
+  const t = new Date(Date.UTC(y, (m || 1) - 1, day || 1));
+  const jsDay = t.getUTCDay(); // 0 = Pazar
+  t.setUTCDate(t.getUTCDate() + (jsDay === 0 ? -6 : 1 - jsDay));
+  return t.toISOString().slice(0, 10);
+}
+
 export function addDays(d: Date, n: number): Date {
   const copy = new Date(d);
   copy.setDate(copy.getDate() + n);

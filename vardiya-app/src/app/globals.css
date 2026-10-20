@@ -598,6 +598,72 @@ html.dark .btn-ghost:hover {
   background-color: #1c2529;
 }
 
+/* ============================================================
+   TEMA TUŞU — aydınlık / karanlık geçişi
+   Üst menüde duran, güneş/ay ikonlu gerçek bir düğme.
+   Renkler tema değişkenlerinden gelir (--yuzey, --cizgi, --soluk).
+   ============================================================ */
+.tema-tus {
+  display: inline-flex;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid var(--cizgi);
+  background-color: var(--yuzey);
+  padding-inline: 0.6rem;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--soluk);
+  transition:
+    background-color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    transform 0.2s var(--ease-out);
+}
+
+.tema-tus:hover {
+  border-color: #f59e0b;
+  background-color: #fffbeb;
+  color: var(--metin);
+}
+
+.tema-tus:active {
+  transform: scale(0.96);
+}
+
+.tema-simge {
+  display: grid;
+  place-items: center;
+  color: #52525b;
+}
+
+/* Koyu temada güneş ikonu amber yansın: "buraya bas, aydınlan" */
+.tema-tus-koyu .tema-simge {
+  color: #fbbf24;
+}
+
+.tema-tus-koyu:hover {
+  background-color: #1c2529;
+}
+
+/* Yazı mobilde gizli (yer dar), sm ve üstünde görünür */
+.tema-yazi {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .tema-tus {
+    padding-inline: 0.85rem 0.95rem;
+  }
+  .tema-yazi {
+    display: inline;
+  }
+}
+
 /* @apply ile yazılan bileşen sınıfları, `.text-zinc-*` sınıfı taşımadığı için
    yukarıdaki koyu tema metin kurallarından etkilenmiyordu. Bu yüzden koyu
    temada bazı başlık/etiketler neredeyse görünmez oluyordu. */

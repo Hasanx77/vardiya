@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { DEFAULT_SHIFTS } from "./shifts";
-import { addDays, startOfWeek, toISODate } from "./dates";
+import { gunEkleISO, haftaBasiISO } from "./dates";
 import { aktifKullaniciId } from "./auth";
 
 /**
@@ -31,8 +31,9 @@ export async function seedDemoData(businessId: string) {
     orderBy: { createdAt: "asc" },
   });
 
-  const pazartesi = startOfWeek(new Date());
-  const iso = (n: number) => toISODate(addDays(pazartesi, n));
+  // Hafta, Türkiye saatine göre hesaplanır (sunucu UTC olsa bile doğru gün).
+  const pazartesi = haftaBasiISO();
+  const iso = (n: number) => gunEkleISO(pazartesi, n);
 
   const plan: { e: number; d: number; s: string }[] = [
     { e: 0, d: 0, s: sabah },
@@ -64,30 +65,52 @@ export async function seedDemoData(businessId: string) {
  *
  * 🔒 Gizlilik/izolasyon: her sorgu **kullanıcıya bağlı işletme** üzerinden yapılır,
  * böylece bir kullanıcı başkasının personelini/vardiyasını göremez.
- * Oturum yoksa hata verir (middleware zaten oturumsuz isteği geçirmez).
+ *
+ * Kenar durumlar (düzeltildi):
+ * - Çerez imzası geçerli ama kullanıcı silinmişse eskiden foreign-key hatası
+ *   ile 500 dönüyordu. Artık "OTURUM_YOK" hatası veriyor.
+ * - Aynı kullanıcı için eşzamanlı iki istek işletme oluşturmaya çalışırsa
+ *   (userId tekil) biri patlıyordu; artık yarış güvenli.
  */
 export async function ensureBusiness() {
   const userId = await aktifKullaniciId();
   if (!userId) throw new Error("OTURUM_YOK");
 
+  const kullanici = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!kullanici) throw new Error("OTURUM_YOK");
+
   const mevcut = await prisma.business.findUnique({ where: { userId } });
   if (mevcut) return mevcut;
 
-  // Yeni hesap: boş işletme + varsayılan vardiya şablonları
-  const business = await prisma.business.create({
-    data: { userId, name: "İşletmem" },
-  });
+  try {
+    // Yeni hesap: boş işletme + varsayılan vardiya şablonları (tek işlemde)
+    return await prisma.$transaction(async (tx) => {
+      const business = await tx.business.create({
+        data: { userId, name: "İşletmem" },
+      });
 
-  await prisma.shiftTemplate.createMany({
-    data: DEFAULT_SHIFTS.map((s) => ({
-      businessId: business.id,
-      name: s.name,
-      start: s.start,
-      end: s.end,
-      color: s.color,
-      minStaff: s.minStaff,
-    })),
-  });
+      await tx.shiftTemplate.createMany({
+        data: DEFAULT_SHIFTS.map((s) => ({
+          businessId: business.id,
+          name: s.name,
+          start: s.start,
+          end: s.end,
+          color: s.color,
+          minStaff: s.minStaff,
+        })),
+      });
 
-  return business;
+      return business;
+    });
+  } catch (e) {
+    // Eşzamanlı istek araya girdiyse oluşturulan işletmeyi kullan.
+    if ((e as { code?: string })?.code === "P2002") {
+      const olusan = await prisma.business.findUnique({ where: { userId } });
+      if (olusan) return olusan;
+    }
+    throw e;
+  }
 }

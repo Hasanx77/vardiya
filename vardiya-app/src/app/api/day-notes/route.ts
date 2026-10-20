@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
-import { cleanText } from "@/lib/validate";
+import { cleanText, isValidISODate } from "@/lib/validate";
 
 // Gün notu ekler/günceller; not boşsa siler
 // body: { date, note }
@@ -10,6 +10,9 @@ export async function POST(request: Request) {
   const date = String(body?.date ?? "");
   if (!date) {
     return NextResponse.json({ error: "date gerekli" }, { status: 400 });
+  }
+  if (!isValidISODate(date)) {
+    return NextResponse.json({ error: "date YYYY-MM-DD biçiminde olmalı" }, { status: 400 });
   }
 
   const business = await ensureBusiness();

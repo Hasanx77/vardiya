@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
+import { isValidISODate } from "@/lib/validate";
 
 /**
  * Atama ekler/günceller ya da (shiftTemplateId boşsa) siler.
@@ -16,6 +17,9 @@ export async function POST(request: Request) {
 
   if (!employeeId || !date) {
     return NextResponse.json({ error: "employeeId ve date gerekli" }, { status: 400 });
+  }
+  if (!isValidISODate(date)) {
+    return NextResponse.json({ error: "date YYYY-MM-DD biçiminde olmalı" }, { status: 400 });
   }
 
   const business = await ensureBusiness();

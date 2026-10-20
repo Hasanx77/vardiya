@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { toISODate } from "@/lib/dates";
+import { istanbulGunu } from "@/lib/dates";
 
 type Ctx = { params: Promise<{ employeeId: string }> };
 
@@ -39,7 +39,7 @@ export async function GET(_request: Request, { params }: Ctx) {
     return new Response("Personel bulunamadı", { status: 404 });
   }
 
-  const todayISO = toISODate(new Date());
+  const todayISO = istanbulGunu();
   const assignments = await prisma.assignment.findMany({
     where: { employeeId, date: { gte: todayISO } },
     include: { shiftTemplate: true },

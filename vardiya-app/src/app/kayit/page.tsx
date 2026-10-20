@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import AuthKabuk from "@/components/AuthKabuk";
 import SifreAlani from "@/components/SifreAlani";
+import { aktifKullanici } from "@/lib/auth";
 import { kaydetZiyaret } from "@/lib/visits";
+import { guvenliHedef } from "@/lib/url";
 
 export const metadata = {
   title: "Ücretsiz kayıt ol — Vardiya",
@@ -18,7 +21,13 @@ export default async function KayitPage({
   searchParams: Promise<{ hata?: string; email?: string; isletme?: string; next?: string }>;
 }) {
   const { hata, email, isletme, next } = await searchParams;
-  const hedef = next && next.startsWith("/") && !next.startsWith("//") ? next : "/basla";
+  const hedefHam = guvenliHedef(next ?? "", "/basla");
+  const hedef = hedefHam.startsWith("/kayit") || hedefHam.startsWith("/giris") ? "/panel" : hedefHam;
+
+  // Zaten giriş yapılmışsa kayıt formunu tekrar gösterme.
+  const kullanici = await aktifKullanici();
+  if (kullanici) redirect(hedef);
+
   await kaydetZiyaret();
 
   return (

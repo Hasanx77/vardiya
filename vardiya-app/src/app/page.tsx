@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import TamEkran from "@/components/TamEkran";
+import { aktifKullanici } from "@/lib/auth";
 import { kaydetZiyaret } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
@@ -294,6 +295,7 @@ function OrnekCizelge() {
 
 export default async function Home() {
   await kaydetZiyaret();
+  const kullanici = await aktifKullanici();
 
   const yapisalVeri = {
     "@context": "https://schema.org",
@@ -372,12 +374,20 @@ export default async function Home() {
             </p>
 
             <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
-              <Link href="/kayit" className="btn-cta h-12 px-7">
-                Ücretsiz hesap aç <span aria-hidden>→</span>
-              </Link>
-              <Link href="/giris" className="btn-ghost h-12 px-7">
-                Giriş yap
-              </Link>
+              {kullanici ? (
+                <Link href="/panel" className="btn-cta h-12 px-7">
+                  Panele git <span aria-hidden>→</span>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/kayit" className="btn-cta h-12 px-7">
+                    Ücretsiz hesap aç <span aria-hidden>→</span>
+                  </Link>
+                  <Link href="/giris" className="btn-ghost h-12 px-7">
+                    Giriş yap
+                  </Link>
+                </>
+              )}
               <TamEkran className="btn-ghost h-12 px-5" />
             </div>
 
@@ -712,15 +722,23 @@ export default async function Home() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link href="/kayit" className="btn-cta h-12 px-6">
-                Ücretsiz başla <span aria-hidden>→</span>
-              </Link>
-              <Link
-                href="/giris"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                Giriş
-              </Link>
+              {kullanici ? (
+                <Link href="/panel" className="btn-cta h-12 px-6">
+                  Panele git <span aria-hidden>→</span>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/kayit" className="btn-cta h-12 px-6">
+                    Ücretsiz başla <span aria-hidden>→</span>
+                  </Link>
+                  <Link
+                    href="/giris"
+                    className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                  >
+                    Giriş
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
