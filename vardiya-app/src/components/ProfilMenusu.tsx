@@ -91,6 +91,13 @@ export default function ProfilMenusu({ email }: { email: string }) {
             >
               Yardım
             </Link>
+            <Link
+              href="/hakkimizda"
+              onClick={() => setAcik(false)}
+              className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
+            >
+              Hakkımızda
+            </Link>
           </div>
           <form action="/api/auth/logout" method="post" className="border-t border-zinc-100">
             <button

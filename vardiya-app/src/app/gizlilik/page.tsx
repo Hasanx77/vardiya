@@ -116,8 +116,8 @@ export default async function GizlilikPage() {
           <h2 className="text-lg font-semibold text-zinc-900">7) İletişim</h2>
           <p>
             Soru, talep veya şikâyet için:{" "}
-            <a href="mailto:hmum117413@gmail.com" className="underline">
-              hmum117413@gmail.com
+            <a href="mailto:destek@zihnora.com.tr" className="underline">
+              destek@zihnora.com.tr
             </a>
             . Talebini en geç 30 gün içinde yanıtlarız.
           </p>

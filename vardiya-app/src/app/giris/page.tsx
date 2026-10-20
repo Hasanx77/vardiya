@@ -65,8 +65,8 @@ export default async function GirisPage({
 
       <p className="mt-4 text-xs leading-relaxed text-zinc-500">
         Şifreni hatırlamıyorsan hesabınla ilişkili e-postadan bize yaz:{" "}
-        <a href="mailto:hmum117413@gmail.com" className="underline hover:text-zinc-800">
-          hmum117413@gmail.com
+        <a href="mailto:destek@zihnora.com.tr" className="underline hover:text-zinc-800">
+          destek@zihnora.com.tr
         </a>
       </p>
 

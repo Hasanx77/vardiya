@@ -160,7 +160,7 @@ export default async function Home() {
       </section>
 
       {/* Üç adım */}
-      <section id="nasil" className="border-y border-zinc-200 bg-white">
+      <section id="nasil" className="scroll-mt-20 border-y border-zinc-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-10">
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500">
             Nasıl çalışır?
@@ -182,7 +182,7 @@ export default async function Home() {
       </section>
 
       {/* Özellikler + neler yok */}
-      <section className="mx-auto max-w-6xl px-4 py-14">
+      <section id="ozellikler" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">İhtiyacın olan her şey</h2>
@@ -272,7 +272,7 @@ export default async function Home() {
             <h2 className="mt-0.5 text-lg font-semibold tracking-tight">
               Hasan Mum{" "}
               <span className="font-normal text-zinc-500">
-                · Kurucu &amp; Geliştirici
+                · Kurucu &amp; CEO
               </span>
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">
