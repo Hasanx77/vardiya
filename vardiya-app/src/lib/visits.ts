@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "./prisma";
 
@@ -14,7 +15,12 @@ import { prisma } from "./prisma";
  * `prisma generate` çalıştırmadan da güvenle çalışsın diye.
  */
 
-const SAHIP_EPOSTA = (process.env.OWNER_EMAIL ?? "hmum117413@gmail.com").trim().toLowerCase();
+const SAHIP_EPOSTALAR = (
+  process.env.OWNER_EMAIL ?? "hmum117413@gmail.com,mumhasan508@gmail.com"
+)
+  .split(/[,;]/)
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 const SAKLAMA_GUN = 120;
 
 const BOT_KALIBI =
@@ -73,9 +79,32 @@ function istemciIp(h: Headers): string {
   return "";
 }
 
+async function ziyaretYaz(gun: string, ozet: string): Promise<void> {
+  try {
+    await tabloKur();
+    await prisma.$executeRaw`
+      INSERT OR IGNORE INTO "Visit" ("id", "gun", "ziyaretciHash", "createdAt")
+      VALUES (${randomUUID()}, ${gun}, ${ozet}, ${new Date()})
+    `;
+
+    // Günde bir kez eski kayıtları temizle.
+    if (temizlikGunu !== gun) {
+      temizlikGunu = gun;
+      const eski = gunKaydir(gun, -SAKLAMA_GUN);
+      await prisma.$executeRaw`DELETE FROM "Visit" WHERE "gun" < ${eski}`;
+    }
+  } catch (e) {
+    // Sayaç yüzünden sayfa açılmasın.
+    console.error("ziyaret sayacı:", e);
+  }
+}
+
 /**
  * Public sayfalarda çağrılır. Hata olsa bile sayfayı bozmaz.
  * Botları ve IP'si okunamayan istekleri saymaz.
+ *
+ * Yazma işi `after()` ile yanıt gönderildikten sonraya bırakılır:
+ * SQLite yazması sayfanın ilk baytını geciktirmesin.
  */
 export async function kaydetZiyaret(): Promise<void> {
   try {
@@ -91,18 +120,7 @@ export async function kaydetZiyaret(): Promise<void> {
     const tuz = `${process.env.AUTH_SECRET ?? "varsayilan"}:${ay}`;
     const ozet = createHash("sha256").update(`${ip}|${ua}|${tuz}`).digest("hex");
 
-    await tabloKur();
-    await prisma.$executeRaw`
-      INSERT OR IGNORE INTO "Visit" ("id", "gun", "ziyaretciHash", "createdAt")
-      VALUES (${randomUUID()}, ${gun}, ${ozet}, ${new Date()})
-    `;
-
-    // Günde bir kez eski kayıtları temizle.
-    if (temizlikGunu !== gun) {
-      temizlikGunu = gun;
-      const eski = gunKaydir(gun, -SAKLAMA_GUN);
-      await prisma.$executeRaw`DELETE FROM "Visit" WHERE "gun" < ${eski}`;
-    }
+    after(() => ziyaretYaz(gun, ozet));
   } catch (e) {
     // Sayaç yüzünden sayfa açılmasın.
     console.error("ziyaret sayacı:", e);
@@ -146,5 +164,5 @@ export async function ziyaretOzeti(): Promise<ZiyaretOzeti> {
 
 /** Ziyaret kartını yalnızca site sahibi görsün. */
 export function sahipMi(email: string | null | undefined): boolean {
-  return (email ?? "").trim().toLowerCase() === SAHIP_EPOSTA;
+  return SAHIP_EPOSTALAR.includes((email ?? "").trim().toLowerCase());
 }

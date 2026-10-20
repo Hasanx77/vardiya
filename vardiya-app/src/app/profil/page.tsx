@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { aktifKullanici } from "@/lib/auth";
 import { getStatePayload } from "@/lib/state";
 import HesapSilButonu from "@/components/HesapSilButonu";
+import { mesajOzeti } from "@/lib/messages";
+import { sahipMi } from "@/lib/visits";
 
 export const metadata = {
   title: "Profilim — Vardiya",
@@ -39,6 +41,8 @@ export default async function ProfilPage({
   const toplamVardiya = await prisma.assignment.count({
     where: { businessId: durum.business.id },
   });
+  const sahip = sahipMi(kullanici.email);
+  const mesajlar = sahip ? await mesajOzeti() : null;
 
   return (
     <main className="flex-1">
@@ -100,6 +104,28 @@ export default async function ProfilPage({
             <div className="mt-1 text-2xl font-semibold">{toplamVardiya}</div>
           </div>
         </section>
+
+        {mesajlar ? (
+          <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div>
+              <h2 className="text-sm font-semibold">İletişim mesajları</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Toplam <strong>{mesajlar.toplam}</strong> mesaj
+                {mesajlar.okunmamis > 0 ? (
+                  <>
+                    {" · "}
+                    <span className="font-semibold text-amber-700">
+                      {mesajlar.okunmamis} yeni
+                    </span>
+                  </>
+                ) : null}
+              </p>
+            </div>
+            <Link href="/mesajlar" className="btn-ikincil">
+              Gelen mesajlar
+            </Link>
+          </section>
+        ) : null}
 
         {/* Şifre değiştir */}
         <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

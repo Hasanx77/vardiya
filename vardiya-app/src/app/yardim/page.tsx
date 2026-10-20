@@ -4,6 +4,7 @@ import { kaydetZiyaret } from "@/lib/visits";
 export const metadata = {
   title: "Yardım — Vardiya",
   description: "Vardiya uygulaması nasıl kullanılır? Adım adım kılavuz.",
+  alternates: { canonical: "/yardim" },
 };
 
 export const dynamic = "force-dynamic";

@@ -5,10 +5,12 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
 import { AltMenu, UstMenu } from "@/components/Menu";
+import SiteMenusu from "@/components/SiteMenusu";
 import Animasyon from "@/components/Animasyon";
 import Ilerleme from "@/components/Ilerleme";
 import KaydirmaDurumu from "@/components/KaydirmaDurumu";
 import { aktifKullanici } from "@/lib/auth";
+import { sahipMi } from "@/lib/visits";
 import "./globals.css";
 
 const bodyFont = Inter({
@@ -128,12 +130,34 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Site bağlantıları: "Ücretsiz başla"nın hemen solunda, tek tek */}
+              {kullanici ? null : (
+                <>
+                  <SiteMenusu />
+                  <span className="mx-1 hidden h-5 w-px bg-zinc-200 md:block" aria-hidden />
+                </>
+              )}
               <ThemeToggle />
               {kullanici ? (
-                <ProfilMenusu email={kullanici.email} />
+                <>
+                  <ProfilMenusu email={kullanici.email} sahip={sahipMi(kullanici.email)} />
+                  {/* Giriş yapıldığında sağ üstte görünür çıkış düğmesi.
+                      (Avatar menüsünün içinde de var; burada tek tıkla erişim.) */}
+                  <form action="/api/auth/logout" method="post" className="shrink-0">
+                    <button
+                      type="submit"
+                      className="btn-sessiz px-3"
+                      title="Oturumu kapat"
+                      aria-label="Çıkış yap"
+                    >
+                      <span className="sm:hidden">Çıkış</span>
+                      <span className="hidden sm:inline">Çıkış Yap</span>
+                    </button>
+                  </form>
+                </>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <Link href="/giris" className="btn-sessiz">
+                  <Link href="/giris" className="btn-sessiz hidden sm:inline-flex">
                     Giriş
                   </Link>
                   <Link href="/kayit" className="btn-birincil">
@@ -150,22 +174,28 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </div>
 
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
-          <div className="kap flex flex-col gap-2 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+          <div className="kap flex flex-col gap-3 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <span>
               Vardiya — kafe &amp; restoranlar için vardiya yönetimi.
             </span>
-            <span className="flex items-center gap-4">
-              <Link href="/hakkimizda" className="hover:text-zinc-900 hover:underline">
+            <nav aria-label="Alt menü" className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <Link href="/hakkimizda" className="hover:text-zinc-900">
                 Hakkımızda
               </Link>
-              <Link href="/yardim" className="hover:text-zinc-900 hover:underline">
+              <Link href="/iletisim" className="hover:text-zinc-900">
+                İletişim
+              </Link>
+              <Link href="/yardim" className="hover:text-zinc-900">
                 Yardım
               </Link>
-              <Link href="/gizlilik" className="hover:text-zinc-900 hover:underline">
+              <Link href="/gizlilik" className="hover:text-zinc-900">
                 Gizlilik
               </Link>
+              <Link href="/gizlilik#cerezler" className="hover:text-zinc-900">
+                Çerezler
+              </Link>
               <span className="text-zinc-400">© {yil}</span>
-            </span>
+            </nav>
           </div>
         </footer>
 

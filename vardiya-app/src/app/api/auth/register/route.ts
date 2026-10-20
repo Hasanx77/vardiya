@@ -5,6 +5,7 @@ import { oturumTokeni } from "@/lib/session";
 import { standartSablonlar } from "@/lib/shifts";
 import { normalizeTime } from "@/lib/validate";
 import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
+import { denemeBasarisiz, denemeIzinli } from "@/lib/rate-limit";
 
 /**
  * Kayıt ol.
@@ -28,6 +29,18 @@ export async function POST(req: Request) {
     if (isletme) url.searchParams.set("isletme", isletme);
     return NextResponse.redirect(url, 303);
   };
+
+  // Bot koruması: (1) gizli bal küpü alanı, (2) IP başına 10 dakikada 5 kayıt denemesi.
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "yerel";
+  const anahtar = `kayit|${ip}`;
+  if (!denemeIzinli(anahtar, 5)) {
+    return hataYonlendir("Çok fazla kayıt denemesi. Lütfen 10 dakika sonra tekrar dene.");
+  }
+  denemeBasarisiz(anahtar);
+  if (String(form.get("website") ?? "").trim()) {
+    // Bot: hiçbir hesap açmadan sessizce normal akışa gönder.
+    return NextResponse.redirect(disAdres(req, next), 303);
+  }
 
   const bicimHatasi = girdilerGecerliMi(email, sifre);
   if (bicimHatasi) return hataYonlendir(bicimHatasi);

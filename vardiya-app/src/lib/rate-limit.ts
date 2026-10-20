@@ -26,8 +26,8 @@ function temizle(simdi: number) {
   }
 }
 
-/** Bu anahtar için yeni deneme hakkı var mı? */
-export function denemeIzinli(anahtar: string): boolean {
+/** Bu anahtar için yeni deneme hakkı var mı? (azami verilebilir) */
+export function denemeIzinli(anahtar: string, azami = AZAMI_DENEME): boolean {
   const simdi = Date.now();
   temizle(simdi);
 
@@ -37,7 +37,7 @@ export function denemeIzinli(anahtar: string): boolean {
     kayitlar.delete(anahtar);
     return true;
   }
-  return kayit.sayi < AZAMI_DENEME;
+  return kayit.sayi < azami;
 }
 
 /** Başarısız denemeyi say. */

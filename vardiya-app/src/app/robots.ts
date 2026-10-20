@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/hakkimizda", "/yardim", "/gizlilik"],
+        allow: ["/", "/hakkimizda", "/yardim", "/gizlilik", "/iletisim"],
         disallow: [
           "/panel",
           "/bugun",
@@ -19,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
           "/yazdir",
           "/profil",
           "/basla",
+          "/mesajlar",
           "/giris",
           "/kayit",
           "/api/",

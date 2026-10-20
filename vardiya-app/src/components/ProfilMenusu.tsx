@@ -7,7 +7,7 @@ import Link from "next/link";
  * Sağ üstteki profil menüsü (giriş yapılmışken görünür).
  * Avatar = e-postanın ilk harfi. Tıklayınca menü açılır; dışına tıklayınca kapanır.
  */
-export default function ProfilMenusu({ email }: { email: string }) {
+export default function ProfilMenusu({ email, sahip }: { email: string; sahip?: boolean }) {
   const [acik, setAcik] = useState(false);
   const kutu = useRef<HTMLDivElement>(null);
 
@@ -77,6 +77,15 @@ export default function ProfilMenusu({ email }: { email: string }) {
             >
               Personel görünümü
             </Link>
+            {sahip ? (
+              <Link
+                href="/mesajlar"
+                onClick={() => setAcik(false)}
+                className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
+              >
+                Gelen mesajlar
+              </Link>
+            ) : null}
             <Link
               href="/gizlilik"
               onClick={() => setAcik(false)}

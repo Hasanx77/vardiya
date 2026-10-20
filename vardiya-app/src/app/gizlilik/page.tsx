@@ -7,6 +7,7 @@ export const metadata = {
   title: "Gizlilik ve KVKK Aydınlatması — Vardiya",
   description:
     "Vardiya'da hangi veriler işlenir, nerede saklanır, nasıl korunur ve haklarınızı nasıl kullanırsınız.",
+  alternates: { canonical: "/gizlilik" },
 };
 
 export const dynamic = "force-dynamic";
@@ -58,14 +59,46 @@ export default async function GizlilikPage() {
             ziyaret sayacı çerez kullanmaz ve ham IP saklamaz.
           </p>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">3) Nerede ve neden saklanır?</h2>
+          <h2 id="cerezler" className="scroll-mt-20 pt-3 text-lg font-semibold text-zinc-900">3) Çerezler</h2>
+          <p>
+            Vardiya&apos;da reklam, takip veya üçüncü taraf çerezi <strong>yoktur</strong>.
+            Tarayıcıda yalnızca giriş yaptığında oluşan <strong>tek bir zorunlu çerez</strong>
+            bulunur:
+          </p>
+          <div className="overflow-x-auto">
+            <table className="mt-2 w-full border-collapse text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-zinc-200 text-zinc-500">
+                  <th className="py-2 pr-4 font-semibold">Çerez</th>
+                  <th className="py-2 pr-4 font-semibold">Amaç</th>
+                  <th className="py-2 pr-4 font-semibold">Süre</th>
+                  <th className="py-2 font-semibold">Tür</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4 font-mono text-xs">vardiya_oturum</td>
+                  <td className="py-2 pr-4">Oturumun açık kalması (imzalı, httpOnly)</td>
+                  <td className="py-2 pr-4">30 gün</td>
+                  <td className="py-2">Zorunlu</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="pt-1 text-zinc-600">
+            Bu çerez olmadan giriş yapılamaz; bu yüzden onay penceresi (çerez bandı)
+            gösterilmez. Tema tercihi çerez değil, tarayıcının <em>localStorage</em>
+            alanında tutulur ve sunucuya gönderilmez. Ziyaret sayacı da çerez kullanmaz.
+          </p>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">4) Nerede ve neden saklanır?</h2>
           <p>
             Veriler, Türkiye&apos;deki barındırma sunucusunda (Hosting Dünyam) işletmeye özel bir
             veritabanında tutulur ve <strong>yurt dışına aktarılmaz</strong>. İşleme amacı tek:
             vardiya planını oluşturmanı sağlamak ve çizelgeyi ekibine iletebilmen.
           </p>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">4) Güvenlik</h2>
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">5) Güvenlik</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li>Şifreler <strong>scrypt</strong> ile tuzlanıp özetlenir; düz metin şifre hiçbir yerde saklanmaz.</li>
             <li>Oturum çerezi <strong>HMAC-SHA256</strong> ile imzalanır; değiştirilirse geçersiz olur.</li>
@@ -73,14 +106,14 @@ export default async function GizlilikPage() {
             <li><strong>Hesap izolasyonu:</strong> her hesap yalnızca kendi işletmesinin verisini okuyabilir.</li>
           </ul>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">5) Saklama süresi</h2>
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Saklama süresi</h2>
           <p>
             Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
             (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
             Ziyaret sayacı kayıtları ise <strong>120 gün</strong> sonra otomatik olarak silinir.
           </p>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Haklarınız (KVKK m.11)</h2>
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">7) Haklarınız (KVKK m.11)</h2>
           <p>
             Verilerinin işlenip işlenmediğini öğrenme, düzeltilmesini isteme, silinmesini (unutulma)
             ve taşınabilirliğini talep etme hakkın var. İlk ikisi uygulama içinde tek tıkla kullanılabilir:
@@ -113,12 +146,16 @@ export default async function GizlilikPage() {
         )}
 
         <section className="mt-8 space-y-3 text-sm leading-relaxed text-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-900">7) İletişim</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">8) İletişim</h2>
           <p>
             Soru, talep veya şikâyet için:{" "}
             <a href="mailto:destek@zihnora.com.tr" className="underline">
               destek@zihnora.com.tr
-            </a>
+            </a>{" "}
+            veya{" "}
+            <Link href="/iletisim" className="underline">
+              iletişim formu
+            </Link>
             . Talebini en geç 30 gün içinde yanıtlarız.
           </p>
           <p className="text-xs text-zinc-500">

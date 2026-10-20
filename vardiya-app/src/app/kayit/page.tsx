@@ -35,6 +35,12 @@ export default async function KayitPage({
       <form action="/api/auth/register" method="post" className="mt-5 space-y-5">
         <input type="hidden" name="next" value={hedef} />
 
+        {/* Bot tuzağı — ekranda görünmez, klavye ile ulaşılmaz. */}
+        <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+          <label htmlFor="website">Website</label>
+          <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+        </div>
+
         <fieldset className="space-y-3">
           <legend className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
             İşletme

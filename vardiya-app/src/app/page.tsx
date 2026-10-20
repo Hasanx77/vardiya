@@ -295,8 +295,53 @@ function OrnekCizelge() {
 export default async function Home() {
   await kaydetZiyaret();
 
+  const yapisalVeri = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://zihnora.com.tr/#kurum",
+        name: "Vardiya",
+        url: "https://zihnora.com.tr",
+        logo: "https://zihnora.com.tr/icons/icon-512.png",
+        description:
+          "Kafe ve restoranlar için Türkçe, mevzuata uygun haftalık vardiya yönetimi.",
+      },
+      {
+        "@type": "WebApplication",
+        name: "Vardiya",
+        url: "https://zihnora.com.tr",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        inLanguage: "tr-TR",
+        description:
+          "5 dakikada haftalık vardiya planla, ekibine WhatsApp'tan gönder. 45 saat ve 11 saat dinlenme uyarıları.",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "TRY",
+        },
+        publisher: { "@id": "https://zihnora.com.tr/#kurum" },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: sss.map((s) => ({
+          "@type": "Question",
+          name: s.soru,
+          acceptedAnswer: { "@type": "Answer", text: s.cevap },
+        })),
+      },
+    ],
+  };
+
   return (
     <main className="flex-1">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(yapisalVeri).replace(/</g, "\\u003c"),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="hero-grid absolute inset-0 -z-10" aria-hidden="true" />
