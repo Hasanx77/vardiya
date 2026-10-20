@@ -116,7 +116,7 @@ export default function TemplateManager({
       });
       setDraft(bosDraft(standart));
       await onChanged();
-      flash("Şablon eklendi ✅");
+      flash("Şablon eklendi.");
     } catch {
       flash("Eklenemedi. Saatleri SS:DD biçiminde gir.");
     } finally {
@@ -145,7 +145,7 @@ export default function TemplateManager({
         return next;
       });
       await onChanged();
-      flash("Şablon güncellendi ✅");
+      flash("Şablon güncellendi.");
     } catch {
       flash("Güncellenemedi.");
     } finally {

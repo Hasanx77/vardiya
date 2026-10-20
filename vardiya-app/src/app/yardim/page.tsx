@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const sections: { id: string; title: string; items: string[] }[] = [
   {
     id: "baslangic",
-    title: "🚀 Başlangıç",
+    title: "Başlangıç",
     items: [
       "İşletme adını yaz ve personelini toplu yapıştır (Ad; Görev; Telefon).",
       "Excel'den hücreleri kopyalayıp yapıştırabilir veya .csv / .tsv / .txt dosyası yükleyebilirsin; başlık satırı otomatik atlanır.",
@@ -22,7 +22,7 @@ const sections: { id: string; title: string; items: string[] }[] = [
   },
   {
     id: "demo",
-    title: "👀 Demo (kayıt gerekmez)",
+    title: "Demo (kayıt gerekmez)",
     items: [
       "Ana sayfadaki 'Demoyu dene' bağlantısı /demo sayfasını açar.",
       "Hücrelere tıklayarak vardiya değiştirebilirsin; toplam saat ve uyarılar anında güncellenir.",
@@ -31,29 +31,29 @@ const sections: { id: string; title: string; items: string[] }[] = [
   },
   {
     id: "panel",
-    title: "🗓️ Yönetim Paneli",
+    title: "Yönetim Paneli",
     items: [
       "Haftalık ızgarada her hücreye tıklayıp vardiya seç.",
       "Gün başlığındaki kalem simgesiyle o güne not ekle (ör. canlı müzik).",
-      "Vardiya şablonlarını 'Yönet' düğmesinden düzenle; 'min. kişi' hedefini belirle.",
+      "Vardiya şablonlarını 'Yönet' düğmesinden düzenle; 'min. kişi' hedefini belirle. Bölünmüş vardiyada ara saatlerini de tanımlayabilirsin.",
       "Kapsam uyarıları: hedefin altında kalan gün/vardiyalar kendiliğinden listelenir.",
       "Gönder düğmesi her personele ayrı mesaj hazırlar; mesajları tek tek WhatsApp'ta açıp yollarsın.",
     ],
   },
   {
     id: "personel",
-    title: "🧑 Personel Görünümü (salt-okunur)",
+    title: "Personel Görünümü (salt-okunur)",
     items: [
       "Personel satırındaki 'Link' düğmesi kişiye özel bir bağlantı kopyalar.",
       "Çalışan bu bağlantıyı giriş yapmadan açar; yalnızca kendi haftalık programını görür.",
       "İzin hakkı ve duyurular görünür; telefon numarası ve diğer personelin bilgileri görünmez.",
       "'Telefon takvimine ekle (.ics)' ile programını cebine alır.",
-      "Elemanın veri değiştirebileceği bir alan yoktur; linki bilen herkes programı görebilir. Şu an link yenileme/iptal düğmesi yok; personeli silmek linki geçersiz kılar.",
+      "Elemanın veri değiştirebileceği bir alan yoktur; linki bilen herkes programı görebilir. Panelde 'Linki yenile' eski bağlantıyı geçersiz kılar, 'Linki kapat' erişimi tamamen keser.",
     ],
   },
   {
     id: "whatsapp",
-    title: "💬 WhatsApp ve bildirim",
+    title: "WhatsApp ve bildirim",
     items: [
       "Her personele ayrı mesaj hazırlanır; 15 kişilik ekipte 15 kez açılır. Otomatik toplu gönderim yoktur.",
       "WhatsApp Business API entegrasyonu yok; Vardiya senin adına mesaj göndermez.",
@@ -63,18 +63,18 @@ const sections: { id: string; title: string; items: string[] }[] = [
   },
   {
     id: "diger",
-    title: "🧰 Diğer",
+    title: "Diğer",
     items: [
       "Bugün: kafede tablete açılabilecek 'bugün kim çalışıyor' tahtası.",
       "Raporlar: aylık saat / izin özeti + CSV.",
       "Yazdır: duvara asılacak haftalık çizelge.",
       "Telefona ekle: tarayıcı menüsünden 'Ana Ekrana Ekle' ile uygulama gibi açılır (PWA). Mağaza uygulaması yok.",
-      "Sağ üstteki 🌙/☀️ ile koyu/açık tema.",
+      "Sağ üstteki tema düğmesiyle koyu/açık temaya geçebilirsin.",
     ],
   },
   {
     id: "sinirlar",
-    title: "🧭 Bugünkü sınırlar (dürüst liste)",
+    title: "Bugünkü sınırlar (dürüst liste)",
     items: [
       "Tek hesap = tek işletme. Çok şubeli ekipler her şubeyi ayrı hesapla kullanabilir; tek panelden şube yönetimi ve 'müdür yalnız kendi şubesini görsün' yetkisi henüz yok.",
       "Müdür/çalışan yetkileri henüz yok; personel yalnızca kişisel bağlantısından salt-okunur programını görür.",
@@ -85,7 +85,7 @@ const sections: { id: string; title: string; items: string[] }[] = [
   },
   {
     id: "kvkk",
-    title: "🔐 KVKK ve veri sorumlusu",
+    title: "KVKK ve veri sorumlusu",
     items: [
       "Personel verilerinde veri sorumlusu işletme (işveren), veri işleyen Vardiya'dır.",
       "Ücret/maaş, T.C. kimlik, konum ve sağlık verisi istenmez ve saklanmaz.",

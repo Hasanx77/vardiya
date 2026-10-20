@@ -190,12 +190,48 @@ const karsilastirma = [
 ];
 
 const sektorler = [
-  { ad: "Kafe", alt: "Barista & servis", ikon: "☕" },
-  { ad: "Restoran", alt: "Mutfak & salon", ikon: "🍽️" },
-  { ad: "Pastane", alt: "Üretim & tezgâh", ikon: "🥐" },
-  { ad: "Bar", alt: "Gece vardiyası", ikon: "🍸" },
-  { ad: "Otel restoranı", alt: "Vardiyalı ekip", ikon: "🏨" },
-  { ad: "Zincir şube", alt: "Çoklu lokasyon · yol haritasında", ikon: "🧾" },
+  {
+    ad: "Kafe",
+    alt: "Barista & servis",
+    yollar: [
+      "M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z",
+      "M16 9h1.5a2.5 2.5 0 0 1 0 5H16",
+      "M6 3v2M10 3v2M14 3v2",
+    ],
+  },
+  {
+    ad: "Restoran",
+    alt: "Mutfak & salon",
+    yollar: ["M4 17h16", "M6 17a6 6 0 0 1 12 0", "M12 8v3"],
+  },
+  {
+    ad: "Pastane",
+    alt: "Üretim & tezgâh",
+    yollar: [
+      "M5 12a7 7 0 0 1 14 0v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-4Z",
+      "M9 9v2M12 8v3M15 9v2",
+    ],
+  },
+  {
+    ad: "Bar",
+    alt: "Gece vardiyası",
+    yollar: ["M4 4h16l-8 9v7", "M8 20h8", "M7 9h10"],
+  },
+  {
+    ad: "Otel restoranı",
+    alt: "Vardiyalı ekip",
+    yollar: [
+      "M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16",
+      "M16 9h2a2 2 0 0 1 2 2v10",
+      "M8 7h2M8 11h2M8 15h2M12 7h2M12 11h2M12 15h2",
+      "M3 21h18",
+    ],
+  },
+  {
+    ad: "Zincir şube",
+    alt: "Çoklu lokasyon · yol haritasında",
+    yollar: ["M12 3 3 8l9 5 9-5-9-5Z", "M3 12l9 5 9-5", "M3 16l9 5 9-5"],
+  },
 ];
 
 const sss = [
@@ -881,9 +917,20 @@ export default async function Home() {
               key={s.ad}
               className="kart p-4 text-center transition-colors hover:border-amber-300"
             >
-              <div className="text-2xl" aria-hidden>
-                {s.ikon}
-              </div>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mx-auto h-6 w-6 text-amber-700"
+                aria-hidden="true"
+              >
+                {s.yollar.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </svg>
               <div className="mt-2 text-sm font-bold text-zinc-900">{s.ad}</div>
               <div className="mt-0.5 text-[11px] text-zinc-500">{s.alt}</div>
             </div>
@@ -1080,10 +1127,10 @@ export default async function Home() {
               </span>
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">
-              Vardiya&apos;yı, kafe ve restoran sektöründe çalışırken gördüğü
-              planlama karmaşasını çözmek için geliştirdi. Ürün hâlâ tek bir
-              soruyla şekilleniyor: &quot;Bu, işletmenin işini gerçekten
-              kolaylaştırıyor mu?&quot;
+              Vardiya&apos;yı, kafe ve restoranlarda haftalık planın Excel&apos;de
+              kurulup WhatsApp&apos;ta kaybolduğunu gördüğü için geliştirdi.
+              Amacı tek: planı tek ekranda tutmak ve ekibin her zaman güncel
+              sürümü görmesini sağlamak.
             </p>
           </div>
           <Link href="/hakkimizda" className="btn-ghost h-10 shrink-0 px-5 text-[13px]">
@@ -1103,9 +1150,20 @@ export default async function Home() {
           />
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="kart p-6">
-              <div className="text-2xl" aria-hidden>
-                🌱
-              </div>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-6 w-6 text-emerald-700"
+                aria-hidden="true"
+              >
+                <path d="M12 21V10" />
+                <path d="M12 10C12 6 9 4 4 4c0 5 3 7 8 6Z" />
+                <path d="M12 13c0-4 3-6 8-6 0 5-3 7-8 6Z" />
+              </svg>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
                 Erken erişim
               </h3>
@@ -1116,9 +1174,19 @@ export default async function Home() {
               </p>
             </div>
             <div className="kart border-amber-300 bg-amber-50 p-6">
-              <div className="text-2xl" aria-hidden>
-                🤝
-              </div>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-6 w-6 text-amber-700"
+                aria-hidden="true"
+              >
+                <path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3Z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
                 Fiyat taahhüdü
               </h3>
@@ -1130,9 +1198,19 @@ export default async function Home() {
               </p>
             </div>
             <div className="kart p-6">
-              <div className="text-2xl" aria-hidden>
-                ✉️
-              </div>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-6 w-6 text-zinc-700"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18v12H3z" />
+                <path d="M3 7l9 6 9-6" />
+              </svg>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
                 Doğrudan kurucuya yaz
               </h3>

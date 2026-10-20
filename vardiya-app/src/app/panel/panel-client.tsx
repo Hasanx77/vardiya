@@ -839,8 +839,20 @@ export default function PanelClient({
       {/* Plan */}
       {weekEmpty ? (
         <div className="kart mt-4 border-dashed p-10 text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-amber-50 text-xl">
-            🗓️
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-amber-50">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.7}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-6 w-6 text-amber-700"
+              aria-hidden="true"
+            >
+              <path d="M4 6h16v14H4z" />
+              <path d="M4 10h16M8 3v4M16 3v4" />
+            </svg>
           </div>
           <h2 className="mt-4 text-lg font-semibold">Başlamaya hazırsın</h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-zinc-600">
@@ -1029,9 +1041,10 @@ export default function PanelClient({
                             {total} sa
                           </span>
                           {over && (
-                            <span className="ml-1 text-red-600" title={`${WEEKLY_LIMIT_HOURS} saati aştı`}>
-                              ⚠
-                            </span>
+                            <span
+                              className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-500 align-middle"
+                              title={`${WEEKLY_LIMIT_HOURS} saati aştı`}
+                            />
                           )}
                           {empOvertime(emp) > 0 && (
                             <span className="block text-[10px] text-amber-600">
@@ -1112,7 +1125,7 @@ export default function PanelClient({
                               </div>
                             ) : (
                               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-600">
-                                {emp.phone ? <span>📞 {emp.phone}</span> : null}
+                                {emp.phone ? <span>Tel: {emp.phone}</span> : null}
                                 <span>
                                   Bu ay: <strong className="text-zinc-800">{Math.round(stat.hours * 10) / 10} sa</strong>{" "}
                                   · {stat.days} gün
@@ -1333,9 +1346,12 @@ export default function PanelClient({
                 const isErr = it.severity === "error";
                 return (
                   <li key={`${it.employeeId}-${it.type}-${it.date}-${idx}`} className="flex gap-2">
-                    <span aria-hidden className={isErr ? "text-red-600" : "text-amber-600"}>
-                      {isErr ? "⛔" : "⚠"}
-                    </span>
+                    <span
+                      aria-hidden
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                        isErr ? "bg-red-500" : "bg-amber-500"
+                      }`}
+                    />
                     <span className="text-amber-900">
                       <strong>{emp?.name ?? "Bilinmeyen"}</strong>{" "}
                       <span className={isErr ? "text-red-700" : ""}>{it.message}</span>

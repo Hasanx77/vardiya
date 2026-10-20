@@ -116,7 +116,6 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
                   title={holiday?.name}
                 >
                   {dayNum}
-                  {holiday ? " 🎉" : ""}
                 </div>
                 <div className="mt-1 space-y-0.5">
                   {dayMap &&

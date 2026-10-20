@@ -67,7 +67,7 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
           <strong className="text-zinc-800">{veri.employee.annualLeaveDays} gün</strong>
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800">
-          <span aria-hidden>👁</span> Salt-okunur
+          Salt-okunur
         </span>
       </div>
 
@@ -141,9 +141,10 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
                   </span>
                 )}
                 {holiday && (
-                  <span className="ml-1 text-red-500" title={holiday.name}>
-                    🎉
-                  </span>
+                  <span
+                    className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-red-500 align-middle"
+                    title={holiday.name}
+                  />
                 )}
               </span>
               {t ? (
