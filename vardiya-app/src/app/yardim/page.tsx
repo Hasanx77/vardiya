@@ -15,8 +15,18 @@ const sections: { id: string; title: string; items: string[] }[] = [
     title: "🚀 Başlangıç",
     items: [
       "İşletme adını yaz ve personelini toplu yapıştır (Ad; Görev; Telefon).",
+      "Excel'den hücreleri kopyalayıp yapıştırabilir veya .csv / .tsv / .txt dosyası yükleyebilirsin; başlık satırı otomatik atlanır.",
       "Vardiya şablonları (Sabah/Akşam/Tam Gün) otomatik hazır gelir.",
       "İlk günü geçen haftadan kopyalayarak hızlıca doldurabilirsin.",
+    ],
+  },
+  {
+    id: "demo",
+    title: "👀 Demo (kayıt gerekmez)",
+    items: [
+      "Ana sayfadaki 'Demoyu dene' bağlantısı /demo sayfasını açar.",
+      "Hücrelere tıklayarak vardiya değiştirebilirsin; toplam saat ve uyarılar anında güncellenir.",
+      "Demo hiçbir veri kaydetmez; gerçek hesabına dokunmaz.",
     ],
   },
   {
@@ -51,6 +61,16 @@ const sections: { id: string; title: string; items: string[] }[] = [
       "Sağ üstteki 🌙/☀️ ile koyu/açık tema.",
     ],
   },
+  {
+    id: "sinirlar",
+    title: "🧭 Bugünkü sınırlar (dürüst liste)",
+    items: [
+      "Tek hesap = tek işletme. Çok şubeli ekipler her şubeyi ayrı hesapla kullanabilir; tek panelden şube yönetimi henüz yok.",
+      "Müdür/çalışan yetkileri henüz yok; personel yalnızca kişisel bağlantısından salt-okunur programını görür.",
+      "Uygulama içi vardiya değişim talebi, izin/mazeret girişi ve otomatik bildirim henüz yok. Talep WhatsApp'tan iletilir; plan değişince güncel programı tek tıkla gönderirsin.",
+      "Bu özellikler yol haritasında; hazır olduklarında duyurulacak.",
+    ],
+  },
 ];
 
 export default async function YardimPage() {
@@ -82,6 +102,13 @@ export default async function YardimPage() {
         ))}
       </div>
 
+      <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-900">
+        <strong>Mevzuat notu:</strong> 45 saat, 11 saat dinlenme, gece çalışması
+        ve resmî tatil uyarıları bir planlama kontrolüdür; hukuki danışmanlık
+        değildir. Mevzuatın işletmene uygulanmasından işveren sorumludur.
+        Şüpheli durumlarda iş hukuku uzmanına danış.
+      </div>
+
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
         Sorun mu var? Panele dönüp <strong>Ayarlar → Örnek veriyi yükle</strong> ile demo verisini
         yeniden yükleyebilirsin. İşletmeni sıfırdan kurmak için{" "}
@@ -95,9 +122,12 @@ export default async function YardimPage() {
         ; genellikle aynı gün dönüyoruz.
       </div>
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex flex-wrap gap-2">
         <Link href="/panel" className="btn-birincil">
           Panele git →
+        </Link>
+        <Link href="/demo" className="btn-ikincil">
+          Demoyu dene
         </Link>
         <Link href="/gizlilik" className="btn-ikincil">
           Gizlilik

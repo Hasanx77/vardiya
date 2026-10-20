@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const son = new Date();
   return [
     { url: `${TABAN}/`, lastModified: son, changeFrequency: "weekly", priority: 1 },
+    { url: `${TABAN}/demo`, lastModified: son, changeFrequency: "weekly", priority: 0.9 },
     { url: `${TABAN}/hakkimizda`, lastModified: son, changeFrequency: "monthly", priority: 0.7 },
     { url: `${TABAN}/yardim`, lastModified: son, changeFrequency: "monthly", priority: 0.6 },
     { url: `${TABAN}/iletisim`, lastModified: son, changeFrequency: "monthly", priority: 0.6 },

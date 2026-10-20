@@ -22,6 +22,7 @@ import { COOKIE_NAME, tokenKullanici } from "@/lib/session";
  */
 const PUBLIC_PATHS = new Set([
   "/",
+  "/demo",
   "/giris",
   "/kayit",
   "/gizlilik",

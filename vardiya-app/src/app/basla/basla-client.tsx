@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StatePayload } from "@/lib/types";
 import {
@@ -10,29 +10,17 @@ import {
   updateBusiness,
 } from "@/lib/api-client";
 import { DEFAULT_SHIFTS } from "@/lib/shifts";
-
-type ParsedEmployee = { name: string; role: string; phone: string };
-
-/** "Ad; Görev; Telefon" satırlarını personel listesine çevirir */
-function parseEmployees(text: string): ParsedEmployee[] {
-  return text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(/[;\t]/).map((p) => p.trim());
-      return { name: parts[0] ?? "", role: parts[1] ?? "", phone: parts[2] ?? "" };
-    })
-    .filter((e) => e.name.length > 0);
-}
+import { dosyaKabulEdilir, parseEmployeeText } from "@/lib/personel-aktarim";
 
 export default function BaslaClient({ initialData }: { initialData: StatePayload }) {
   const router = useRouter();
   const [data, setData] = useState<StatePayload>(initialData);
   const [name, setName] = useState(initialData.business.name);
   const [bulk, setBulk] = useState("");
+  const [dosyaAdi, setDosyaAdi] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const dosyaGirdisi = useRef<HTMLInputElement>(null);
 
   async function load() {
     try {
@@ -44,7 +32,29 @@ export default function BaslaClient({ initialData }: { initialData: StatePayload
     }
   }
 
-  const parsed = useMemo(() => parseEmployees(bulk), [bulk]);
+  const parsed = useMemo(() => parseEmployeeText(bulk), [bulk]);
+
+  async function handleDosya(e: React.ChangeEvent<HTMLInputElement>) {
+    const dosya = e.target.files?.[0];
+    if (!dosya) return;
+
+    if (!dosyaKabulEdilir(dosya.name)) {
+      setMsg("Yalnızca .csv, .tsv veya .txt dosyası yükleyebilirsin. Excel'de 'Farklı kaydet → CSV' seç.");
+      return;
+    }
+
+    try {
+      const metin = await dosya.text();
+      setBulk(metin);
+      setDosyaAdi(dosya.name);
+      setMsg("");
+    } catch {
+      setMsg("Dosya okunamadı. Excel'den kopyalayıp yapıştırmayı da deneyebilirsin.");
+    } finally {
+      // Aynı dosyayı yeniden seçebilmek için girdiyi sıfırla.
+      if (dosyaGirdisi.current) dosyaGirdisi.current.value = "";
+    }
+  }
 
   async function handleReset() {
     if (!window.confirm("Tüm personel, vardiya ve talepler silinecek. Sıfırdan başlanacak. Devam?"))
@@ -131,17 +141,40 @@ export default function BaslaClient({ initialData }: { initialData: StatePayload
             Her satıra bir personel:{" "}
             <code className="rounded bg-zinc-100 px-1 py-0.5">Ad; Görev; Telefon</code>
             <br />
-            Örnek:{" "}
-            <code className="rounded bg-zinc-100 px-1 py-0.5">
-              Ayşe Yılmaz; Barista; 0532 111 22 33
-            </code>
+            Excel&apos;den kopyalayıp yapıştırabilir veya CSV dosyası yükleyebilirsin.
+            Başlık satırı otomatik atlanır.
           </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              ref={dosyaGirdisi}
+              id="personel-dosya"
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+              onChange={handleDosya}
+              className="sr-only"
+            />
+            <button
+              type="button"
+              onClick={() => dosyaGirdisi.current?.click()}
+              className="btn-ikincil btn-kucuk"
+            >
+              CSV / Excel dosyası seç
+            </button>
+            {dosyaAdi ? (
+              <span className="text-xs text-zinc-500">{dosyaAdi} yüklendi</span>
+            ) : (
+              <span className="text-xs text-zinc-400">.csv, .tsv, .txt</span>
+            )}
+          </div>
           <textarea
             id="personel-liste"
             value={bulk}
-            onChange={(e) => setBulk(e.target.value)}
+            onChange={(e) => {
+              setBulk(e.target.value);
+              setDosyaAdi("");
+            }}
             rows={6}
-            placeholder={"Ayşe Yılmaz; Barista; 0532 111 22 33\nMehmet Kaya; Garson; 0533 222 33 44\nZeynep Demir; Şef"}
+            placeholder={"Ad Soyad; Görev; Telefon\nAyşe Yılmaz; Barista; 0532 111 22 33\nMehmet Kaya; Garson; 0533 222 33 44\nZeynep Demir; Şef"}
             className="giris mt-3 font-mono text-[13px]"
           />
           {parsed.length > 0 && (

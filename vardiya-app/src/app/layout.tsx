@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://zihnora.com.tr"),
   title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
   description:
-    "5 dakikada haftalık vardiya planla, personele WhatsApp'tan tek tıkla gönder. Türkçe, mevzuata uygun, cebinde.",
+    "5 dakikada haftalık vardiya planla, personele WhatsApp'tan tek tıkla gönder. Türkçe, mevzuat uyarılarıyla, cebinde.",
   applicationName: "Vardiya",
   openGraph: {
     type: "website",

@@ -1,10 +1,11 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Employee, StatePayload } from "@/lib/types";
 import {
   addEmployee as apiAddEmployee,
+  addEmployeesBulk as apiAddEmployeesBulk,
   clearWeek as apiClearWeek,
   copyWeek as apiCopyWeek,
   createAnnouncement as apiCreateAnnouncement,
@@ -27,6 +28,7 @@ import TemplateManager from "@/components/TemplateManager";
 import Modal from "@/components/Modal";
 import { csvIndir } from "@/lib/csv";
 import { getHoliday } from "@/lib/holidays";
+import { dosyaKabulEdilir, parseEmployeeText } from "@/lib/personel-aktarim";
 
 function keyOf(employeeId: string, iso: string) {
   return `${employeeId}__${iso}`;
@@ -79,6 +81,11 @@ export default function PanelClient({
   });
   const [announcementDraft, setAnnouncementDraft] = useState("");
   const [showBulk, setShowBulk] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importBusy, setImportBusy] = useState(false);
+  const [importDosyaAdi, setImportDosyaAdi] = useState("");
+  const importDosya = useRef<HTMLInputElement>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showStandart, setShowStandart] = useState(false);
   const [acilisDraft, setAcilisDraft] = useState(initialData.business.openTime);
@@ -241,6 +248,41 @@ export default function PanelClient({
       flash("Personel eklendi.");
     } catch {
       flash("Personel eklenemedi.");
+    }
+  }
+
+  async function handleImportDosya(e: React.ChangeEvent<HTMLInputElement>) {
+    const dosya = e.target.files?.[0];
+    if (!dosya) return;
+    if (!dosyaKabulEdilir(dosya.name)) {
+      flash("Yalnızca .csv, .tsv veya .txt yükleyebilirsin.");
+      return;
+    }
+    try {
+      setImportText(await dosya.text());
+      setImportDosyaAdi(dosya.name);
+    } catch {
+      flash("Dosya okunamadı.");
+    } finally {
+      if (importDosya.current) importDosya.current.value = "";
+    }
+  }
+
+  async function handleImport() {
+    const list = parseEmployeeText(importText);
+    if (list.length === 0) return flash("İçe aktarılacak personel bulunamadı.");
+    setImportBusy(true);
+    try {
+      const res = await apiAddEmployeesBulk(list);
+      await load();
+      setShowImport(false);
+      setImportText("");
+      setImportDosyaAdi("");
+      flash(`${res.created} personel içe aktarıldı.`);
+    } catch {
+      flash("İçe aktarma başarısız.");
+    } finally {
+      setImportBusy(false);
     }
   }
 
@@ -598,6 +640,9 @@ export default function PanelClient({
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={handleCopyPrev} className="btn-ikincil">
             Geçen haftayı kopyala
+          </button>
+          <button onClick={() => setShowImport(true)} className="btn-ikincil">
+            Excel&apos;den aktar
           </button>
           <button onClick={() => setShowForm((s) => !s)} className="btn-birincil">
             + Personel
@@ -1463,6 +1508,79 @@ export default function PanelClient({
           >
             Boş başla (tüm personeli sil)
           </button>
+        </div>
+      </Modal>
+
+      {/* Personel içe aktarma (Excel / CSV) */}
+      <Modal
+        acik={showImport}
+        kapat={() => setShowImport(false)}
+        baslik="Excel / CSV'den personel aktar"
+        genislik="max-w-lg"
+      >
+        <p className="text-sm text-zinc-600">
+          Excel&apos;deki listeyi olduğu gibi kopyalayıp yapıştır ya da{" "}
+          <code className="rounded bg-zinc-100 px-1 py-0.5 text-[12px]">.csv</code>{" "}
+          dosyası yükle. Sütun sırası: <strong>Ad; Görev; Telefon</strong>. Başlık
+          satırı otomatik atlanır; görev ve telefon isteğe bağlıdır.
+        </p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            ref={importDosya}
+            type="file"
+            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+            onChange={handleImportDosya}
+            className="sr-only"
+            id="ice-aktar-dosya"
+          />
+          <button
+            type="button"
+            onClick={() => importDosya.current?.click()}
+            className="btn-ikincil btn-kucuk"
+          >
+            Dosya seç
+          </button>
+          <span className="text-xs text-zinc-500">
+            {importDosyaAdi || ".csv, .tsv, .txt · en fazla 200 kişi"}
+          </span>
+        </div>
+
+        <textarea
+          value={importText}
+          onChange={(e) => {
+            setImportText(e.target.value);
+            setImportDosyaAdi("");
+          }}
+          rows={8}
+          placeholder={"Ad Soyad\tGörev\tTelefon\nAyşe Yılmaz\tBarista\t0532 111 22 33\nMehmet Kaya\tGarson\t0533 222 33 44"}
+          className="giris mt-3 font-mono text-[13px]"
+          aria-label="Personel listesi"
+        />
+
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-emerald-700">
+            {parseEmployeeText(importText).length > 0
+              ? `✓ ${parseEmployeeText(importText).length} personel algılandı`
+              : "Henüz personel algılanmadı"}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowImport(false)}
+              className="btn-ghost btn-kucuk"
+            >
+              Vazgeç
+            </button>
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={importBusy || parseEmployeeText(importText).length === 0}
+              className="btn-birincil btn-kucuk"
+            >
+              {importBusy ? "Aktarılıyor…" : "İçe aktar"}
+            </button>
+          </div>
         </div>
       </Modal>
 
