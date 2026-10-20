@@ -3,33 +3,50 @@
 /* Tema: varsayılan açık; <html class="dark"> ile koyu tema */
 :root {
   color-scheme: light;
-  /* Sıcak "kâğıt" paleti — kafe/restoran arayüzüne daha yakın */
-  --zemin: #faf9f7;
+  /* Premium "platinum" paleti — beyaz zemin, amber vurgu, açık gri bölümler */
+  --zemin: #ffffff;
   --yuzey: #ffffff;
-  --cizgi: #e7e5e4;
-  --metin: #1c1917;
-  --soluk: #78716c;
-  --vurgu: #b45309;
+  --cizgi: #d9e6ea;
+  --metin: #14181b;
+  --soluk: #5c6b73;
+  --vurgu: #f59e0b;
+  --gri: #f6f8f9;
 }
 html.dark {
   color-scheme: dark;
-  --zemin: #0c0a09;
-  --yuzey: #171412;
-  --cizgi: #292524;
-  --metin: #f5f5f4;
-  --soluk: #a8a29e;
+  --zemin: #0b0f11;
+  --yuzey: #12181b;
+  --cizgi: #223038;
+  --metin: #f4f7f8;
+  --soluk: #9fb0b8;
   --vurgu: #fbbf24;
+  --gri: #0f1417;
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  font-family: var(--font-geist-sans), system-ui, Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), system-ui, Arial, Helvetica, sans-serif;
   background-color: var(--zemin);
   color: var(--metin);
+}
+
+/* Başlıklar: Plus Jakarta Sans, sıkı harf aralığı (referans: Platin Creative) */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+/* Açık gri bölüm bandı */
+.bolum-gri {
+  background-color: var(--gri);
 }
 
 /* ============================================================
@@ -38,40 +55,40 @@ body {
    yazar; böylece tek bayrakla tüm sayfalar koyulaşır.
    ============================================================ */
 html.dark body {
-  background-color: #0c0a09; /* stone-950 */
-  color: #f5f5f4; /* stone-100 */
+  background-color: #0b0f11;
+  color: #f4f7f8;
 }
 
 /* --- Yüzeyler --- */
 html.dark .bg-white {
-  background-color: #171412;
+  background-color: #12181b;
 }
 html.dark .bg-white\/80 {
-  background-color: rgba(23, 20, 18, 0.85);
+  background-color: rgba(18, 24, 27, 0.85);
 }
 html.dark .bg-white\/90 {
-  background-color: rgba(23, 20, 18, 0.9);
+  background-color: rgba(18, 24, 27, 0.9);
 }
 html.dark .bg-white\/95 {
-  background-color: rgba(23, 20, 18, 0.95);
+  background-color: rgba(18, 24, 27, 0.95);
 }
 html.dark .bg-zinc-50\/50 {
-  background-color: rgba(16, 13, 11, 0.5);
+  background-color: rgba(15, 20, 23, 0.5);
 }
 html.dark .bg-zinc-50\/60 {
-  background-color: rgba(16, 13, 11, 0.6);
+  background-color: rgba(15, 20, 23, 0.6);
 }
 html.dark .bg-zinc-50\/95 {
-  background-color: rgba(16, 13, 11, 0.95);
+  background-color: rgba(15, 20, 23, 0.95);
 }
 html.dark .bg-zinc-50 {
-  background-color: #101013;
+  background-color: #0f1417;
 }
 html.dark .bg-zinc-100 {
-  background-color: #27272a;
+  background-color: #1c2529;
 }
 html.dark .bg-zinc-200 {
-  background-color: #3f3f46;
+  background-color: #2a383f;
 }
 
 /* --- Ana butonlar (bg-zinc-900) koyu zeminde görünür kalsın --- */
@@ -428,10 +445,10 @@ body {
 
   /* Yüzey */
   .kart {
-    @apply rounded-2xl border border-zinc-200 bg-white;
+    @apply rounded-[20px] border border-zinc-200 bg-white;
   }
   .kart-baslik {
-    @apply flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3;
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3.5;
   }
   .kart-govde {
     @apply p-4 sm:p-5;
@@ -439,35 +456,43 @@ body {
 
   /* Butonlar */
   .btn {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-birincil {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-zinc-700 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-amber-500 px-5 text-[13px] font-bold text-zinc-950 transition-colors hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-ikincil {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white px-5 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-sessiz {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-tehlike {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-red-200 bg-white px-5 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-kucuk {
-    @apply h-8 px-2.5 text-xs;
+    @apply h-8 px-3 text-xs;
+  }
+
+  /* Tanıtım sayfası CTA'ları */
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-6 text-sm font-bold text-zinc-950 transition-colors hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
   }
 
   /* Form */
   .giris {
-    @apply w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10;
+    @apply w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20;
   }
   .etiket {
-    @apply block text-xs font-medium text-zinc-600;
+    @apply block text-xs font-semibold text-zinc-600;
   }
 
   /* Küçük etiketler */
   .cip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-600;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600;
   }
   .bolum-baslik {
     @apply text-sm font-semibold text-zinc-800;
@@ -481,36 +506,46 @@ html.dark .kart {
   border-color: var(--cizgi);
 }
 html.dark .kart-baslik {
-  border-color: #292524;
+  border-color: #223038;
 }
 html.dark .giris {
-  background-color: #1c1917;
-  border-color: #3f3a36;
-  color: #f5f5f4;
+  background-color: #12181b;
+  border-color: #2a383f;
+  color: #f4f7f8;
 }
 html.dark .btn-ikincil,
 html.dark .btn-tehlike {
-  background-color: #1c1917;
-  border-color: #3f3a36;
+  background-color: #12181b;
+  border-color: #2a383f;
   color: #e7e5e4;
 }
 html.dark .btn-tehlike {
   border-color: #7f1d1d;
   color: #fca5a5;
 }
-html.dark .btn-birincil {
-  background-color: #f5f5f4;
-  color: #171412;
+html.dark .btn-birincil,
+html.dark .btn-cta {
+  background-color: #fbbf24;
+  color: #14181b;
 }
-html.dark .btn-birincil:hover {
-  background-color: #d6d3d1;
+html.dark .btn-birincil:hover,
+html.dark .btn-cta:hover {
+  background-color: #fcd34d;
 }
 html.dark .cip {
-  background-color: #1c1917;
-  border-color: #292524;
+  background-color: #12181b;
+  border-color: #223038;
 }
 html.dark .btn-ikincil:hover {
-  background-color: #292524;
+  background-color: #1c2529;
+}
+html.dark .btn-ghost {
+  background-color: #12181b;
+  border-color: #2a383f;
+  color: #f4f7f8;
+}
+html.dark .btn-ghost:hover {
+  background-color: #1c2529;
 }
 
 /* @apply ile yazılan bileşen sınıfları, `.text-zinc-*` sınıfı taşımadığı için
@@ -555,6 +590,22 @@ html.dark .bg-amber-500 .text-zinc-800 {
 }
 html.dark .hero-glow {
   background: radial-gradient(60% 60% at 45% 40%, rgba(180, 83, 9, 0.22), transparent 75%);
+}
+
+/* Platin esintili arka plan: ince ızgara + amber ışık */
+.hero-grid {
+  background-image: linear-gradient(to right, rgba(20, 24, 27, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 24, 27, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 25%, transparent 72%);
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 25%, transparent 72%);
+}
+html.dark .hero-grid {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+}
+.amber-glow {
+  background: radial-gradient(50% 50% at 50% 50%, rgba(245, 158, 11, 0.26), transparent 72%);
 }
 
 /* ============================================================

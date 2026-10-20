@@ -16,18 +16,22 @@ export default function AuthKabuk({
 }) {
   return (
     <main className="flex-1 px-4 py-8 sm:py-12">
-      <div className="mx-auto grid max-w-4xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm md:grid-cols-[0.9fr_1.1fr]">
+      <div className="mx-auto grid max-w-4xl overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-[0_24px_70px_-40px_rgba(20,24,27,0.35)] md:grid-cols-[0.9fr_1.1fr]">
         {/* Marka paneli */}
-        <aside className="hidden flex-col justify-between bg-zinc-950 p-8 text-white md:flex">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-900">
+        <aside className="relative hidden flex-col justify-between overflow-hidden bg-zinc-950 p-8 text-white md:flex">
+          <div
+            className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-amber-500/25 blur-3xl"
+            aria-hidden="true"
+          />
+          <Link href="/" className="relative flex items-center gap-2 font-bold">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
               V
             </span>
             <span className="tracking-tight">Vardiya</span>
           </Link>
 
-          <div className="my-8">
-            <h2 className="text-2xl font-semibold leading-snug">
+          <div className="relative my-8">
+            <h2 className="text-2xl font-extrabold leading-snug tracking-tight">
               Haftalık plan,
               <br />
               5 dakikada hazır.
@@ -56,14 +60,14 @@ export default function AuthKabuk({
         {/* Form */}
         <div className="p-6 sm:p-8">
           <div className="md:hidden">
-            <Link href="/" className="inline-flex items-center gap-2 font-semibold">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-600 text-[13px] font-bold text-white">
+            <Link href="/" className="inline-flex items-center gap-2 font-bold">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
                 V
               </span>
               <span className="tracking-tight">Vardiya</span>
             </Link>
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight md:mt-0">{baslik}</h1>
+          <h1 className="mt-4 text-2xl font-extrabold tracking-tight md:mt-0">{baslik}</h1>
           <p className="mt-1 text-sm text-zinc-500">{alt}</p>
           {children}
         </div>

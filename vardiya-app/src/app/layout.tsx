@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
@@ -8,9 +8,15 @@ import { AltMenu, UstMenu } from "@/components/Menu";
 import { aktifKullanici } from "@/lib/auth";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const bodyFont = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
+});
+
+const headingFont = Plus_Jakarta_Sans({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -71,7 +77,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang="tr"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bodyFont.variable} ${headingFont.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body
         className={`flex min-h-full flex-col ${
@@ -97,7 +103,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
             <div className="flex min-w-0 items-center gap-6">
               <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-600 text-[13px] font-bold text-white">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
                   V
                 </span>
                 <span className="tracking-tight">Vardiya</span>

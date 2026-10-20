@@ -74,7 +74,7 @@ export default async function HakkimizdaPage() {
         <nav aria-label="Sayfa içi menü" className="mt-6 flex flex-wrap gap-1.5">
           {[
             { href: "#kurucu", ad: "Kurucu" },
-            { href: "#mesaj", ad: "CEO Mesajı" },
+            { href: "#mesaj", ad: "Kurucu Mesajı" },
             { href: "#misyon", ad: "Misyon & Vizyon" },
             { href: "#degerler", ad: "Değerler" },
           ].map((b) => (
@@ -105,7 +105,7 @@ export default async function HakkimizdaPage() {
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">
                 Hasan Mum
               </h2>
-              <p className="mt-0.5 text-sm text-zinc-500">Kurucu &amp; CEO</p>
+              <p className="mt-0.5 text-sm text-zinc-500">Kurucu &amp; Geliştirici</p>
 
               <div className="mt-5 space-y-3 text-sm leading-relaxed text-zinc-600">
                 <p>
@@ -135,20 +135,20 @@ export default async function HakkimizdaPage() {
           </div>
         </section>
 
-        {/* CEO mesajı */}
+        {/* Kurucu mesajı */}
         <section
           id="mesaj"
           className="mt-10 scroll-mt-24 rounded-2xl border border-amber-200 bg-amber-50 p-6 sm:p-8"
         >
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800">
-            CEO Mesajı
+            Kurucu Mesajı
           </h2>
           <blockquote className="mt-3 text-lg font-medium leading-relaxed text-amber-900 sm:text-xl">
             &quot;İyi bir vardiya planı, işletme sahibinin aklında kalmamalı;
             ekibin her üyesinin aynı şeyi gördüğü tek bir yerde olmalı.&quot;
           </blockquote>
           <p className="mt-3 text-sm text-amber-800">
-            Hasan Mum · Kurucu &amp; CEO
+            Hasan Mum · Kurucu &amp; Geliştirici
           </p>
           <p className="mt-4 border-t border-amber-200 pt-4 text-sm leading-relaxed text-amber-900">
             Vardiya&apos;nın yol haritası bu ilkeye göre belirleniyor: yeni bir
