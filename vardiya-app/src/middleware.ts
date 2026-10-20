@@ -109,10 +109,8 @@ export async function middleware(req: NextRequest) {
     proto === "http" &&
     !yerelAdres
   ) {
-    const url = req.nextUrl.clone();
-    url.protocol = "https:";
-    url.port = "";
-    return NextResponse.redirect(url, 308);
+    const hedef = new URL(`${pathname}${req.nextUrl.search}`, `https://${host}`);
+    return NextResponse.redirect(hedef, 308);
   }
 
   if (acikMi(pathname)) return NextResponse.next();
