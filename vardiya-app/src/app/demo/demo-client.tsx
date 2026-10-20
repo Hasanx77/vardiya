@@ -71,7 +71,7 @@ function baslangicAtamalari(): Record<string, string> {
   };
 
   ekle("p1", ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-23"], "sabah");
-  ekle("p2", ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-23", "2026-10-24"], "aksam");
+  ekle("p2", ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-23", "2026-10-24", "2026-10-25"], "aksam");
   ekle("p3", ["2026-10-21", "2026-10-24", "2026-10-25"], "tamgun");
   ekle("p4", ["2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"], "ara");
   // Kasıtlı örnek: akşam kapanışından sonra ertesi sabah açılış → 8 saat dinlenme.
@@ -324,8 +324,10 @@ export default function DemoClient() {
               Mevzuat uyarıları {analiz.issues.length > 0 ? `(${analiz.issues.length})` : ""}
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              Örnekte bilerek bir uyarı var: Elif, akşam kapanışından sonra ertesi
-              sabah açılışta. Dinlenme {MIN_DAILY_REST_HOURS} saatten az.
+              Örnekte bilerek iki uyarı var: Elif, akşam kapanışından sonra ertesi
+              sabah açılışta (dinlenme 8 saat); Mehmet ise haftada 48 saat çalışıyor
+              (45 saat sınırı). Hücreleri değiştirerek uyarıların nasıl
+              güncellendiğini görebilirsin.
             </p>
             {analiz.issues.length === 0 ? (
               <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
@@ -376,8 +378,9 @@ export default function DemoClient() {
               {mesaj}
             </pre>
             <p className="mt-2 text-[11px] text-zinc-500">
-              Gerçek panelde bu metin tek tıkla WhatsApp&apos;ta açılır. Personel
-              giriş yapmadan da kendi programını görür.
+              Gerçek panelde bu metin her personel için ayrı hazırlanır ve tek tıkla
+              WhatsApp&apos;ta açılır. 15 kişilik ekipte 15 kez açılır; otomatik toplu
+              gönderim yoktur. Personel giriş yapmadan da kendi programını görür.
             </p>
           </section>
         </div>
@@ -385,8 +388,8 @@ export default function DemoClient() {
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
           <p className="font-semibold">Bu demo hiçbir veri kaydetmez.</p>
           <p className="mt-1 text-[13px] leading-relaxed">
-            Gerçek hesabında personelini ekler, haftayı doldurur ve tek tıkla
-            WhatsApp&apos;tan gönderirsin. Ücretsiz; kredi kartı istenmez.
+            Gerçek hesabında personelini ekler, haftayı doldurur ve her kişiye hazır
+            mesajı WhatsApp&apos;ta açarsın. Ücretsiz; kredi kartı istenmez.
           </p>
           <Link href="/kayit" className="btn-cta mt-4 h-11 px-6">
             Ücretsiz başla <span aria-hidden>→</span>

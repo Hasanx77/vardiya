@@ -36,9 +36,9 @@ const nedenler = [
       "Personel, vardiya şablonları, duyurular ve gün notları aynı yerde. Dosya, sekme ve mesaj kalabalığı yok.",
   },
   {
-    baslik: "Mevzuata saygı",
+    baslik: "Süre uyarıları",
     metin:
-      "Haftalık 45 saat, iki vardiya arası 11 saat dinlenme ve resmî tatil uyarıları plan yaparken görünür.",
+      "Haftalık 45 saat, iki vardiya arası 11 saat dinlenme, gece ve resmî tatil uyarıları plan yaparken görünür. Kapsamı sınırlıdır; hukuki danışmanlık değildir.",
   },
   {
     baslik: "Gizliliğe saygı",
@@ -66,10 +66,10 @@ export default async function HakkimizdaPage() {
           Vardiya neden var?
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-zinc-600 sm:text-base">
-          Kafe ve restoranların haftalık vardiya planını Excel, kâğıt ve
-          WhatsApp karmaşasından kurtarmak için kuruldu. Amaç büyük bir yazılım
-          paketi değil; işletme sahibinin beş dakikada bitirebildiği, personelin
-          de tek bakışta anladığı sade bir araç.
+          Vardiya, <strong>Zihnora</strong>&apos;nın ürünüdür. Kafe ve restoranların
+          haftalık vardiya planını Excel, kâğıt ve WhatsApp karmaşasından kurtarmak
+          için kuruldu. Amaç büyük bir yazılım paketi değil; işletme sahibinin beş
+          dakikada bitirebildiği, personelin de tek bakışta anladığı sade bir araç.
         </p>
 
         {/* Sayfa içi menü */}
@@ -133,6 +133,25 @@ export default async function HakkimizdaPage() {
                   eklenmiyor.
                 </p>
               </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/iletisim"
+                  className="btn-ikincil h-10 px-5 text-[13px]"
+                >
+                  15 dk görüşme iste
+                </Link>
+                <span className="text-xs text-zinc-500">
+                  veya{" "}
+                  <a
+                    href="mailto:destek@zihnora.com.tr"
+                    className="underline underline-offset-2 hover:text-zinc-800"
+                  >
+                    destek@zihnora.com.tr
+                  </a>{" "}
+                  adresine yaz
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -167,7 +186,7 @@ export default async function HakkimizdaPage() {
               <h3 className="text-sm font-semibold text-zinc-800">Misyonumuz</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">
                 Kafe ve restoranların haftalık vardiya planlamasını; kurulum
-                gerektirmeyen, Türkçe ve mevzuata saygılı tek bir araçla beş
+                gerektirmeyen, Türkçe ve süre uyarılarına sahip tek bir araçla beş
                 dakikaya indirmek.
               </p>
             </div>

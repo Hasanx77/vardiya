@@ -41,7 +41,7 @@ export default function AuthKabuk({
                 <span className="text-amber-400">✓</span> Excel tablosu yok
               </li>
               <li className="flex gap-2">
-                <span className="text-amber-400">✓</span> WhatsApp&apos;tan tek tık
+                <span className="text-amber-400">✓</span> WhatsApp&apos;a hazır mesaj
               </li>
               <li className="flex gap-2">
                 <span className="text-amber-400">✓</span> 45 saat uyarısı

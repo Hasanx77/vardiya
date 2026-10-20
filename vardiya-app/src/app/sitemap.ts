@@ -15,5 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${TABAN}/yardim`, lastModified: son, changeFrequency: "monthly", priority: 0.6 },
     { url: `${TABAN}/iletisim`, lastModified: son, changeFrequency: "monthly", priority: 0.6 },
     { url: `${TABAN}/gizlilik`, lastModified: son, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${TABAN}/personel-aydinlatma`, lastModified: son, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

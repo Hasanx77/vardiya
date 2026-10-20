@@ -1249,7 +1249,7 @@ export default function PanelClient({
 
       {!weekEmpty && uyariSayisi === 0 && (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-700">
-          <span aria-hidden>✓</span> Bu hafta mevzuat ve kapsam uyarısı yok.
+          <span aria-hidden>✓</span> Bu hafta süre ve kapsam uyarısı yok.
         </p>
       )}
 

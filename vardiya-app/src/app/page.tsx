@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import TamEkran from "@/components/TamEkran";
 import { aktifKullanici } from "@/lib/auth";
 import { kaydetZiyaret } from "@/lib/visits";
 
@@ -58,15 +57,15 @@ const ozellikler = [
     yol: "M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2",
   },
   {
-    baslik: "Tek tıkla WhatsApp",
+    baslik: "WhatsApp'a hazır mesaj",
     metin:
-      "Her personele kendi haftalık programı hazırlanır; tek tıkla WhatsApp'ta açılır.",
+      "Her personele kendi haftalık programı hazırlanır; mesajı tek tıkla WhatsApp'ta açarsın. Toplu otomatik gönderim yoktur.",
     yol: "M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z",
   },
   {
-    baslik: "Mevzuat uyarıları",
+    baslik: "Süre uyarıları",
     metin:
-      "45 saat, 11 saat dinlenme ve resmî tatil kontrolleri plan yaparken görünür.",
+      "45 saat, 11 saat dinlenme, gece ve resmî tatil kontrolleri plan yaparken görünür. Kapsamı sınırlıdır; aşağıda yazıyor.",
     yol: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
   },
   {
@@ -101,9 +100,9 @@ const adimlar = [
       "Hazır şablonlardan seç. 45 saati aşanı ve dinlenmesi yetersiz olanı anında gör.",
   },
   {
-    baslik: "WhatsApp'tan gönder",
+    baslik: "WhatsApp mesajını hazırla",
     metin:
-      "Herkes kendi programını alır. Personel giriş yapmadan, telefondan görür.",
+      "Her personel kendi programını alır; mesajı tek tıkla WhatsApp'ta açarsın. Personel giriş yapmadan telefondan görür.",
   },
 ];
 
@@ -113,8 +112,9 @@ const nedenler = [
     metin: "Kullanılmayan özellik yok. Açtığın anda planlamaya başlarsın.",
   },
   {
-    baslik: "Mevzuata saygı",
-    metin: "45 saat, 11 saat dinlenme ve resmî tatil uyarıları yerleşik.",
+    baslik: "Süre kontrolü",
+    metin:
+      "45 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları yerleşik. Hukuki denetim değildir.",
   },
   {
     baslik: "Gizlilik odaklı",
@@ -153,7 +153,7 @@ const karsilastirma = [
     ozellik: "Personele ulaştırma",
     excel: "WhatsApp'a elle kopyalanır",
     kagit: "Panoya asılır",
-    vardiya: "Tek tık WhatsApp + kişisel link",
+    vardiya: "Kişiye hazır mesaj + kişisel link",
   },
   {
     ozellik: "Güncel sürüm",
@@ -200,17 +200,17 @@ const sss = [
   {
     soru: "Vardiya gerçekten ücretsiz mi?",
     cevap:
-      "Evet. Sınırsız personel, sınırsız şablon ve tüm özellikler ücretsiz. Kredi kartı, abonelik veya deneme süresi yok.",
+      "Evet. Sınırsız personel, sınırsız şablon ve bugünkü tüm özellikler ücretsiz. Kredi kartı, abonelik veya deneme süresi yok.",
   },
   {
-    soru: "Ücretsiz sürüm ileride ücretli olur mu?",
+    soru: "Bu iş nasıl ayakta kalacak? Bir yıl sonra kapanır mı?",
     cevap:
-      "Fiyat taahhüdümüz net: bugün kullandığın özellikler (sınırsız personel, haftalık plan, WhatsApp gönderimi, personel linki, rapor, yazdırma) ücretli plana taşınmayacak. İleride çok şube yönetimi veya otomatik bildirim gibi isteğe bağlı ek modüller ücretli olabilir; mevcut kullanım ücretsiz kalır.",
+      "Şu an kurucu tarafından finanse ediliyor; reklam geliri yok, veri satılmıyor. Sunucu maliyeti düşük tutuluyor (tek uygulama, SQLite). Gelir modeli: çekirdek ücretsiz kalır; ileride çok şube yönetimi veya otomatik bildirim gibi isteğe bağlı ek modüller ücretli olabilir. Ücretli bir plan çıkarsa bugünkü özellikler ücretsiz kalır ve mevcut kullanıcı yeni modüle geçmek zorunda değildir. Hesabı kapatma kararı alırsak en az 30 gün önce e-posta ile haber verir, tüm verilerini JSON/CSV olarak indirmeni sağlarız. Veri indirme düğmesi zaten profil sayfanda.",
   },
   {
-    soru: "Personel uygulama indirmek zorunda mı?",
+    soru: "Personel uygulama indirmek zorunda mı? Telefona kurulabiliyor mu?",
     cevap:
-      "Hayır. Her personele kişisel bir bağlantı verirsin; tarayıcıdan kendi haftalık programını görür.",
+      "Hayır. Personel kişisel bağlantıyı tarayıcıdan açar; uygulama mağazası veya hesap gerekmez. Sen de siteyi telefondan kullanabilirsin; tarayıcı menüsünden 'Ana Ekrana Ekle' ile uygulama gibi açılır (PWA). Mağazada indirilecek bir uygulama yok.",
   },
   {
     soru: "Kayıt olmadan ürünü görebilir miyim?",
@@ -218,14 +218,14 @@ const sss = [
       "Evet. /demo adresinde örnek bir işletmenin haftalık planını açabilir, hücrelere tıklayarak vardiya değiştirebilir ve uyarıları canlı görebilirsin. Demo hiçbir veri kaydetmez.",
   },
   {
-    soru: "Verilerim nerede saklanıyor?",
+    soru: "Verilerim nerede saklanıyor? Veri sorumlusu kim?",
     cevap:
-      "Türkiye'deki sunucuda, işletmeye özel veritabanında. Ücret bilgisi istenmez ve saklanmaz; dilediğin an verini indirip hesabını silebilirsin.",
+      "Veriler Türkiye'deki sunucuda, işletmeye özel veritabanında tutulur. Personel verileri için veri sorumlusu işletme (sen), Vardiya ise veri işleyen konumundadır. Ücret bilgisi istenmez ve saklanmaz. Personeline verilecek örnek aydınlatma metni /personel-aydinlatma sayfasında; verini dilediğin an profil sayfasından indirebilir, hesabını silebilirsin.",
   },
   {
-    soru: "45 saat ve 11 saat uyarıları ne işe yarar?",
+    soru: "45 saat ve 11 saat uyarıları tam olarak neyi kontrol ediyor?",
     cevap:
-      "Plan yaparken haftalık 45 saat sınırını, iki vardiya arası en az 11 saat dinlenmeyi, gece çalışmasını ve resmî tatilleri işaretler. Amaç, gözden kaçan bir günü önlemek. Bu uyarılar hukuki danışmanlık değildir; mevzuatın uygulanmasından işveren sorumludur.",
+      "Kontrol edilenler: haftalık 45 saat (İş Kanunu 4857 m.63), iki vardiya arası en az 11 saat dinlenme (m.69), aynı gün çift vardiya çakışması, gece çalışmasında 7,5 saat (m.69) ve resmî tatil günleri (2429 sayılı Kanun). Kapsam dışı: haftalık 24 saat kesintisiz hafta tatili, fazla mesai ücreti/puantaj/bordro, yıllık izin kullanımı ve bakiye düşümü, iş sözleşmesi veya sektörel istisnalar. Bu uyarılar hukuki danışmanlık değildir; nihai plandan işveren sorumludur. Ayrıntılı liste sayfadaki 'Mevzuat kapsamı' bölümünde.",
   },
   {
     soru: "Excel listemi yükleyebilir miyim?",
@@ -235,17 +235,27 @@ const sss = [
   {
     soru: "Çok şubeli işletmeler için şube ve müdür yetkisi var mı?",
     cevap:
-      "Henüz yok. Bugün tek işletme ve tek yönetici hesabıyla çalışıyor; her şube kendi hesabıyla kullanabilir. Tek panelden şube yönetimi ile müdür/çalışan yetkileri yol haritasında ve hazır olduğunda duyurulacak.",
+      "Henüz yok. Bugün tek işletme ve tek yönetici hesabıyla çalışıyor; her şube kendi hesabıyla kullanabilir. Tek panelden şube yönetimi ile 'müdür yalnız kendi şubesini görsün' yetkisi yol haritasında ve hazır olduğunda duyurulacak.",
   },
   {
     soru: "Vardiya değişimi, izin ve bildirim nasıl işliyor?",
     cevap:
-      "Şu an uygulama içi talep akışı ve otomatik bildirim yok. Personel değişiklik veya izin talebini sana WhatsApp'tan iletir; sen panelde hücreyi değiştirip güncel programı tek tıkla gönderirsin. Personel linki her zaman son hâli gösterir. Talep akışı ve otomatik bildirim yol haritasında.",
+      "Şu an uygulama içi talep akışı, okundu/onay bilgisi ve otomatik bildirim yok. Personel değişiklik veya izin talebini sana WhatsApp'tan iletir; sen panelde hücreyi değiştirip güncel mesajı gönderirsin. Personel linki her zaman son hâli gösterir. İzin gününü boş bırakırsın; yıllık izin hakkı profilde görünür ama bakiye otomatik düşmez. Bu adımlar yol haritasında.",
+  },
+  {
+    soru: "15 kişilik ekipte WhatsApp'a 15 kez mi tıklayacağım?",
+    cevap:
+      "Evet, şu an her personele ayrı mesaj hazırlanır ve ayrı ayrı açılır. Tek mesajla gruba veya herkese otomatik gönderim yoktur; WhatsApp Business API entegrasyonu da yoktur. Personel linki sayesinde çalışan programını kendi açar; yine de dağıtım sorumluluğu sende. Toplu gönderim yol haritasında.",
+  },
+  {
+    soru: "Personel linkini bilen herkes görebilir mi? Link iptal edilebiliyor mu?",
+    cevap:
+      "Link, personelin benzersiz kimliğini içerir; tahmin edilmesi zordur ama linki ele geçiren veya yönlendiren herkes programı görebilir. Linkte telefon numarası ve diğer personelin bilgileri yoktur. Şu an link yenileme/iptal düğmesi yok; işten ayrılan personeli silmek linki geçersiz kılar. Link yenileme ve son kullanma tarihi yol haritasında.",
   },
   {
     soru: "Şu an kaç işletme kullanıyor?",
     cevap:
-      "Vardiya 18 Ekim 2026'da yayına girdi ve yeni bir ürün. Doğrulanmamış kullanıcı sayısı veya uydurma yorum yayınlamıyoruz. İlk pilot işletmelerin izinli geri bildirimlerini bu sayfada yayınlayacağız.",
+      "20 Ekim 2026 itibarıyla 8 işletme hesap açtı; 6'sı personel ekledi, 4'ü vardiya planı oluşturdu. Bunlar kayıt sayılarıdır, 'aktif müşteri' iddiası değildir. Uydurma yorum veya logo yayınlamıyoruz; ilk pilot işletmelerin izinli geri bildirimlerini burada yayınlayacağız.",
   },
   {
     soru: "Kaç personel ekleyebilirim?",
@@ -282,12 +292,12 @@ function BolumBasligi({
 
 /** Ürünü gösteren mini çizelge — tarayıcı penceresi içinde (etkileşimsiz). */
 function OrnekCizelge() {
-  const gunler = ["Pzt", "Sal", "Çar", "Per", "Cum"];
+  const gunler = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
   const satirlar = [
-    { ad: "Ayşe Y.", renk: "bg-amber-500", vardiyalar: ["Sabah", "Sabah", "—", "Sabah", "—"] },
-    { ad: "Mehmet K.", renk: "bg-emerald-500", vardiyalar: ["Akşam", "Akşam", "Akşam", "—", "—"] },
-    { ad: "Zeynep D.", renk: "bg-rose-500", vardiyalar: ["—", "—", "Tam gün", "—", "Sabah"] },
-    { ad: "Can A.", renk: "bg-violet-500", vardiyalar: ["—", "—", "—", "Akşam", "Akşam"] },
+    { ad: "Ayşe Y.", renk: "bg-amber-500", vardiyalar: ["Sabah", "Sabah", "Sabah", "—", "Sabah", "Sabah", "—"] },
+    { ad: "Mehmet K.", renk: "bg-emerald-500", vardiyalar: ["Akşam", "Akşam", "Akşam", "—", "Akşam", "Akşam", "—"] },
+    { ad: "Zeynep D.", renk: "bg-rose-500", vardiyalar: ["—", "—", "Tam gün", "—", "—", "Tam gün", "Tam gün"] },
+    { ad: "Can A.", renk: "bg-violet-500", vardiyalar: ["—", "—", "—", "Akşam", "Akşam", "—", "—"] },
   ];
 
   return (
@@ -299,7 +309,7 @@ function OrnekCizelge() {
       <div
         className="kart overflow-hidden rounded-[24px] shadow-[0_24px_70px_-30px_rgba(20,24,27,0.35)]"
         role="img"
-        aria-label="Örnek haftalık vardiya planı: 4 personel, Pazartesi–Cuma, toplam 10 vardiya ve 45 saat kontrolü açık."
+        aria-label="Örnek haftalık vardiya planı: 4 personel, Pazartesi–Pazar, toplam 15 vardiya ve 45 saat kontrolü açık."
       >
         <div aria-hidden="true">
           <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-4 py-3">
@@ -318,12 +328,12 @@ function OrnekCizelge() {
             <div className="flex items-end justify-between">
               <div>
                 <div className="text-[13px] font-bold text-zinc-900">Haftalık plan</div>
-                <div className="text-[11px] text-zinc-500">19 – 23 Ekim · Pzt–Cum</div>
+                <div className="text-[11px] text-zinc-500">19 – 25 Ekim · Pzt–Paz</div>
               </div>
               <span className="cip !px-2 !py-0.5 !text-[10px]">4 personel</span>
             </div>
 
-            <div className="mt-3 grid grid-cols-[62px_repeat(5,minmax(0,1fr))] gap-1 text-[10px]">
+            <div className="mt-3 grid grid-cols-[52px_repeat(7,minmax(0,1fr))] gap-1 text-[10px]">
               <div />
               {gunler.map((g) => (
                 <div key={g} className="pb-1 text-center font-semibold text-zinc-500">
@@ -359,21 +369,13 @@ function OrnekCizelge() {
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-2.5 text-[10px] text-zinc-500">
-              <span>Toplam 10 vardiya</span>
+              <span>Toplam 15 vardiya · 4/4 kişi</span>
               <span className="font-semibold text-emerald-700">✓ 45 saat kontrolü açık</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="suzul absolute -bottom-5 -left-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-xl sm:-left-6">
-        <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-          Bu hafta çalışan
-        </div>
-        <div className="mt-0.5 text-lg font-extrabold tracking-tight text-zinc-900">
-          4 / 4 kişi
-        </div>
-      </div>
       <div
         className="suzul absolute -right-3 -top-4 hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-800 sm:block"
         style={{ animationDelay: "1.2s" }}
@@ -460,7 +462,7 @@ export default async function Home() {
               hazır.
             </h1>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-zinc-600 sm:text-lg">
-              Personelini ekle, günleri doldur, tek tıkla WhatsApp&apos;tan gönder.
+              Personelini ekle, günleri doldur, WhatsApp mesajını hazırla.
               Excel, kâğıt ve mesaj karmaşası olmadan.
             </p>
 
@@ -479,7 +481,6 @@ export default async function Home() {
                   </Link>
                 </>
               )}
-              <TamEkran className="btn-ghost h-12 px-5" />
             </div>
 
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-zinc-600">
@@ -594,13 +595,104 @@ export default async function Home() {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white/80 p-4 text-[12px] leading-relaxed text-zinc-600">
-            <strong className="font-semibold text-zinc-900">Mevzuat notu:</strong>{" "}
-            Vardiya bir planlama ve hatırlatma aracıdır. Haftalık 45 saat, iki
-            vardiya arası 11 saat dinlenme, gece çalışması ve resmî tatil
-            kurallarını işaretler; ancak <strong>hukuki danışmanlık değildir</strong>.
-            Mevzuatın işletmene nasıl uygulanacağından ve nihai plandan işveren
-            sorumludur. Şüpheli durumlarda iş hukuku uzmanına danış.
+          <p className="mt-6 text-[12px] leading-relaxed text-zinc-500">
+            &quot;Mevzuata uygun&quot; demiyoruz; çünkü bu bir hukuki uygunluk
+            iddiası olur. Neyi kontrol ettiğimizi, neyi etmediğimizi ve sorumluluk
+            notunu{" "}
+            <a href="#mevzuat" className="font-semibold text-amber-700 underline underline-offset-2">
+              Mevzuat kapsamı
+            </a>{" "}
+            bölümünde açıkça yazdık.
+          </p>
+        </div>
+      </section>
+
+      {/* Mevzuat kapsamı */}
+      <section id="mevzuat" className="bolum-gri scroll-mt-20">
+        <div className="kap py-16 sm:py-24" data-reveal>
+          <BolumBasligi
+            etiket="Mevzuat kapsamı"
+            baslik="Neyi kontrol ediyoruz, neyi etmiyoruz?"
+            aciklama="Plan yaparken bazı süre kurallarını işaretliyoruz. Bu, bağımsız bir hukuk veya mali müşavir denetimi değildir; 'mevzuata uygun' sertifikası da değildir."
+          />
+          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            <div className="kart p-6">
+              <h3 className="flex items-center gap-2 text-base font-bold text-zinc-900">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">
+                  ✓
+                </span>
+                Kontrol edilir
+              </h3>
+              <ul className="mt-4 space-y-3 text-[13px] leading-relaxed text-zinc-600">
+                <li>
+                  <strong className="text-zinc-900">Haftalık 45 saat</strong> — İş
+                  Kanunu 4857 m.63. Aşım, fazla mesai uyarısı olarak gösterilir.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">Günlük 11 saat dinlenme</strong>{" "}
+                  — 4857 m.69. İki vardiya arasındaki süre hesaplanır.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">Aynı gün çift vardiya</strong> —
+                  çakışan atamalar hata olarak işaretlenir.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">Gece çalışması 7,5 saat</strong>{" "}
+                  — 4857 m.69. 20:00–06:00 arasına denk gelen süre kontrol edilir.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">Resmî tatil günleri</strong> —
+                  2429 sayılı Kanun. Tatilde çalışma atanmışsa uyarı verilir.
+                </li>
+              </ul>
+            </div>
+
+            <div className="kart p-6">
+              <h3 className="flex items-center gap-2 text-base font-bold text-zinc-900">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-800">
+                  ✗
+                </span>
+                Kapsam dışı
+              </h3>
+              <ul className="mt-4 space-y-3 text-[13px] leading-relaxed text-zinc-600">
+                <li>
+                  <strong className="text-zinc-900">
+                    Haftalık 24 saat kesintisiz hafta tatili
+                  </strong>{" "}
+                  — ayrıca kontrol edilmez; plana işaretlenmez.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">
+                    Fazla mesai ücreti, puantaj ve bordro
+                  </strong>{" "}
+                  — ürün para hesabı yapmaz, muhasebe/bordro aktarımı yoktur.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">
+                    Yıllık izin kullanımı ve bakiye
+                  </strong>{" "}
+                  — yalnızca hak günü görünür; izin düşümü otomatik yapılmaz.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">
+                    İş sözleşmesi, toplu iş sözleşmesi, sektörel istisnalar
+                  </strong>{" "}
+                  — işletmeye özel kurallar araca girilmez.
+                </li>
+                <li>
+                  <strong className="text-zinc-900">Hukuki görüş</strong> — bağımsız
+                  hukukçu veya mali müşavir denetimi yoktur.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-900">
+            <strong>Sorumluluk notu:</strong> Vardiya bir planlama ve hatırlatma
+            aracıdır. Uyarılar bilgilendirme amaçlıdır, hukuki danışmanlık
+            değildir. Mevzuatın işletmene nasıl uygulanacağından ve nihai plandan
+            işveren sorumludur. Şüpheli durumlarda iş hukuku uzmanına veya mali
+            müşavire danış.
           </div>
         </div>
       </section>
@@ -657,7 +749,7 @@ export default async function Home() {
                 src="/urun-paneli.png"
                 alt="Vardiya panelinin haftalık plan ekranı: personel, günler, vardiyalar ve toplam saatler."
                 width={1440}
-                height={970}
+                height={960}
                 sizes="(max-width: 1024px) 100vw, 60vw"
                 className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.01]"
               />
@@ -793,7 +885,7 @@ export default async function Home() {
                   "Excel'den kopyala-yapıştır veya CSV içe aktarma",
                   "45 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları",
                   "Personele özel, girişsiz program linki",
-                  "Tek tıkla WhatsApp gönderimi ve yazdırılabilir çizelge",
+                  "WhatsApp'a hazır mesaj ve yazdırılabilir çizelge",
                   "Aylık rapor, CSV indirme, veri indirme ve hesap silme",
                 ].map((m) => (
                   <li key={m} className="flex gap-2">
@@ -845,6 +937,61 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Günlük işleyiş */}
+      <section id="gunluk" className="kap scroll-mt-20 py-16 sm:py-24" data-reveal>
+        <BolumBasligi
+          etiket="Günlük işleyiş"
+          baslik="Vardiya değişimi, izin, onay ve puantaj."
+          aciklama="Bunlar gerçek hayatta en çok sorulan şeyler. Bugün ne yapabildiğini ve neyi uygulama dışında çözmen gerektiğini açıkça yazıyoruz."
+        />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="kart p-5">
+            <h3 className="text-[15px] font-bold text-zinc-900">Vardiya değişimi</h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+              <strong>Bugün:</strong> Personel talebi WhatsApp&apos;tan iletir; sen
+              panelde iki hücreyi değiştirip güncel mesajı gönderirsin.
+              <br />
+              <strong>Yok:</strong> Uygulama içi takas isteği ve onay akışı.
+            </p>
+          </div>
+          <div className="kart p-5">
+            <h3 className="text-[15px] font-bold text-zinc-900">
+              İzin ve mazeret
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+              <strong>Bugün:</strong> İzin gününü planda boş bırakırsın; yıllık izin
+              hakkı personel detayında görünür.
+              <br />
+              <strong>Yok:</strong> İzin talebi, bakiye düşümü ve otomatik onay.
+            </p>
+          </div>
+          <div className="kart p-5">
+            <h3 className="text-[15px] font-bold text-zinc-900">
+              Gördü / onayladı mı?
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+              <strong>Bugün:</strong> Personel linki salt-okunur; programı her zaman
+              son hâliyle görür.
+              <br />
+              <strong>Yok:</strong> Okundu bilgisi, &quot;onayladım&quot; düğmesi ve
+              okunmayanlara hatırlatma.
+            </p>
+          </div>
+          <div className="kart p-5">
+            <h3 className="text-[15px] font-bold text-zinc-900">
+              Fazla mesai ve puantaj
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+              <strong>Bugün:</strong> Haftalık saatleri ve 45 saat üstünü hesaplar;
+              aylık raporu CSV olarak indirirsin.
+              <br />
+              <strong>Yok:</strong> Ücret, bordro, muhasebe aktarımı ve resmî
+              puantaj.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Gizlilik */}
       <section className="bolum-gri">
         <div className="kap grid gap-8 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16" data-reveal>
@@ -852,20 +999,29 @@ export default async function Home() {
             <BolumBasligi
               etiket="Gizlilik"
               baslik="Verin senin. Reklam yok, takip yok."
-              aciklama="Ücret bilgisi istenmez; üçüncü taraf analitik betiği kullanılmaz. Her işletmenin verisi kendi hesabına kilitlidir."
+              aciklama="Ücret bilgisi istenmez; üçüncü taraf analitik betiği kullanılmaz. Her işletmenin verisi kendi hesabına kilitlidir. Personel verilerinde veri sorumlusu işletme, Vardiya veri işleyendir."
             />
-            <Link
-              href="/gizlilik"
-              className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
-            >
-              Gizlilik ve KVKK aydınlatması <span aria-hidden>→</span>
-            </Link>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/gizlilik"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
+              >
+                Gizlilik ve KVKK aydınlatması <span aria-hidden>→</span>
+              </Link>
+              <Link
+                href="/personel-aydinlatma"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
+              >
+                Personel aydınlatma metni örneği <span aria-hidden>→</span>
+              </Link>
+            </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { b: "Hesaba kilitli", m: "Başka bir hesap senin verini göremez." },
               { b: "Ücret istenmez", m: "Maaş ve maliyet bilgisi toplanmaz." },
               { b: "Yurt içinde", m: "Veriler Türkiye'deki sunucuda tutulur." },
+              { b: "Roller net", m: "Sorumlu işletme, işleyen Vardiya." },
             ].map((k) => (
               <div key={k.b} className="kart p-4">
                 <div className="text-sm font-bold text-zinc-900">{k.b}</div>
@@ -914,21 +1070,35 @@ export default async function Home() {
           <BolumBasligi
             etiket="Şeffaflık"
             baslik="Uydurma yorum yok. Olduğu gibi."
-            aciklama="Yeni bir ürünüz: Vardiya 18 Ekim 2026'da yayına girdi. Kullanıcı sayısı, müşteri logosu veya yorum uydurmak yerine ne olduğunu olduğu gibi yazıyoruz."
+            aciklama="Vardiya 18 Ekim 2026'da yayına girdi. 20 Ekim itibarıyla 8 işletme hesap açtı; 6'sı personel ekledi, 4'ü vardiya planı oluşturdu. Bunlar kayıt sayılarıdır; 'aktif müşteri' veya 'binlerce kullanıcı' demiyoruz."
             ortala
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="kart p-6">
               <div className="text-2xl" aria-hidden>
-                💬
+                📊
               </div>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Yorumlar henüz yok
+                Gerçek sayılar
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                İlk pilot işletmelerle görüşüyoruz. Gerçek geri bildirimleri,
-                izinleriyle birlikte burada yayınlayacağız. Sahte yorum veya
-                &quot;binlerce kullanıcı&quot; iddiası bulamazsın.
+                8 işletme hesabı · 6&apos;sı personel ekledi · 4&apos;ü plan oluşturdu.
+                Yorum ve logo henüz yok; ilk pilotların izinli geri bildirimlerini
+                burada yayınlayacağız.
+              </p>
+            </div>
+            <div className="kart p-6">
+              <div className="text-2xl" aria-hidden>
+                🧮
+              </div>
+              <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
+                Bu iş nasıl ayakta kalacak?
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+                Şu an kurucu tarafından finanse ediliyor; reklam yok, veri
+                satılmıyor, sunucu maliyeti düşük. Gelir planı: çekirdek ücretsiz;
+                ileride çok şube veya otomatik bildirim gibi isteğe bağlı modüller
+                ücretli olabilir.
               </p>
             </div>
             <div className="kart p-6">
@@ -936,12 +1106,13 @@ export default async function Home() {
                 🤝
               </div>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Fiyat taahhüdü
+                Fiyat ve veri garantisi
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                Bugünkü özellikler ücretsiz kalacak; mevcut kullanım sonradan
-                ücretli plana taşınmayacak. İleride çok şube veya otomatik
-                bildirim gibi isteğe bağlı ek modüller ücretli olabilir.
+                Ücretli plan çıkarsa bugünkü özellikler ücretsiz kalır; mevcut
+                kullanıcı yeni modüle geçmek zorunda değil. Hesap kapatılırsa en az
+                30 gün önce e-posta ile haber verilir; verin JSON/CSV olarak
+                indirilebilir.
               </p>
             </div>
             <div className="kart p-6">
@@ -970,13 +1141,16 @@ export default async function Home() {
                 Kurulumda takıldın mı? Birlikte bakalım.
               </p>
               <p className="mt-0.5 text-[12px] text-amber-900/80">
-                E-posta ile yaz veya iletişim formunu doldur; robot değil, kurucu
+                15 dakikalık kısa bir görüşme ayarlayabiliriz; robot değil, kurucu
                 yanıtlıyor.
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
-              <a href="mailto:destek@zihnora.com.tr" className="btn-cta h-10 px-4 text-[13px]">
-                E-posta yaz
+              <a
+                href="mailto:destek@zihnora.com.tr?subject=Vardiya%20-%2015%20dk%20g%C3%B6r%C3%BC%C5%9Fme"
+                className="btn-cta h-10 px-4 text-[13px]"
+              >
+                Görüşme iste
               </a>
               <Link href="/iletisim" className="btn-ghost h-10 px-4 text-[13px]">
                 İletişim formu
@@ -1014,10 +1188,11 @@ export default async function Home() {
             {[
               "Sınırsız personel",
               "Sınırsız vardiya şablonu",
-              "WhatsApp ile gönderim",
+              "WhatsApp'a hazır mesaj",
               "Personele özel link",
               "Aylık rapor & CSV",
               "Veri indirme & hesap silme",
+              "Telefona ekle (PWA)",
             ].map((m) => (
               <li key={m} className="flex items-center gap-2">
                 <span className="text-emerald-600">✓</span> {m}
@@ -1034,7 +1209,9 @@ export default async function Home() {
           <p className="mt-2 text-center text-[11px] leading-relaxed text-zinc-500">
             Fiyat taahhüdü: bugünkü özellikler ücretli plana taşınmayacak.
             Gelecekte isteğe bağlı ek modüller (ör. çok şube, otomatik bildirim)
-            ücretli olabilir; mevcut kullanım ücretsiz kalır.
+            ücretli olabilir; mevcut kullanım ücretsiz kalır. Hesap kapatılırsa
+            en az 30 gün önce e-posta ile bildirilir ve verin JSON/CSV olarak
+            indirilebilir.
           </p>
         </div>
       </section>

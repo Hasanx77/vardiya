@@ -27,7 +27,7 @@ export default async function GizlilikPage() {
           Gizlilik
         </p>
         <h1 className="sayfa-baslik mt-1">Gizlilik ve KVKK Aydınlatması</h1>
-        <p className="sayfa-alt">Son güncelleme: 19 Ekim 2026</p>
+        <p className="sayfa-alt">Son güncelleme: 20 Ekim 2026</p>
 
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
           <strong>Özet:</strong> Vardiya yalnızca işini yapmak için gereken veriyi toplar. Reklam
@@ -96,11 +96,20 @@ export default async function GizlilikPage() {
             alanında tutulur ve sunucuya gönderilmez. Ziyaret sayacı da çerez kullanmaz.
           </p>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">4) Nerede ve neden saklanır?</h2>
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">4) Nerede, neden ve kim tarafından saklanır?</h2>
           <p>
             Veriler, Türkiye&apos;deki barındırma sunucusunda (Hosting Dünyam) işletmeye özel bir
             veritabanında tutulur ve <strong>yurt dışına aktarılmaz</strong>. İşleme amacı tek:
-            vardiya planını oluşturmanı sağlamak ve çizelgeyi ekibine iletebilmen.
+            vardiya planını oluşturmanı sağlamak ve çizelgeyi ekibine iletebilmek.
+          </p>
+          <p className="mt-2">
+            <strong>Roller:</strong> Personel verileri için <strong>veri sorumlusu işletme</strong>
+            (hesabı açan işveren), <strong>veri işleyen ise Vardiya</strong> (barındırma ve yazılım
+            altyapısı) konumundadır. Personeline verebileceğin örnek aydınlatma metni{" "}
+            <Link href="/personel-aydinlatma" className="underline">
+              /personel-aydinlatma
+            </Link>{" "}
+            sayfasındadır; bu metin hukuki danışmanlık değildir.
           </p>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">5) Güvenlik</h2>
@@ -123,7 +132,8 @@ export default async function GizlilikPage() {
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">7) Haklarınız (KVKK m.11)</h2>
           <p>
             Verilerinin işlenip işlenmediğini öğrenme, düzeltilmesini isteme, silinmesini (unutulma)
-            ve taşınabilirliğini talep etme hakkın var. İlk ikisi uygulama içinde tek tıkla kullanılabilir:
+            ve taşınabilirliğini talep etme hakkın var. Verini JSON olarak indirme ve hesabını
+            silme düğmeleri aşağıdadır; diğer talepler için destek adresine yazabilirsin.
           </p>
         </section>
 
@@ -166,7 +176,13 @@ export default async function GizlilikPage() {
             . Talebini en geç 30 gün içinde yanıtlarız.
           </p>
           <p className="text-xs text-zinc-500">
-            Not: Bu sayfa bir bilgilendirmedir; veri sorumlusu olarak uygulama sahibi hareket eder.
+            Not: Bu sayfa bir bilgilendirmedir. İşletme ve personel verilerinde veri
+            sorumlusu hesabı açan işletme; barındırma ve yazılım altyapısında Vardiya
+            veri işleyendir. Personeline verilecek örnek metin{" "}
+            <Link href="/personel-aydinlatma" className="underline">
+              personel aydınlatma metni örneğinde
+            </Link>
+            dir.
           </p>
         </section>
 

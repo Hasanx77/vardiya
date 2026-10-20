@@ -19,6 +19,7 @@ const bolumler: { baslik: string; ogeler: Oge[] }[] = [
     ogeler: [
       { href: "/demo", ad: "Demo" },
       { href: "/#ozellikler", ad: "Özellikler" },
+      { href: "/#mevzuat", ad: "Mevzuat kapsamı", sinif: "hidden lg:inline-flex" },
       { href: "/#nasil", ad: "Nasıl çalışır", sinif: "hidden lg:inline-flex" },
       { href: "/#sss", ad: "Sık sorulanlar", sinif: "hidden xl:inline-flex" },
     ],

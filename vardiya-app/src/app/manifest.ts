@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Vardiya — Kafe & Restoran Vardiya Yönetimi",
     short_name: "Vardiya",
     description:
-      "5 dakikada haftalık vardiya planla, personele WhatsApp'tan tek tıkla gönder.",
+      "5 dakikada haftalık vardiya planla, personele WhatsApp mesajını hazırla.",
     start_url: "/panel",
     scope: "/",
     display: "fullscreen",

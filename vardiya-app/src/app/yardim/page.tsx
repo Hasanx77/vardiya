@@ -37,7 +37,7 @@ const sections: { id: string; title: string; items: string[] }[] = [
       "Gün başlığındaki kalem simgesiyle o güne not ekle (ör. canlı müzik).",
       "Vardiya şablonlarını 'Yönet' düğmesinden düzenle; 'min. kişi' hedefini belirle.",
       "Kapsam uyarıları: hedefin altında kalan gün/vardiyalar kendiliğinden listelenir.",
-      "Gönder düğmesiyle herkese WhatsApp'tan kendi programını yolla.",
+      "Gönder düğmesi her personele ayrı mesaj hazırlar; mesajları tek tek WhatsApp'ta açıp yollarsın.",
     ],
   },
   {
@@ -46,9 +46,19 @@ const sections: { id: string; title: string; items: string[] }[] = [
     items: [
       "Personel satırındaki 'Link' düğmesi kişiye özel bir bağlantı kopyalar.",
       "Çalışan bu bağlantıyı giriş yapmadan açar; yalnızca kendi haftalık programını görür.",
-      "İzin hakkı ve duyurular görünür.",
+      "İzin hakkı ve duyurular görünür; telefon numarası ve diğer personelin bilgileri görünmez.",
       "'Telefon takvimine ekle (.ics)' ile programını cebine alır.",
-      "Elemanın veri değiştirebileceği bir alan yoktur; linki bilen herkes programı görebilir.",
+      "Elemanın veri değiştirebileceği bir alan yoktur; linki bilen herkes programı görebilir. Şu an link yenileme/iptal düğmesi yok; personeli silmek linki geçersiz kılar.",
+    ],
+  },
+  {
+    id: "whatsapp",
+    title: "💬 WhatsApp ve bildirim",
+    items: [
+      "Her personele ayrı mesaj hazırlanır; 15 kişilik ekipte 15 kez açılır. Otomatik toplu gönderim yoktur.",
+      "WhatsApp Business API entegrasyonu yok; Vardiya senin adına mesaj göndermez.",
+      "Plan değişince otomatik bildirim gitmez; güncel mesajı yeniden açıp yollaman gerekir.",
+      "Personel linki her zaman son hâli gösterir; çalışan sayfayı yenilediğinde güncel programı görür.",
     ],
   },
   {
@@ -58,6 +68,7 @@ const sections: { id: string; title: string; items: string[] }[] = [
       "Bugün: kafede tablete açılabilecek 'bugün kim çalışıyor' tahtası.",
       "Raporlar: aylık saat / izin özeti + CSV.",
       "Yazdır: duvara asılacak haftalık çizelge.",
+      "Telefona ekle: tarayıcı menüsünden 'Ana Ekrana Ekle' ile uygulama gibi açılır (PWA). Mağaza uygulaması yok.",
       "Sağ üstteki 🌙/☀️ ile koyu/açık tema.",
     ],
   },
@@ -65,10 +76,21 @@ const sections: { id: string; title: string; items: string[] }[] = [
     id: "sinirlar",
     title: "🧭 Bugünkü sınırlar (dürüst liste)",
     items: [
-      "Tek hesap = tek işletme. Çok şubeli ekipler her şubeyi ayrı hesapla kullanabilir; tek panelden şube yönetimi henüz yok.",
+      "Tek hesap = tek işletme. Çok şubeli ekipler her şubeyi ayrı hesapla kullanabilir; tek panelden şube yönetimi ve 'müdür yalnız kendi şubesini görsün' yetkisi henüz yok.",
       "Müdür/çalışan yetkileri henüz yok; personel yalnızca kişisel bağlantısından salt-okunur programını görür.",
-      "Uygulama içi vardiya değişim talebi, izin/mazeret girişi ve otomatik bildirim henüz yok. Talep WhatsApp'tan iletilir; plan değişince güncel programı tek tıkla gönderirsin.",
+      "Uygulama içi vardiya değişim talebi, izin/mazeret girişi, okundu/onay bilgisi ve otomatik bildirim henüz yok.",
+      "Haftalık 24 saat kesintisiz hafta tatili, fazla mesai ücreti, puantaj/bordro ve yıllık izin bakiye düşümü kapsam dışı. Aylık saat raporu CSV olarak indirilebilir.",
       "Bu özellikler yol haritasında; hazır olduklarında duyurulacak.",
+    ],
+  },
+  {
+    id: "kvkk",
+    title: "🔐 KVKK ve veri sorumlusu",
+    items: [
+      "Personel verilerinde veri sorumlusu işletme (işveren), veri işleyen Vardiya'dır.",
+      "Ücret/maaş, T.C. kimlik, konum ve sağlık verisi istenmez ve saklanmaz.",
+      "Personeline verebileceğin örnek aydınlatma metni /personel-aydinlatma sayfasındadır; hukuki danışmanlık değildir.",
+      "Verini profil sayfasından JSON olarak indirebilir, hesabını kalıcı olarak silebilirsin.",
     ],
   },
 ];
@@ -103,10 +125,14 @@ export default async function YardimPage() {
       </div>
 
       <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-900">
-        <strong>Mevzuat notu:</strong> 45 saat, 11 saat dinlenme, gece çalışması
-        ve resmî tatil uyarıları bir planlama kontrolüdür; hukuki danışmanlık
-        değildir. Mevzuatın işletmene uygulanmasından işveren sorumludur.
-        Şüpheli durumlarda iş hukuku uzmanına danış.
+        <strong>Mevzuat notu:</strong> Kontrol edilenler haftalık 45 saat (İş
+        Kanunu 4857 m.63), iki vardiya arası 11 saat dinlenme (m.69), gece
+        çalışmasında 7,5 saat (m.69), aynı gün çift vardiya ve resmî tatil
+        günleridir (2429 sayılı Kanun). Haftalık 24 saat kesintisiz hafta tatili,
+        fazla mesai ücreti, puantaj/bordro ve yıllık izin bakiye düşümü kapsam
+        dışıdır. Uyarılar hukuki danışmanlık değildir; nihai plandan işveren
+        sorumludur. Şüpheli durumlarda iş hukuku uzmanına veya mali müşavire
+        danış.
       </div>
 
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
@@ -131,6 +157,9 @@ export default async function YardimPage() {
         </Link>
         <Link href="/gizlilik" className="btn-ikincil">
           Gizlilik
+        </Link>
+        <Link href="/personel-aydinlatma" className="btn-ikincil">
+          Personel aydınlatma örneği
         </Link>
       </div>
     </main>

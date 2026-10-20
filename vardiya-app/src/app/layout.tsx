@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://zihnora.com.tr"),
   title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
   description:
-    "5 dakikada haftalık vardiya planla, personele WhatsApp'tan tek tıkla gönder. Türkçe, mevzuat uyarılarıyla, cebinde.",
+    "5 dakikada haftalık vardiya planla, personele WhatsApp mesajını hazırla. Türkçe, mevzuat uyarılarıyla, cebinde.",
   applicationName: "Vardiya",
   openGraph: {
     type: "website",
@@ -176,7 +176,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
           <div className="kap flex flex-col gap-3 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Vardiya — kafe &amp; restoranlar için vardiya yönetimi.
+              Vardiya — Zihnora&apos;nın ürünü · zihnora.com.tr
             </span>
             {/* Menü bağlantıları üst çubukta; altbilgide yalnızca telif. */}
             <span className="text-zinc-400">© {yil}</span>

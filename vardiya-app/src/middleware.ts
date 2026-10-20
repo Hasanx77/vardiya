@@ -26,6 +26,7 @@ const PUBLIC_PATHS = new Set([
   "/giris",
   "/kayit",
   "/gizlilik",
+  "/personel-aydinlatma",
   "/yardim",
   "/hakkimizda",
   "/iletisim",
