@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import TamEkran from "@/components/TamEkran";
 import { kaydetZiyaret } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
@@ -300,7 +301,7 @@ export default async function Home() {
           className="amber-glow absolute -right-32 -top-40 -z-10 h-[520px] w-[520px] blur-3xl"
           aria-hidden="true"
         />
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:pt-16 lg:grid-cols-[1.03fr_0.97fr] lg:gap-10 lg:pb-24">
+        <div className="kap grid min-h-[calc(100svh-3.5rem)] items-center gap-12 pb-16 pt-12 sm:pt-16 lg:grid-cols-[1.03fr_0.97fr] lg:gap-10 lg:pb-24">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -329,6 +330,7 @@ export default async function Home() {
               <Link href="/giris" className="btn-ghost h-12 px-7">
                 Giriş yap
               </Link>
+              <TamEkran className="btn-ghost h-12 px-5" />
             </div>
 
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-zinc-600">
@@ -351,7 +353,7 @@ export default async function Home() {
 
       {/* İstatistik + güvence bandı */}
       <section className="bolum-gri border-y border-zinc-200/70">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+        <div className="kap py-8 sm:py-10">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             {istatistikler.map((s) => (
               <div key={s.etiket}>
@@ -373,7 +375,7 @@ export default async function Home() {
       </section>
 
       {/* Sorun */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24">
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <div>
             <BolumBasligi
@@ -405,7 +407,7 @@ export default async function Home() {
 
       {/* Özellikler */}
       <section id="ozellikler" className="bolum-gri scroll-mt-20 border-y border-zinc-200/70">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+        <div className="kap py-16 sm:py-24">
           <BolumBasligi
             etiket="Özellikler"
             baslik="İhtiyacın olan her şey, fazlası değil."
@@ -439,7 +441,7 @@ export default async function Home() {
       </section>
 
       {/* Nasıl çalışır */}
-      <section id="nasil" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:py-24">
+      <section id="nasil" className="kap scroll-mt-20 py-16 sm:py-24">
         <BolumBasligi
           etiket="Nasıl çalışır"
           baslik="Üç adımda haftalık plan."
@@ -460,7 +462,7 @@ export default async function Home() {
 
       {/* Neden Vardiya */}
       <section className="bolum-gri border-y border-zinc-200/70">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+        <div className="kap py-16 sm:py-24">
           <BolumBasligi
             etiket="Neden Vardiya"
             baslik="Vitrin değil, işini kolaylaştıran bir araç."
@@ -483,7 +485,7 @@ export default async function Home() {
       </section>
 
       {/* Kimler için */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24">
         <BolumBasligi
           etiket="Kimler için"
           baslik="Kafe, restoran ve pastaneler için tasarlandı."
@@ -508,7 +510,7 @@ export default async function Home() {
 
       {/* Gizlilik */}
       <section className="bolum-gri border-y border-zinc-200/70">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
+        <div className="kap grid gap-8 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
           <div>
             <BolumBasligi
               etiket="Gizlilik"
@@ -538,7 +540,7 @@ export default async function Home() {
       </section>
 
       {/* Kurucu */}
-      <section className="mx-auto max-w-6xl px-4 pt-14">
+      <section className="kap pt-14">
         <div className="kart flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-7">
           <span
             className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-700 text-lg font-bold tracking-tight text-white"
@@ -570,7 +572,7 @@ export default async function Home() {
       </section>
 
       {/* Fiyatlandırma */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24">
         <BolumBasligi
           etiket="Fiyatlandırma"
           baslik="Tek plan: tamamen ücretsiz."
@@ -644,7 +646,7 @@ export default async function Home() {
       </section>
 
       {/* Son çağrı */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24">
         <div className="relative overflow-hidden rounded-[28px] bg-zinc-950 px-6 py-10 sm:px-10 sm:py-14">
           <div
             className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-amber-500/30 blur-3xl"

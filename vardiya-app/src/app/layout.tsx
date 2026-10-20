@@ -65,7 +65,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#18181b",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f11" },
+  ],
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -100,7 +106,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </a>
 
         <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
-          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
+          <div className="kap flex h-14 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-6">
               <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
@@ -134,7 +140,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </div>
 
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+          <div className="kap flex flex-col gap-2 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <span>
               Vardiya — kafe &amp; restoranlar için vardiya yönetimi.
             </span>

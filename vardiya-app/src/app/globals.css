@@ -35,6 +35,34 @@ body {
   color: var(--metin);
 }
 
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+/* Akışkan kap: ekranı doldurur, okunabilirlik için üst sınır koyar */
+.kap {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3.2vw, 3.5rem);
+}
+
+@media (display-mode: fullscreen), (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+:fullscreen {
+  background-color: var(--zemin);
+}
+
 /* Başlıklar: Plus Jakarta Sans, sıkı harf aralığı (referans: Platin Creative) */
 h1,
 h2,
