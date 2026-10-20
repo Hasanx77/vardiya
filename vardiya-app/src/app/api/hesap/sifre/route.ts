@@ -23,6 +23,7 @@ export async function POST(req: Request) {
   };
 
   if (yeni.length < 8) return hata("Yeni şifre en az 8 karakter olmalı.");
+  if (yeni.length > 200) return hata("Yeni şifre çok uzun.");
   if (yeni !== yeniTekrar) return hata("Yeni şifreler birbiriyle uyuşmuyor.");
 
   const kullanici = await prisma.user.findUnique({ where: { id: kullaniciId } });

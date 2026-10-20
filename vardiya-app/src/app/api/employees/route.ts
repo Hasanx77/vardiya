@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { nextColor } from "@/lib/colors";
+import { sinirliTamSayi } from "@/lib/validate";
 
 /**
  * Yeni personel ekle.
@@ -16,8 +17,9 @@ export async function POST(request: Request) {
 
   const business = await ensureBusiness();
   const count = await prisma.employee.count({ where: { businessId: business.id } });
-  const leaveRaw = Number(body?.annualLeaveDays);
-  const annualLeaveDays = Number.isFinite(leaveRaw) && leaveRaw >= 0 ? Math.round(leaveRaw) : 14;
+  // İzin hakkı 0–365 gün aralığında tutulur (mantıksız değerler reddedilmez,
+  // en yakın geçerli değere çekilir).
+  const annualLeaveDays = sinirliTamSayi(body?.annualLeaveDays, 0, 365, 14);
 
   const emp = await prisma.employee.create({
     data: {

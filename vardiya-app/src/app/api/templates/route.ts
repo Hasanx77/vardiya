@@ -17,10 +17,19 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  if (start === end) {
+    return NextResponse.json(
+      { error: "Başlangıç ve bitiş saati aynı olamaz." },
+      { status: 400 }
+    );
+  }
 
   const business = await ensureBusiness();
   const minStaffRaw = Number(body?.minStaff);
-  const minStaff = Number.isFinite(minStaffRaw) && minStaffRaw > 0 ? Math.round(minStaffRaw) : 0;
+  const minStaff =
+    Number.isFinite(minStaffRaw) && minStaffRaw > 0
+      ? Math.min(999, Math.round(minStaffRaw))
+      : 0;
 
   const t = await prisma.shiftTemplate.create({
     data: { businessId: business.id, name, start, end, color, minStaff },

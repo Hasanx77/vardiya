@@ -13,7 +13,7 @@ export function shiftHours(shift: { start: string; end: string }): number {
   const [sh, sm] = shift.start.split(":").map(Number);
   const [eh, em] = shift.end.split(":").map(Number);
   let minutes = eh * 60 + em - (sh * 60 + sm);
-  if (minutes <= 0) minutes += 24 * 60; // gece yarısını aşan vardiya
+  if (minutes < 0) minutes += 24 * 60; // gece yarısını aşan vardiya
   return minutes / 60;
 }
 
@@ -52,7 +52,15 @@ export function standartSablonlar(acilis: string, kapanis: string) {
   const A = saatDakika(acilis);
   const K = saatDakika(kapanis);
   const sure = ((K - A + 1440) % 1440) || 840; // gece yarısını aşan günler dahil
-  const orta = yuvarla15(A + sure / 2);
+
+  // Çok kısa mesai saatlerinde (ör. 09:00–11:00) "orta" ve "ara vardiya"
+  // saatleri taşıp ertesi güne sarkmasın: en az 15 dakika pay bırak.
+  const yari = Math.floor(sure / 2);
+  const ortaPay = Math.min(Math.max(15, yuvarla15(yari)), Math.max(15, sure - 15));
+  const orta = A + ortaPay;
+
+  // Ara vardiya, tam günün ortasından en fazla 2'şer saat içeride başlar/biter.
+  const araPay = Math.max(0, Math.min(120, Math.floor(sure / 4)));
 
   return [
     { name: "Sabah", start: dakikaSaat(A), end: dakikaSaat(orta), color: "amber", minStaff: 0 },
@@ -60,8 +68,8 @@ export function standartSablonlar(acilis: string, kapanis: string) {
     { name: "Tam Gün", start: dakikaSaat(A), end: dakikaSaat(K), color: "rose", minStaff: 0 },
     {
       name: "Ara Vardiya",
-      start: dakikaSaat(A + 120),
-      end: dakikaSaat(K - 120),
+      start: dakikaSaat(A + araPay),
+      end: dakikaSaat(K - araPay),
       color: "cyan",
       minStaff: 0,
     },

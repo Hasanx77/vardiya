@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
+import { sinirliTamSayi } from "@/lib/validate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,8 +22,8 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (typeof body?.phone === "string") data.phone = body.phone.trim().slice(0, 30);
   if (typeof body?.role === "string") data.role = body.role.trim().slice(0, 40) || "Personel";
   if (body?.annualLeaveDays !== undefined) {
-    const leave = Number(body.annualLeaveDays);
-    if (Number.isFinite(leave) && leave >= 0) data.annualLeaveDays = Math.round(leave);
+    const izin = Number(body.annualLeaveDays);
+    if (Number.isFinite(izin)) data.annualLeaveDays = sinirliTamSayi(izin, 0, 365, 14);
   }
 
   const sonuc = await prisma.employee.updateMany({

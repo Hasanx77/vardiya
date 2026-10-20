@@ -83,9 +83,10 @@ function korumaliMi(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // HTTP → HTTPS (yalnızca üretimde ve ters vekil açıkça "http" dediyse).
-  // Yerel/özel adreslerde ve x-forwarded-proto yoksa yönlendirme yapılmaz:
-  // sonsuz döngü riski yok.
+  // HTTP → HTTPS. Ters vekil `x-forwarded-proto` başlığını HTTP'de "http",
+  // HTTPS'te "https" olarak iletiyor (canlıda doğrulandı). Acil bir durumda
+  // kapatabilmek için `HTTPS_ZORLA=0` ile devre dışı bırakılabilir.
+  // Yerel/özel adreslerde ve başlık yoksa yönlendirme yapılmaz: döngü riski yok.
   const proto = (req.headers.get("x-forwarded-proto") ?? "")
     .split(",")[0]
     .trim()
@@ -102,7 +103,12 @@ export async function middleware(req: NextRequest) {
     host.startsWith("192.168.") ||
     host.startsWith("10.") ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(host);
-  if (process.env.NODE_ENV === "production" && proto === "http" && !yerelAdres) {
+  if (
+    process.env.HTTPS_ZORLA !== "0" &&
+    process.env.NODE_ENV === "production" &&
+    proto === "http" &&
+    !yerelAdres
+  ) {
     const url = req.nextUrl.clone();
     url.protocol = "https:";
     url.port = "";
@@ -127,7 +133,9 @@ export async function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone();
   url.pathname = "/giris";
-  url.search = `?next=${encodeURIComponent(pathname)}`;
+  // Sorgu dizesini de koru (ör. /raporlar?ay=2026-10 → giriş sonrası aynı sayfa).
+  const hedef = `${pathname}${req.nextUrl.search}`;
+  url.search = `?next=${encodeURIComponent(hedef)}`;
   return NextResponse.redirect(url);
 }
 

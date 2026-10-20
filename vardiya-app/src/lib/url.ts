@@ -14,17 +14,36 @@ function ilkDeger(deger: string | null): string {
   return (deger ?? "").split(",")[0].trim().toLowerCase();
 }
 
+/** Yerel/özel adres mi? (HTTP varsayılanı için) */
+function yerelHost(host: string): boolean {
+  return (
+    !host ||
+    host.startsWith("localhost") ||
+    host.startsWith("127.") ||
+    host.startsWith("[::1]") ||
+    host.startsWith("192.168.") ||
+    host.startsWith("10.") ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  );
+}
+
 export function disAdres(req: Request, yol: string): URL {
   const h = req.headers;
-  const proto = ilkDeger(h.get("x-forwarded-proto"));
-  const guvenliProto = GECERLI_PROTO.has(proto)
-    ? proto
-    : new URL(req.url).protocol.replace(":", "") || "https";
   const host = ilkDeger(h.get("x-forwarded-host")) || ilkDeger(h.get("host"));
+  const istekProto = new URL(req.url).protocol.replace(":", "");
+  const forwardedProto = ilkDeger(h.get("x-forwarded-proto"));
+
+  // Ters vekil protokolü iletmediyse dışarıdan HTTPS varsay (canlı site https).
+  const proto = GECERLI_PROTO.has(forwardedProto)
+    ? forwardedProto
+    : yerelHost(host)
+      ? istekProto || "http"
+      : "https";
+
   const yolGuvenli = yol.startsWith("/") ? yol : `/${yol}`;
 
   if (host && GECERLI_HOST.test(host)) {
-    return new URL(`${guvenliProto}://${host}${yolGuvenli}`);
+    return new URL(`${proto}://${host}${yolGuvenli}`);
   }
   return new URL(yolGuvenli, req.url);
 }
@@ -32,6 +51,10 @@ export function disAdres(req: Request, yol: string): URL {
 export function httpsMi(req: Request): boolean {
   const forwarded = ilkDeger(req.headers.get("x-forwarded-proto"));
   if (GECERLI_PROTO.has(forwarded)) return forwarded === "https";
+
+  // Başlık yoksa: yerel geliştirme http, canlı (yerel olmayan host) https kabul edilir.
+  const host = ilkDeger(req.headers.get("x-forwarded-host")) || ilkDeger(req.headers.get("host"));
+  if (!yerelHost(host)) return true;
   return new URL(req.url).protocol === "https:";
 }
 

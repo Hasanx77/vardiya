@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DEFAULT_SHIFTS, WEEKLY_LIMIT_HOURS, shiftHours } from "./shifts";
+import { DEFAULT_SHIFTS, WEEKLY_LIMIT_HOURS, shiftHours, standartSablonlar } from "./shifts";
 
 describe("shiftHours", () => {
   it("gündüz vardiyası 8 saat", () => {
@@ -16,6 +16,33 @@ describe("shiftHours", () => {
   });
   it("buçuklu saatler", () => {
     expect(shiftHours({ start: "09:30", end: "18:00" })).toBe(8.5);
+  });
+  it("başlangıç = bitiş ise 0 saat (24 saat değil)", () => {
+    expect(shiftHours({ start: "09:00", end: "09:00" })).toBe(0);
+  });
+});
+
+describe("standartSablonlar", () => {
+  it("kısa mesai saatlerinde ara vardiya ters dönmez", () => {
+    const sablonlar = standartSablonlar("09:00", "11:00");
+    for (const s of sablonlar) {
+      expect(shiftHours(s)).toBeGreaterThan(0);
+      expect(shiftHours(s)).toBeLessThanOrEqual(24);
+    }
+    const ara = sablonlar.find((s) => s.name === "Ara Vardiya")!;
+    expect(ara.start).toBe("09:30");
+    expect(ara.end).toBe("10:30");
+  });
+  it("normal mesai saatlerinde beklenen şablonlar", () => {
+    const sablonlar = standartSablonlar("09:00", "23:00");
+    expect(sablonlar.map((s) => s.name)).toEqual([
+      "Sabah",
+      "Akşam",
+      "Tam Gün",
+      "Ara Vardiya",
+    ]);
+    expect(sablonlar[0]).toMatchObject({ start: "09:00", end: "16:00" });
+    expect(sablonlar[2]).toMatchObject({ start: "09:00", end: "23:00" });
   });
 });
 

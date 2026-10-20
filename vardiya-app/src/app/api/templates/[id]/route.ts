@@ -24,7 +24,30 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (isValidColor(body?.color)) data.color = String(body.color);
   if (body?.minStaff !== undefined) {
     const m = Number(body.minStaff);
-    if (Number.isFinite(m) && m >= 0) data.minStaff = Math.round(m);
+    if (Number.isFinite(m) && m >= 0) data.minStaff = Math.min(999, Math.round(m));
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Güncellenecek alan yok" }, { status: 400 });
+  }
+
+  // Kısmi güncellemede de başlangıç = bitiş olmasın.
+  if (data.start !== undefined || data.end !== undefined) {
+    const mevcut = await prisma.shiftTemplate.findFirst({
+      where: { id, businessId: business.id },
+      select: { start: true, end: true },
+    });
+    if (!mevcut) {
+      return NextResponse.json({ error: "Şablon bulunamadı" }, { status: 404 });
+    }
+    const yeniStart = (data.start as string | undefined) ?? mevcut.start;
+    const yeniEnd = (data.end as string | undefined) ?? mevcut.end;
+    if (yeniStart === yeniEnd) {
+      return NextResponse.json(
+        { error: "Başlangıç ve bitiş saati aynı olamaz." },
+        { status: 400 },
+      );
+    }
   }
 
   const sonuc = await prisma.shiftTemplate.updateMany({
