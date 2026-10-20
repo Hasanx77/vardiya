@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 
 const TABAN = "https://zihnora.com.tr";
 
+/** Her istekte üretilir (eski ön-render önbelleği servis edilmesin). */
+export const dynamic = "force-dynamic";
+
 /** Yalnızca herkese açık sayfalar dizine eklenir; panel ve hesap sayfaları kapalı. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const son = new Date();
