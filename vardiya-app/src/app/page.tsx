@@ -205,7 +205,7 @@ const sss = [
   {
     soru: "Bu iş nasıl ayakta kalacak? Bir yıl sonra kapanır mı?",
     cevap:
-      "Şu an kurucu tarafından finanse ediliyor; reklam geliri yok, veri satılmıyor. Sunucu maliyeti düşük tutuluyor (tek uygulama, SQLite). Gelir modeli: çekirdek ücretsiz kalır; ileride çok şube yönetimi veya otomatik bildirim gibi isteğe bağlı ek modüller ücretli olabilir. Ücretli bir plan çıkarsa bugünkü özellikler ücretsiz kalır ve mevcut kullanıcı yeni modüle geçmek zorunda değildir. Hesabı kapatma kararı alırsak en az 30 gün önce e-posta ile haber verir, tüm verilerini JSON/CSV olarak indirmeni sağlarız. Veri indirme düğmesi zaten profil sayfanda.",
+      "Resmî taahhüt: Hizmet ücretli olmadan 1 ay önce bilgilendirme yapılacaktır. Asla kart bilgileriniz vb. alınmayacaktır. Bu süreçte dilediğiniz gibi ücret ödemeden kullanabilirsiniz.",
   },
   {
     soru: "Personel uygulama indirmek zorunda mı? Telefona kurulabiliyor mu?",
@@ -1073,7 +1073,7 @@ export default async function Home() {
             aciklama="Vardiya 18 Ekim 2026'da yayına girdi. 20 Ekim itibarıyla 8 işletme hesap açtı; 6'sı personel ekledi, 4'ü vardiya planı oluşturdu. Bunlar kayıt sayılarıdır; 'aktif müşteri' veya 'binlerce kullanıcı' demiyoruz."
             ortala
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="kart p-6">
               <div className="text-2xl" aria-hidden>
                 📊
@@ -1087,32 +1087,18 @@ export default async function Home() {
                 burada yayınlayacağız.
               </p>
             </div>
-            <div className="kart p-6">
-              <div className="text-2xl" aria-hidden>
-                🧮
-              </div>
-              <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Bu iş nasıl ayakta kalacak?
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                Şu an kurucu tarafından finanse ediliyor; reklam yok, veri
-                satılmıyor, sunucu maliyeti düşük. Gelir planı: çekirdek ücretsiz;
-                ileride çok şube veya otomatik bildirim gibi isteğe bağlı modüller
-                ücretli olabilir.
-              </p>
-            </div>
-            <div className="kart p-6">
+            <div className="kart border-amber-300 bg-amber-50 p-6">
               <div className="text-2xl" aria-hidden>
                 🤝
               </div>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Fiyat ve veri garantisi
+                Resmî fiyat taahhüdü
               </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                Ücretli plan çıkarsa bugünkü özellikler ücretsiz kalır; mevcut
-                kullanıcı yeni modüle geçmek zorunda değil. Hesap kapatılırsa en az
-                30 gün önce e-posta ile haber verilir; verin JSON/CSV olarak
-                indirilebilir.
+              <p className="mt-2 text-[13px] leading-relaxed text-zinc-700">
+                Hizmet ücretli olmadan <strong>1 ay önce</strong> bilgilendirme
+                yapılacaktır. <strong>Asla kart bilgileriniz vb. alınmayacaktır.</strong>{" "}
+                Bu süreçte dilediğiniz gibi <strong>ücret ödemeden</strong>{" "}
+                kullanabilirsiniz.
               </p>
             </div>
             <div className="kart p-6">
@@ -1207,11 +1193,9 @@ export default async function Home() {
             Kredi kartı yok · abonelik yok · deneme süresi yok
           </p>
           <p className="mt-2 text-center text-[11px] leading-relaxed text-zinc-500">
-            Fiyat taahhüdü: bugünkü özellikler ücretli plana taşınmayacak.
-            Gelecekte isteğe bağlı ek modüller (ör. çok şube, otomatik bildirim)
-            ücretli olabilir; mevcut kullanım ücretsiz kalır. Hesap kapatılırsa
-            en az 30 gün önce e-posta ile bildirilir ve verin JSON/CSV olarak
-            indirilebilir.
+            <strong>Resmî taahhüt:</strong> Hizmet ücretli olmadan 1 ay önce
+            bilgilendirme yapılacaktır. Asla kart bilgileriniz vb. alınmayacaktır.
+            Bu süreçte dilediğiniz gibi ücret ödemeden kullanabilirsiniz.
           </p>
         </div>
       </section>
