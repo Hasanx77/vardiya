@@ -274,7 +274,7 @@ function OrnekCizelge() {
         </div>
       </div>
 
-      <div className="absolute -bottom-5 -left-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-xl sm:-left-6">
+      <div className="suzul absolute -bottom-5 -left-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-xl sm:-left-6">
         <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
           Bu hafta çalışan
         </div>
@@ -282,7 +282,10 @@ function OrnekCizelge() {
           3 / 5 kişi
         </div>
       </div>
-      <div className="absolute -right-3 -top-4 hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-800 sm:block">
+      <div
+        className="suzul absolute -right-3 -top-4 hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-800 sm:block"
+        style={{ animationDelay: "1.2s" }}
+      >
         5 dakikada hazır
       </div>
     </div>
@@ -302,7 +305,7 @@ export default async function Home() {
           aria-hidden="true"
         />
         <div className="kap grid min-h-[calc(100svh-3.5rem)] items-center gap-12 pb-16 pt-12 sm:pt-16 lg:grid-cols-[1.03fr_0.97fr] lg:gap-10 lg:pb-24">
-          <div>
+          <div className="hero-gel">
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
               Kafe &amp; restoranlar için
@@ -347,13 +350,15 @@ export default async function Home() {
             </ul>
           </div>
 
-          <OrnekCizelge />
+          <div className="hero-gel hero-gel-2">
+            <OrnekCizelge />
+          </div>
         </div>
       </section>
 
       {/* İstatistik + güvence bandı */}
-      <section className="bolum-gri border-y border-zinc-200/70">
-        <div className="kap py-8 sm:py-10">
+      <section className="bolum-gri">
+        <div className="kap py-8 sm:py-10" data-reveal>
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             {istatistikler.map((s) => (
               <div key={s.etiket}>
@@ -375,7 +380,7 @@ export default async function Home() {
       </section>
 
       {/* Sorun */}
-      <section className="kap py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24" data-reveal>
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <div>
             <BolumBasligi
@@ -406,8 +411,8 @@ export default async function Home() {
       </section>
 
       {/* Özellikler */}
-      <section id="ozellikler" className="bolum-gri scroll-mt-20 border-y border-zinc-200/70">
-        <div className="kap py-16 sm:py-24">
+      <section id="ozellikler" className="bolum-gri scroll-mt-20">
+        <div className="kap py-16 sm:py-24" data-reveal>
           <BolumBasligi
             etiket="Özellikler"
             baslik="İhtiyacın olan her şey, fazlası değil."
@@ -418,7 +423,7 @@ export default async function Home() {
             {ozellikler.map((o) => (
               <div
                 key={o.baslik}
-                className="group rounded-[20px] border border-zinc-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_16px_40px_-24px_rgba(20,24,27,0.35)]"
+                className="kart group p-6 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_16px_40px_-24px_rgba(20,24,27,0.35)]"
               >
                 <span className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-700">
                   <svg
@@ -441,7 +446,7 @@ export default async function Home() {
       </section>
 
       {/* Nasıl çalışır */}
-      <section id="nasil" className="kap scroll-mt-20 py-16 sm:py-24">
+      <section id="nasil" className="kap scroll-mt-20 py-16 sm:py-24" data-reveal>
         <BolumBasligi
           etiket="Nasıl çalışır"
           baslik="Üç adımda haftalık plan."
@@ -449,7 +454,7 @@ export default async function Home() {
         />
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {adimlar.map((a, i) => (
-            <div key={a.baslik} className="relative rounded-[20px] border border-zinc-200 bg-white p-6">
+            <div key={a.baslik} className="kart relative p-6">
               <span className="text-[11px] font-bold tracking-[0.2em] text-amber-700">
                 0{i + 1}
               </span>
@@ -461,14 +466,14 @@ export default async function Home() {
       </section>
 
       {/* Neden Vardiya */}
-      <section className="bolum-gri border-y border-zinc-200/70">
-        <div className="kap py-16 sm:py-24">
+      <section className="bolum-gri">
+        <div className="kap py-16 sm:py-24" data-reveal>
           <BolumBasligi
             etiket="Neden Vardiya"
             baslik="Vitrin değil, işini kolaylaştıran bir araç."
             aciklama="Yeni özellik eklemeden önce tek bir soruyu soruyoruz: Bu, işletmenin işini gerçekten kolaylaştırıyor mu?"
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="kart mt-10 grid gap-x-10 gap-y-7 p-7 sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
             {nedenler.map((n) => (
               <div key={n.baslik} className="flex gap-3">
                 <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">
@@ -485,7 +490,7 @@ export default async function Home() {
       </section>
 
       {/* Kimler için */}
-      <section className="kap py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24" data-reveal>
         <BolumBasligi
           etiket="Kimler için"
           baslik="Kafe, restoran ve pastaneler için tasarlandı."
@@ -496,7 +501,7 @@ export default async function Home() {
           {sektorler.map((s) => (
             <div
               key={s.ad}
-              className="rounded-[18px] border border-zinc-200 bg-white p-4 text-center transition-colors hover:border-amber-300"
+              className="kart p-4 text-center transition-colors hover:border-amber-300"
             >
               <div className="text-2xl" aria-hidden>
                 {s.ikon}
@@ -509,8 +514,8 @@ export default async function Home() {
       </section>
 
       {/* Gizlilik */}
-      <section className="bolum-gri border-y border-zinc-200/70">
-        <div className="kap grid gap-8 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
+      <section className="bolum-gri">
+        <div className="kap grid gap-8 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16" data-reveal>
           <div>
             <BolumBasligi
               etiket="Gizlilik"
@@ -540,7 +545,7 @@ export default async function Home() {
       </section>
 
       {/* Kurucu */}
-      <section className="kap pt-14">
+      <section className="kap pt-14" data-reveal>
         <div className="kart flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-7">
           <span
             className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-700 text-lg font-bold tracking-tight text-white"
@@ -572,7 +577,7 @@ export default async function Home() {
       </section>
 
       {/* Fiyatlandırma */}
-      <section className="kap py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24" data-reveal>
         <BolumBasligi
           etiket="Fiyatlandırma"
           baslik="Tek plan: tamamen ücretsiz."
@@ -620,14 +625,14 @@ export default async function Home() {
       </section>
 
       {/* SSS */}
-      <section id="sss" className="bolum-gri scroll-mt-20 border-y border-zinc-200/70">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
+      <section id="sss" className="bolum-gri scroll-mt-20">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:py-24" data-reveal>
           <BolumBasligi etiket="SSS" baslik="Sık sorulan sorular" ortala />
           <div className="mt-8 space-y-3">
             {sss.map((s) => (
               <details
                 key={s.soru}
-                className="group rounded-[18px] border border-zinc-200 bg-white px-5 py-4"
+                className="kart group px-5 py-4"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-bold text-zinc-900 [&::-webkit-details-marker]:hidden">
                   {s.soru}
@@ -646,7 +651,7 @@ export default async function Home() {
       </section>
 
       {/* Son çağrı */}
-      <section className="kap py-16 sm:py-24">
+      <section className="kap py-16 sm:py-24" data-reveal>
         <div className="relative overflow-hidden rounded-[28px] bg-zinc-950 px-6 py-10 sm:px-10 sm:py-14">
           <div
             className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-amber-500/30 blur-3xl"

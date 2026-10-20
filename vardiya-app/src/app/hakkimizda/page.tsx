@@ -58,11 +58,13 @@ export default async function HakkimizdaPage() {
 
   return (
     <main className="flex-1">
-      <div className="sayfa max-w-4xl">
+      <div className="sayfa max-w-5xl">
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
           Hakkımızda
         </p>
-        <h1 className="sayfa-baslik mt-1">Vardiya neden var?</h1>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-[-0.04em] text-zinc-900 sm:text-5xl">
+          Vardiya neden var?
+        </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-zinc-600 sm:text-base">
           Kafe ve restoranların haftalık vardiya planını Excel, kâğıt ve
           WhatsApp karmaşasından kurtarmak için kuruldu. Amaç büyük bir yazılım

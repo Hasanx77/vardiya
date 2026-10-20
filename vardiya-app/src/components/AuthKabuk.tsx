@@ -23,7 +23,7 @@ export default function AuthKabuk({
             className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-amber-500/25 blur-3xl"
             aria-hidden="true"
           />
-          <Link href="/" className="relative flex items-center gap-2 font-bold">
+          <Link href="/" className="marka relative flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
               V
             </span>
@@ -60,7 +60,7 @@ export default function AuthKabuk({
         {/* Form */}
         <div className="p-6 sm:p-8">
           <div className="md:hidden">
-            <Link href="/" className="inline-flex items-center gap-2 font-bold">
+            <Link href="/" className="marka inline-flex items-center gap-2">
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
                 V
               </span>

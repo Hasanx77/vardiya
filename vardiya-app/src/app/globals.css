@@ -72,9 +72,31 @@ h4 {
   letter-spacing: -0.03em;
 }
 
-/* Açık gri bölüm bandı */
+/* Açık gri bölüm bandı — sert kenar yok, beyaza yumuşak geçiş */
 .bolum-gri {
-  background-color: var(--gri);
+  background: linear-gradient(
+    180deg,
+    rgba(246, 248, 249, 0) 0%,
+    #f6f8f9 5%,
+    #f6f8f9 95%,
+    rgba(246, 248, 249, 0) 100%
+  );
+}
+html.dark .bolum-gri {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 15, 17, 0) 0%,
+    #0f1417 5%,
+    #0f1417 95%,
+    rgba(11, 15, 17, 0) 100%
+  );
+}
+
+/* Marka yazısı: başlık fontu, sıkı aralık */
+.marka {
+  font-family: var(--font-heading), var(--font-body), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 /* ============================================================
@@ -685,4 +707,181 @@ html.dark .hero-grid {
     background: #fff !important;
   }
 }
+
+/* ============================================================
+   AKIŞKANLIK / HAREKET (20 Eki 2026)
+   Amaç: sayfa "parça parça" değil, tek bir akış gibi hissettirsin.
+   Tüm hareketler prefers-reduced-motion ile kapanır.
+   ============================================================ */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes heroGel {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sayfaGecis {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes yumusakGel {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes suzul {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes nefes {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.hero-gel {
+  animation: heroGel 0.8s var(--ease-out) both;
+}
+.hero-gel-2 {
+  animation-delay: 0.12s;
+}
+
+.sayfa-gecis {
+  animation: sayfaGecis 0.45s var(--ease-out) both;
+}
+
+[data-reveal] {
+  transform: translateY(18px);
+  transition: transform 0.8s var(--ease-out);
+}
+[data-reveal].gorundu {
+  transform: none;
+}
+
+.suzul {
+  animation: suzul 7s ease-in-out infinite;
+}
+.amber-glow {
+  animation: nefes 9s ease-in-out infinite;
+}
+
+/* Butonlar: hafif kalkma + yumuşak renk geçişi */
+.btn-birincil,
+.btn-ikincil,
+.btn-sessiz,
+.btn-tehlike,
+.btn-cta,
+.btn-ghost {
+  transition:
+    background-color 0.25s var(--ease-out),
+    color 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out),
+    transform 0.25s var(--ease-out);
+}
+.btn-birincil:hover,
+.btn-ikincil:hover,
+.btn-cta:hover,
+.btn-ghost:hover {
+  transform: translateY(-1px);
+}
+.btn-birincil:active,
+.btn-ikincil:active,
+.btn-cta:active,
+.btn-ghost:active,
+.btn-sessiz:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Kartlar: sadece kenar/gölge geçişi (uygulama tablolarını sarsmaz) */
+.kart {
+  transition:
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out),
+    background-color 0.25s var(--ease-out);
+}
+
+/* SSS açılırken içerik yumuşak gelsin */
+details > summary {
+  transition:
+    background-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out);
+}
+details[open] > p {
+  animation: yumusakGel 0.35s var(--ease-out);
+}
+
+/* Header: kaydırınca ince gölge */
+header {
+  transition: box-shadow 0.35s var(--ease-out);
+}
+html.kaydirildi header {
+  box-shadow: 0 10px 30px -26px rgba(20, 24, 27, 0.55);
+}
+
+/* Sayfa üstü ilerleme çizgisi */
+.ilerleme {
+  position: fixed;
+  inset: 0 auto auto 0;
+  height: 2px;
+  width: 0;
+  background: var(--vurgu);
+  z-index: 60;
+  transition: width 0.12s linear;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-gel,
+  .sayfa-gecis,
+  .suzul,
+  .amber-glow,
+  details[open] > p {
+    animation: none !important;
+  }
+  [data-reveal] {
+    transform: none !important;
+    transition: none !important;
+  }
+  .btn-birincil,
+  .btn-ikincil,
+  .btn-sessiz,
+  .btn-tehlike,
+  .btn-cta,
+  .btn-ghost {
+    transform: none !important;
+  }
+}
+
 

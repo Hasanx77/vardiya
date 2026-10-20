@@ -5,6 +5,9 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
 import { AltMenu, UstMenu } from "@/components/Menu";
+import Animasyon from "@/components/Animasyon";
+import Ilerleme from "@/components/Ilerleme";
+import KaydirmaDurumu from "@/components/KaydirmaDurumu";
 import { aktifKullanici } from "@/lib/auth";
 import "./globals.css";
 
@@ -98,6 +101,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           }}
         />
 
+        <Ilerleme />
+        <KaydirmaDurumu />
+        <Animasyon />
+        <noscript>
+          <style>{`[data-reveal]{transform:none!important}`}</style>
+        </noscript>
+
         <a
           href="#icerik"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-zinc-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
@@ -108,7 +118,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
           <div className="kap flex h-14 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-6">
-              <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
+              <Link href="/" className="marka flex shrink-0 items-center gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
                   V
                 </span>
