@@ -9,7 +9,7 @@ import {
   resetData,
   updateBusiness,
 } from "@/lib/api-client";
-import { DEFAULT_SHIFTS } from "@/lib/shifts";
+import { DEFAULT_SHIFTS, shiftSaatMetni } from "@/lib/shifts";
 import { dosyaKabulEdilir, parseEmployeeText } from "@/lib/personel-aktarim";
 
 export default function BaslaClient({ initialData }: { initialData: StatePayload }) {
@@ -203,7 +203,7 @@ export default function BaslaClient({ initialData }: { initialData: StatePayload
             </button>
           </div>
           <p className="mt-3 text-xs text-zinc-500">
-            Hazır şablonlar: {sablonlar.map((s) => `${s.name} ${s.start}–${s.end}`).join(" · ")}
+            Hazır şablonlar: {sablonlar.map((s) => `${s.name} ${shiftSaatMetni(s)}`).join(" · ")}
           </p>
         </section>
       </div>

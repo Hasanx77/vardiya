@@ -68,6 +68,10 @@ model ShiftTemplate {
   start      String
   end        String
   color      String @default("sky")
+  /** Bölünmüş vardiya: ücretsiz aranın başlangıcı ("HH:MM"). Yoksa null. */
+  breakStart String?
+  /** Bölünmüş vardiya: ücretsiz aranın bitişi ("HH:MM"). Yoksa null. */
+  breakEnd   String?
   /** Bu vardiyada hedeflenen en az kişi sayısı (0 = hedef yok) */
   minStaff   Int    @default(0)
 

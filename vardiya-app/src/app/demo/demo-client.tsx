@@ -4,9 +4,17 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
 import { DAY_SHORT_TR } from "@/lib/dates";
-import { DEFAULT_SHIFTS, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
+import { DEFAULT_SHIFTS, shiftSaatMetni, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { buildScheduleText } from "@/lib/whatsapp";
-import type { Employee, ShiftTemplate } from "@/lib/types";
+import {
+  DEMO_GUNLER,
+  DEMO_PERSONEL,
+  DEMO_SIRA,
+  demoAtamaSatirlari,
+  demoAtamalari,
+  demoKey,
+} from "@/lib/demo-data";
+import type { ShiftTemplate } from "@/lib/types";
 
 /**
  * Kayıt gerektirmeyen ürün demosu.
@@ -16,30 +24,15 @@ import type { Employee, ShiftTemplate } from "@/lib/types";
  * hesap açmadan görebilmesi.
  */
 
-const GUNLER = [
-  { iso: "2026-10-19", ad: "Pzt", tarih: "19 Eki" },
-  { iso: "2026-10-20", ad: "Sal", tarih: "20 Eki" },
-  { iso: "2026-10-21", ad: "Çar", tarih: "21 Eki" },
-  { iso: "2026-10-22", ad: "Per", tarih: "22 Eki" },
-  { iso: "2026-10-23", ad: "Cum", tarih: "23 Eki" },
-  { iso: "2026-10-24", ad: "Cmt", tarih: "24 Eki" },
-  { iso: "2026-10-25", ad: "Paz", tarih: "25 Eki" },
-];
+const GUNLER = DEMO_GUNLER;
 
 const HAFTA: Date[] = GUNLER.map((g) => {
   const [y, m, d] = g.iso.split("-").map(Number);
   return new Date(y, m - 1, d);
 });
 
-const PERSONEL: Employee[] = [
-  { id: "p1", name: "Ayşe Yılmaz", role: "Barista", phone: "", color: "amber", annualLeaveDays: 14 },
-  { id: "p2", name: "Mehmet Kaya", role: "Garson", phone: "", color: "emerald", annualLeaveDays: 14 },
-  { id: "p3", name: "Zeynep Demir", role: "Şef", phone: "", color: "rose", annualLeaveDays: 14 },
-  { id: "p4", name: "Can Aydın", role: "Barista", phone: "", color: "violet", annualLeaveDays: 14 },
-  { id: "p5", name: "Elif Şahin", role: "Servis", phone: "", color: "cyan", annualLeaveDays: 14 },
-];
-
-const SIRA = ["sabah", "aksam", "tamgun", "ara"] as const;
+const PERSONEL = DEMO_PERSONEL;
+const SIRA = DEMO_SIRA;
 
 const RENK: Record<string, { hucre: string; nokta: string }> = {
   sabah: {
@@ -60,33 +53,9 @@ const RENK: Record<string, { hucre: string; nokta: string }> = {
   },
 };
 
-function keyOf(employeeId: string, iso: string) {
-  return `${employeeId}__${iso}`;
-}
-
-function baslangicAtamalari(): Record<string, string> {
-  const atama: Record<string, string> = {};
-  const ekle = (employeeId: string, gunler: string[], vardiya: string) => {
-    for (const iso of gunler) atama[keyOf(employeeId, iso)] = vardiya;
-  };
-
-  ekle("p1", ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-23"], "sabah");
-  ekle("p2", ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-23", "2026-10-24", "2026-10-25"], "aksam");
-  ekle("p3", ["2026-10-21", "2026-10-24", "2026-10-25"], "tamgun");
-  ekle("p4", ["2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"], "ara");
-  // Kasıtlı örnek: akşam kapanışından sonra ertesi sabah açılış → 8 saat dinlenme.
-  ekle("p5", ["2026-10-22"], "aksam");
-  ekle("p5", ["2026-10-23"], "sabah");
-
-  return atama;
-}
-
-function toAssignmentRows(atama: Record<string, string>) {
-  return Object.entries(atama).map(([k, shiftTemplateId]) => {
-    const [employeeId, date] = k.split("__");
-    return { employeeId, date, shiftTemplateId };
-  });
-}
+const keyOf = demoKey;
+const baslangicAtamalari = demoAtamalari;
+const toAssignmentRows = demoAtamaSatirlari;
 
 export default function DemoClient() {
   const [atama, setAtama] = useState<Record<string, string>>(baslangicAtamalari);
@@ -311,7 +280,7 @@ export default function DemoClient() {
             {DEFAULT_SHIFTS.map((s) => (
               <span key={s.id} className="inline-flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${RENK[s.id]?.nokta ?? "bg-zinc-300"}`} />
-                {s.name} · {s.start}–{s.end}
+                {s.name} · {shiftSaatMetni(s)}
               </span>
             ))}
             <span className="ml-auto">Mobilde tabloyu yatay kaydır.</span>

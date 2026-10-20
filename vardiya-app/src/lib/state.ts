@@ -49,6 +49,8 @@ export async function getStatePayload(): Promise<StatePayload> {
       name: t.name,
       start: t.start,
       end: t.end,
+      breakStart: t.breakStart,
+      breakEnd: t.breakEnd,
       color: t.color as ColorKey,
       minStaff: t.minStaff,
     })),

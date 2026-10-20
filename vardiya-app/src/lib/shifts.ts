@@ -8,13 +8,76 @@ export const DEFAULT_SHIFTS: ShiftTemplate[] = [
   { id: "ara", name: "Ara Vardiya", start: "12:00", end: "20:00", color: "cyan", minStaff: 0 },
 ];
 
-/** Bir vardiyanın saat cinsinden süresi (gece yarısını aşanlar dahil) */
-export function shiftHours(shift: { start: string; end: string }): number {
+/** Bir vardiyanın saat cinsinden süresi (gece yarısını aşanlar dahil).
+ *  Bölünmüş vardiyada ücretsiz ara süresi düşülür. */
+export function shiftHours(shift: {
+  start: string;
+  end: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}): number {
   const [sh, sm] = shift.start.split(":").map(Number);
   const [eh, em] = shift.end.split(":").map(Number);
   let minutes = eh * 60 + em - (sh * 60 + sm);
   if (minutes < 0) minutes += 24 * 60; // gece yarısını aşan vardiya
+
+  // Ara yalnızca vardiya sınırları içindeyse düşülür.
+  if (shift.breakStart && shift.breakEnd) {
+    const bas = sh * 60 + sm;
+    const araBas = (saatDakika(shift.breakStart) - bas + 1440) % 1440;
+    const araBit = (saatDakika(shift.breakEnd) - bas + 1440) % 1440;
+    if (araBas > 0 && araBit > araBas && araBit < minutes) {
+      minutes -= araBit - araBas;
+    }
+  }
+
   return minutes / 60;
+}
+
+/** Bölünmüş vardiyadaki ücretsiz aranın dakikası (yoksa 0). */
+export function breakMinutes(shift: {
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}): number {
+  const { breakStart, breakEnd } = shift;
+  if (!breakStart || !breakEnd) return 0;
+  if (!/^\d{2}:\d{2}$/.test(breakStart) || !/^\d{2}:\d{2}$/.test(breakEnd)) return 0;
+  if (breakStart === breakEnd) return 0;
+
+  let bas = saatDakika(breakStart);
+  let bit = saatDakika(breakEnd);
+  if (bit < bas) bit += 24 * 60;
+  return bit - bas;
+}
+
+/** "09:00–22:00" veya "09:00–22:00 (ara 13:00–17:00)" */
+export function shiftSaatMetni(shift: {
+  start: string;
+  end: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}): string {
+  const temel = `${shift.start}–${shift.end}`;
+  return shift.breakStart && shift.breakEnd
+    ? `${temel} (ara ${shift.breakStart}–${shift.breakEnd})`
+    : temel;
+}
+
+/**
+ * Bölünmüş vardiya arası vardiya sınırları içinde mi?
+ * (Ara, başlangıçtan sonra başlamalı ve bitişten önce bitmeli.)
+ */
+export function araGecerliMi(
+  start: string,
+  end: string,
+  breakStart: string,
+  breakEnd: string
+): boolean {
+  if (!breakStart || !breakEnd || breakStart === breakEnd) return false;
+  const span = (saatDakika(end) - saatDakika(start) + 1440) % 1440;
+  const bs = (saatDakika(breakStart) - saatDakika(start) + 1440) % 1440;
+  const be = (saatDakika(breakEnd) - saatDakika(start) + 1440) % 1440;
+  return span > 0 && bs > 0 && be > bs && be < span;
 }
 
 /** Haftalık yasal sınır (İş Kanunu: haftalık 45 saat) */
@@ -77,5 +140,5 @@ export function standartSablonlar(acilis: string, kapanis: string) {
 }
 
 export function shiftLabel(shift: ShiftTemplate): string {
-  return `${shift.name} (${shift.start}–${shift.end})`;
+  return `${shift.name} (${shiftSaatMetni(shift)})`;
 }

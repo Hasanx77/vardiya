@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { cleanText, isValidColor, normalizeTime } from "@/lib/validate";
+import { araGecerliMi } from "@/lib/shifts";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -14,7 +15,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const business = await ensureBusiness();
   const body = await request.json().catch(() => ({}));
 
-  const data: Record<string, string | number> = {};
+  const data: Record<string, string | number | null> = {};
   const name = cleanText(body?.name, 30);
   const start = normalizeTime(body?.start);
   const end = normalizeTime(body?.end);
@@ -27,15 +28,30 @@ export async function PATCH(request: Request, { params }: Ctx) {
     if (Number.isFinite(m) && m >= 0) data.minStaff = Math.min(999, Math.round(m));
   }
 
+  // Bölünmüş vardiya arası: iki alan birlikte gönderilir.
+  // Boş gönderilirse ("") ara kaldırılır.
+  const araIstendi = body?.breakStart !== undefined || body?.breakEnd !== undefined;
+  if (araIstendi) {
+    const bs = normalizeTime(body?.breakStart);
+    const be = normalizeTime(body?.breakEnd);
+    if (!bs && !be) {
+      data.breakStart = null;
+      data.breakEnd = null;
+    } else {
+      data.breakStart = bs;
+      data.breakEnd = be;
+    }
+  }
+
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Güncellenecek alan yok" }, { status: 400 });
   }
 
-  // Kısmi güncellemede de başlangıç = bitiş olmasın.
-  if (data.start !== undefined || data.end !== undefined) {
+  // Kısmi güncellemede de saatler tutarlı kalsın.
+  if (data.start !== undefined || data.end !== undefined || araIstendi) {
     const mevcut = await prisma.shiftTemplate.findFirst({
       where: { id, businessId: business.id },
-      select: { start: true, end: true },
+      select: { start: true, end: true, breakStart: true, breakEnd: true },
     });
     if (!mevcut) {
       return NextResponse.json({ error: "Şablon bulunamadı" }, { status: 404 });
@@ -47,6 +63,17 @@ export async function PATCH(request: Request, { params }: Ctx) {
         { error: "Başlangıç ve bitiş saati aynı olamaz." },
         { status: 400 },
       );
+    }
+
+    if (data.breakStart) {
+      const bs = String(data.breakStart);
+      const be = String(data.breakEnd);
+      if (!araGecerliMi(yeniStart, yeniEnd, bs, be)) {
+        return NextResponse.json(
+          { error: "Ara saatleri vardiya içinde ve başlangıç < bitiş olacak şekilde girilmeli." },
+          { status: 400 },
+        );
+      }
     }
   }
 
@@ -64,6 +91,8 @@ export async function PATCH(request: Request, { params }: Ctx) {
     name: t?.name,
     start: t?.start,
     end: t?.end,
+    breakStart: t?.breakStart ?? null,
+    breakEnd: t?.breakEnd ?? null,
     color: t?.color,
     minStaff: t?.minStaff,
   });

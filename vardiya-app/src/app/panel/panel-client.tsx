@@ -20,7 +20,7 @@ import {
   updateTemplate as apiUpdateTemplate,
 } from "@/lib/api-client";
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
-import { shiftHours, WEEKLY_LIMIT_HOURS, standartSablonlar } from "@/lib/shifts";
+import { shiftHours, shiftSaatMetni, WEEKLY_LIMIT_HOURS, standartSablonlar } from "@/lib/shifts";
 import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
@@ -408,7 +408,7 @@ export default function PanelClient({
       const cells = weekDates.map((d) => {
         const sid = assignMap.get(keyOf(emp.id, toISODate(d)));
         const t = sid ? templateById.get(sid) : undefined;
-        return t ? `${t.name} ${t.start}-${t.end}` : "";
+        return t ? `${t.name} ${shiftSaatMetni(t)}` : "";
       });
       satirlar.push([emp.name, emp.role, ...cells, weekTotal(emp), empOvertime(emp)]);
     }
@@ -542,12 +542,51 @@ export default function PanelClient({
   }
 
   async function copyStaffLink(emp: Employee) {
-    const url = `${window.location.origin}/ekip/${emp.id}`;
     try {
-      await navigator.clipboard.writeText(url);
+      const r = await fetch(`/api/baglanti/${emp.id}`, { cache: "no-store" });
+      const j = (await r.json().catch(() => ({}))) as { yol?: string | null; aktif?: boolean };
+      if (!r.ok) return flash("Bağlantı alınamadı.");
+      if (!j.aktif || !j.yol) {
+        return flash("Bu personelin bağlantısı kapalı. 'Yenile' ile yeni link oluştur.");
+      }
+      await navigator.clipboard.writeText(`${window.location.origin}${j.yol}`);
       flash("Personel linki kopyalandı.");
     } catch {
       flash("Kopyalanamadı.");
+    }
+  }
+
+  /** Personel linkini yenile / kapat / yeniden aç. */
+  async function linkIslem(emp: Employee, islem: "yenile" | "kapat" | "ac") {
+    if (islem === "kapat" && !window.confirm(`${emp.name} için link kapatılsın mı? Elindeki bağlantı çalışmayacak.`)) {
+      return;
+    }
+    try {
+      const r = await fetch(`/api/baglanti/${emp.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ islem }),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        yol?: string | null;
+        hata?: string;
+      };
+      if (!r.ok) return flash(j.hata ?? "İşlem yapılamadı.");
+
+      if (islem === "kapat") {
+        flash("Link kapatıldı. Personel artık açamaz.");
+        return;
+      }
+      if (j.yol) {
+        await navigator.clipboard.writeText(`${window.location.origin}${j.yol}`).catch(() => {});
+      }
+      flash(
+        islem === "yenile"
+          ? "Yeni link kopyalandı; eski link geçersiz."
+          : "Link yeniden açıldı ve kopyalandı."
+      );
+    } catch {
+      flash("İşlem yapılamadı.");
     }
   }
 
@@ -1097,6 +1136,20 @@ export default function PanelClient({
                                   <button onClick={() => copyStaffLink(emp)} className="btn-ikincil btn-kucuk">
                                     Link
                                   </button>
+                                  <button
+                                    onClick={() => linkIslem(emp, "yenile")}
+                                    className="btn-ikincil btn-kucuk"
+                                    title="Eski bağlantıyı geçersiz kılar, yenisini kopyalar"
+                                  >
+                                    Linki yenile
+                                  </button>
+                                  <button
+                                    onClick={() => linkIslem(emp, "kapat")}
+                                    className="btn-sessiz btn-kucuk"
+                                    title="Personelin elindeki bağlantıyı kapatır"
+                                  >
+                                    Linki kapat
+                                  </button>
                                   <button onClick={() => startEditEmp(emp)} className="btn-ikincil btn-kucuk">
                                     Düzenle
                                   </button>
@@ -1229,6 +1282,20 @@ export default function PanelClient({
                       </button>
                       <button onClick={() => copyStaffLink(emp)} className="btn-ikincil btn-kucuk">
                         Link
+                      </button>
+                      <button
+                        onClick={() => linkIslem(emp, "yenile")}
+                        className="btn-ikincil btn-kucuk"
+                        title="Eski bağlantıyı geçersiz kılar, yenisini kopyalar"
+                      >
+                        Linki yenile
+                      </button>
+                      <button
+                        onClick={() => linkIslem(emp, "kapat")}
+                        className="btn-sessiz btn-kucuk"
+                        title="Personelin elindeki bağlantıyı kapatır"
+                      >
+                        Kapat
                       </button>
                       <button onClick={() => handleRemoveEmployee(emp)} className="btn-tehlike btn-kucuk">
                         Sil
@@ -1405,7 +1472,7 @@ export default function PanelClient({
                   }`}
                 >
                   <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
-                  {t.name} · {t.start}–{t.end}
+                  {t.name} · {shiftSaatMetni(t)}
                 </span>
               ))}
             </div>

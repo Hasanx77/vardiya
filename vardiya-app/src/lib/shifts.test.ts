@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { DEFAULT_SHIFTS, WEEKLY_LIMIT_HOURS, shiftHours, standartSablonlar } from "./shifts";
+import {
+  DEFAULT_SHIFTS,
+  WEEKLY_LIMIT_HOURS,
+  araGecerliMi,
+  shiftHours,
+  shiftSaatMetni,
+  standartSablonlar,
+} from "./shifts";
 
 describe("shiftHours", () => {
   it("gündüz vardiyası 8 saat", () => {
@@ -19,6 +26,36 @@ describe("shiftHours", () => {
   });
   it("başlangıç = bitiş ise 0 saat (24 saat değil)", () => {
     expect(shiftHours({ start: "09:00", end: "09:00" })).toBe(0);
+  });
+  it("bölünmüş vardiyada ücretsiz ara düşülür", () => {
+    expect(
+      shiftHours({ start: "09:00", end: "22:00", breakStart: "13:00", breakEnd: "17:00" })
+    ).toBe(9);
+  });
+  it("ara vardiya dışındaysa süre yanlış hesaplanmaz", () => {
+    expect(
+      shiftHours({ start: "09:00", end: "17:00", breakStart: "18:00", breakEnd: "19:00" })
+    ).toBe(8);
+  });
+});
+
+describe("araGecerliMi", () => {
+  it("vardiya içindeki ara geçerli", () => {
+    expect(araGecerliMi("09:00", "22:00", "13:00", "17:00")).toBe(true);
+  });
+  it("vardiya dışına taşan ara geçersiz", () => {
+    expect(araGecerliMi("09:00", "17:00", "16:00", "18:00")).toBe(false);
+  });
+  it("ters ara geçersiz", () => {
+    expect(araGecerliMi("09:00", "22:00", "17:00", "13:00")).toBe(false);
+  });
+});
+
+describe("shiftSaatMetni", () => {
+  it("arayı okunur biçimde gösterir", () => {
+    expect(
+      shiftSaatMetni({ start: "09:00", end: "22:00", breakStart: "13:00", breakEnd: "17:00" })
+    ).toBe("09:00–22:00 (ara 13:00–17:00)");
   });
 });
 

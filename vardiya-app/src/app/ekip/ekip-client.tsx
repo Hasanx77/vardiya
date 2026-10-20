@@ -5,9 +5,17 @@ import Link from "next/link";
 import type { StatePayload } from "@/lib/types";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { toISODate } from "@/lib/dates";
+import { shiftSaatMetni } from "@/lib/shifts";
 import SayfaBasligi from "@/components/SayfaBasligi";
 
-export default function EkipClient({ initialData }: { initialData: StatePayload }) {
+export default function EkipClient({
+  initialData,
+  baglantilar,
+}: {
+  initialData: StatePayload;
+  /** personelId → imzalı /ekip/<token> yolu (kapalıysa null) */
+  baglantilar: Record<string, string | null>;
+}) {
   const data = initialData;
 
   const todayISO = toISODate(new Date());
@@ -49,12 +57,10 @@ export default function EkipClient({ initialData }: { initialData: StatePayload 
           {data.employees.map((emp) => {
             const shiftId = todayByEmployee.get(emp.id);
             const t = shiftId ? templateById.get(shiftId) : undefined;
-            return (
-              <Link
-                key={emp.id}
-                href={`/ekip/${emp.id}`}
-                className="kart flex items-center gap-3 p-4 transition-colors hover:border-zinc-300"
-              >
+            const link = baglantilar[emp.id] ?? null;
+
+            const icerik = (
+              <>
                 <span
                   className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                     COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
@@ -70,13 +76,33 @@ export default function EkipClient({ initialData }: { initialData: StatePayload 
                       COLOR_CLASSES[t.color]?.chip ?? ""
                     }`}
                   >
-                    Bugün {t.start}–{t.end}
+                    Bugün {shiftSaatMetni(t)}
                   </span>
                 ) : (
                   <span className="shrink-0 text-[11px] text-zinc-400">Bugün izinli</span>
                 )}
-                <span className="text-zinc-300">→</span>
+                <span className="shrink-0 text-zinc-300">
+                  {link ? "→" : <span className="text-[11px] text-zinc-400">Link kapalı</span>}
+                </span>
+              </>
+            );
+
+            return link ? (
+              <Link
+                key={emp.id}
+                href={link}
+                className="kart flex items-center gap-3 p-4 transition-colors hover:border-zinc-300"
+              >
+                {icerik}
               </Link>
+            ) : (
+              <div
+                key={emp.id}
+                className="kart flex items-center gap-3 p-4 opacity-70"
+                title="Bağlantı kapatılmış. Panelden 'Linki yenile' ile yenisini oluşturabilirsin."
+              >
+                {icerik}
+              </div>
             );
           })}
         </div>

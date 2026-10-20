@@ -176,7 +176,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
           <div className="kap flex flex-col gap-3 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Vardiya — Zihnora&apos;nın ürünü · zihnora.com.tr
+              Vardiya, Zihnora&apos;nın ürünüdür · Yayın adresi: zihnora.com.tr
+              <span className="mt-1 block text-[11px] text-zinc-400">
+                İleride vardiya.app adresine taşınacak; bu adres de çalışmaya devam
+                edecek. Destek:{" "}
+                <a
+                  href="mailto:destek@zihnora.com.tr"
+                  className="underline underline-offset-2 hover:text-zinc-700"
+                >
+                  destek@zihnora.com.tr
+                </a>
+              </span>
             </span>
             {/* Menü bağlantıları üst çubukta; altbilgide yalnızca telif. */}
             <span className="text-zinc-400">© {yil}</span>

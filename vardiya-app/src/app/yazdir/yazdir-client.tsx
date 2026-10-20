@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { StatePayload } from "@/lib/types";
 import { DAY_NAMES_TR, formatShort, formatWeekRange, getWeekDates, toISODate } from "@/lib/dates";
 import { getHoliday } from "@/lib/holidays";
+import { shiftSaatMetni } from "@/lib/shifts";
 
 /**
  * Duvara asılacak haftalık çizelge. Veri sunucudan hazır gelir; ekran
@@ -137,7 +138,7 @@ export default function YazdirClient({ initialData }: { initialData: StatePayloa
                             <>
                               <div className="font-medium">{t.name}</div>
                               <div className="text-[10px] text-zinc-500">
-                                {t.start}–{t.end}
+                                {shiftSaatMetni(t)}
                               </div>
                             </>
                           ) : (
@@ -155,7 +156,7 @@ export default function YazdirClient({ initialData }: { initialData: StatePayloa
               <div className="flex flex-wrap gap-2">
                 {data.shiftTemplates.map((t) => (
                   <span key={t.id}>
-                    {t.name} {t.start}–{t.end}
+                    {t.name} {shiftSaatMetni(t)}
                   </span>
                 ))}
               </div>

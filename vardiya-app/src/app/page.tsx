@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { aktifKullanici } from "@/lib/auth";
+import { demoOzet } from "@/lib/demo-data";
 import { kaydetZiyaret } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,8 @@ const istatistikler = [
 ];
 
 const guvenceler = [
-  "KVKK uyumlu",
+  "KVKK aydınlatması",
+  "Veri indir / sil",
   "Reklamsız",
   "Türkiye'de barındırılıyor",
   "Kredi kartı yok",
@@ -123,7 +125,7 @@ const nedenler = [
   {
     baslik: "Gerçekten ücretsiz",
     metin:
-      "Bugünkü özellikler kalıcı olarak ücretsiz. Kredi kartı, abonelik veya deneme süresi yok.",
+      "Bugünkü temel özellikler kalıcı olarak ücretsiz; ileri özellikler ileride Pro olabilir. Kredi kartı, abonelik veya deneme süresi yok.",
   },
   {
     baslik: "Türkçe destek",
@@ -203,9 +205,14 @@ const sss = [
       "Evet. Sınırsız personel, sınırsız şablon ve bugünkü tüm özellikler ücretsiz. Kredi kartı, abonelik veya deneme süresi yok.",
   },
   {
+    soru: "Marka Vardiya ama adres neden zihnora.com.tr?",
+    cevap:
+      "Vardiya ürünün adı; zihnora.com.tr ise yayın adresimiz (Zihnora'nın ürünü). İleride vardiya.app adresine taşımayı planlıyoruz; bu adres de çalışmaya devam edecek. İki isim aynı ürünü gösterir, farklı bir şirket veya kopya site yok.",
+  },
+  {
     soru: "Bu iş nasıl ayakta kalacak? Bir yıl sonra kapanır mı?",
     cevap:
-      "Resmî taahhüt: Hizmet ücretli olmadan 1 ay önce bilgilendirme yapılacaktır. Asla kart bilgileriniz vb. alınmayacaktır. Bu süreçte dilediğiniz gibi ücret ödemeden kullanabilirsiniz.",
+      "Bugünkü temel özellikler (personel, haftalık plan, rapor, personele özel link) kalıcı olarak ücretsiz kalacak. İleride şube yönetimi veya otomatik bildirim gibi ileri özellikler ücretli bir Pro plana dönüşebilir; bugün kullandığın temel özellikler ücretli hâle gelmeyecek. Ücretli bir özellik eklenirse en az 30 gün önce haber verilir, kart bilgisi istenmez. Tek kişilik bir proje olduğu için kapanma riskini de saklamıyoruz: hizmet sona ererse verini Profil → Verilerimi indir ile JSON olarak dışa aktarabilirsin.",
   },
   {
     soru: "Personel uygulama indirmek zorunda mı? Telefona kurulabiliyor mu?",
@@ -290,15 +297,17 @@ function BolumBasligi({
   );
 }
 
-/** Ürünü gösteren mini çizelge — tarayıcı penceresi içinde (etkileşimsiz). */
+/** Ürünü gösteren mini çizelge — tarayıcı penceresi içinde (etkileşimsiz).
+ *  Sayılar /demo ekranıyla **aynı kaynaktan** (lib/demo-data) gelir. */
 function OrnekCizelge() {
-  const gunler = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-  const satirlar = [
-    { ad: "Ayşe Y.", renk: "bg-amber-500", vardiyalar: ["Sabah", "Sabah", "Sabah", "—", "Sabah", "Sabah", "—"] },
-    { ad: "Mehmet K.", renk: "bg-emerald-500", vardiyalar: ["Akşam", "Akşam", "Akşam", "—", "Akşam", "Akşam", "—"] },
-    { ad: "Zeynep D.", renk: "bg-rose-500", vardiyalar: ["—", "—", "Tam gün", "—", "—", "Tam gün", "Tam gün"] },
-    { ad: "Can A.", renk: "bg-violet-500", vardiyalar: ["—", "—", "—", "Akşam", "Akşam", "—", "—"] },
-  ];
+  const ozet = demoOzet();
+
+  const hucreRengi: Record<string, string> = {
+    sabah: "border-amber-200 bg-amber-100 text-amber-900",
+    aksam: "border-violet-200 bg-violet-100 text-violet-800",
+    tamgun: "border-rose-200 bg-rose-100 text-rose-800",
+    ara: "border-cyan-200 bg-cyan-100 text-cyan-800",
+  };
 
   return (
     <div className="relative">
@@ -309,7 +318,7 @@ function OrnekCizelge() {
       <div
         className="kart overflow-hidden rounded-[24px] shadow-[0_24px_70px_-30px_rgba(20,24,27,0.35)]"
         role="img"
-        aria-label="Örnek haftalık vardiya planı: 4 personel, Pazartesi–Pazar, toplam 15 vardiya ve 45 saat kontrolü açık."
+        aria-label={`Örnek haftalık vardiya planı: ${ozet.kisi} personel, Pazartesi–Pazar, toplam ${ozet.toplamVardiya} vardiya ve 45 saat kontrolü açık.`}
       >
         <div aria-hidden="true">
           <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-4 py-3">
@@ -319,49 +328,45 @@ function OrnekCizelge() {
             <span className="ml-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-medium text-zinc-500">
               zihnora.com.tr/panel
             </span>
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> canlı
+            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+              örnek veri
             </span>
           </div>
 
           <div className="px-4 pb-3 pt-4">
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-[13px] font-bold text-zinc-900">Haftalık plan</div>
+                <div className="text-[13px] font-bold text-zinc-900">{ozet.isletme}</div>
                 <div className="text-[11px] text-zinc-500">19 – 25 Ekim · Pzt–Paz</div>
               </div>
-              <span className="cip !px-2 !py-0.5 !text-[10px]">4 personel</span>
+              <span className="cip !px-2 !py-0.5 !text-[10px]">
+                {ozet.kisi} personel
+              </span>
             </div>
 
             <div className="mt-3 grid grid-cols-[52px_repeat(7,minmax(0,1fr))] gap-1 text-[10px]">
               <div />
-              {gunler.map((g) => (
+              {ozet.gunler.map((g) => (
                 <div key={g} className="pb-1 text-center font-semibold text-zinc-500">
                   {g}
                 </div>
               ))}
-              {satirlar.map((s) => (
-                <div key={s.ad} className="contents">
+              {ozet.satirlar.map((s) => (
+                <div key={s.id} className="contents">
                   <div className="flex min-w-0 items-center gap-1.5 py-1.5 text-[10px] font-semibold text-zinc-700">
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.renk}`} />
                     <span className="truncate">{s.ad}</span>
                   </div>
-                  {s.vardiyalar.map((v, i) => (
+                  {s.hucreler.map((h, i) => (
                     <div
                       key={i}
                       className={`my-0.5 truncate rounded-md border px-1 py-1 text-center text-[9px] font-medium ${
-                        v === "—"
-                          ? "border-dashed border-zinc-200 text-zinc-400"
-                          : v === "Sabah"
-                            ? "border-amber-200 bg-amber-100 text-amber-900"
-                            : v === "Akşam"
-                              ? "border-emerald-200 bg-emerald-100 text-emerald-800"
-                              : v === "Tam gün"
-                                ? "border-rose-200 bg-rose-100 text-rose-800"
-                                : "border-violet-200 bg-violet-100 text-violet-800"
+                        h.tur
+                          ? hucreRengi[h.tur] ?? "border-zinc-200 bg-zinc-50 text-zinc-700"
+                          : "border-dashed border-zinc-200 text-zinc-400"
                       }`}
                     >
-                      {v}
+                      {h.etiket ?? "—"}
                     </div>
                   ))}
                 </div>
@@ -369,8 +374,12 @@ function OrnekCizelge() {
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-2.5 text-[10px] text-zinc-500">
-              <span>Toplam 15 vardiya · 4/4 kişi</span>
-              <span className="font-semibold text-emerald-700">✓ 45 saat kontrolü açık</span>
+              <span>
+                Toplam {ozet.toplamVardiya} vardiya · {ozet.calisan}/{ozet.kisi} kişi
+              </span>
+              <span className="font-semibold text-emerald-700">
+                ✓ {ozet.uyari > 0 ? `${ozet.uyari} uyarı` : "uyarı yok"}
+              </span>
             </div>
           </div>
         </div>
@@ -500,6 +509,25 @@ export default async function Home() {
                 )
               )}
             </ul>
+
+            <p className="mt-5 text-[13px] leading-relaxed text-zinc-500">
+              Sorun mu var?{" "}
+              <a
+                href="mailto:destek@zihnora.com.tr"
+                className="font-semibold text-zinc-700 underline underline-offset-2 hover:text-amber-700"
+              >
+                destek@zihnora.com.tr
+              </a>
+              <span className="mx-1.5 text-zinc-300" aria-hidden>
+                ·
+              </span>
+              <a
+                href="mailto:hmum117413@gmail.com"
+                className="font-semibold text-zinc-700 underline underline-offset-2 hover:text-amber-700"
+              >
+                hmum117413@gmail.com
+              </a>
+            </p>
           </div>
 
           <div className="hero-gel hero-gel-2">
@@ -1068,23 +1096,23 @@ export default async function Home() {
       <section id="seffaflik" className="bolum-gri scroll-mt-20">
         <div className="kap py-16 sm:py-24" data-reveal>
           <BolumBasligi
-            etiket="Şeffaflık"
+            etiket="Erken erişim"
             baslik="Uydurma yorum yok. Olduğu gibi."
-            aciklama="Vardiya 18 Ekim 2026'da yayına girdi. 20 Ekim itibarıyla 8 işletme hesap açtı; 6'sı personel ekledi, 4'ü vardiya planı oluşturdu. Bunlar kayıt sayılarıdır; 'aktif müşteri' veya 'binlerce kullanıcı' demiyoruz."
+            aciklama="Vardiya 18 Ekim 2026'da yayına girdi. Henüz yayınlanmış müşteri yorumu, işletme logosu veya 'binlerce kullanıcı' iddiası yok. İlk pilotların izinli geri bildirimlerini burada yayınlayacağız."
             ortala
           />
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="kart p-6">
               <div className="text-2xl" aria-hidden>
-                📊
+                🌱
               </div>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Gerçek sayılar
+                Erken erişim
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                8 işletme hesabı · 6&apos;sı personel ekledi · 4&apos;ü plan oluşturdu.
-                Yorum ve logo henüz yok; ilk pilotların izinli geri bildirimlerini
-                burada yayınlayacağız.
+                Ürün yeni ve tek kişi tarafından geliştiriliyor. Yorum yerine ne
+                olduğunu ve ne olmadığını yazıyoruz. Pilot kullanıcı olmak istersen
+                doğrudan yazabilirsin.
               </p>
             </div>
             <div className="kart border-amber-300 bg-amber-50 p-6">
@@ -1092,13 +1120,13 @@ export default async function Home() {
                 🤝
               </div>
               <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Resmî fiyat taahhüdü
+                Fiyat taahhüdü
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-zinc-700">
-                Hizmet ücretli olmadan <strong>1 ay önce</strong> bilgilendirme
-                yapılacaktır. <strong>Asla kart bilgileriniz vb. alınmayacaktır.</strong>{" "}
-                Bu süreçte dilediğiniz gibi <strong>ücret ödemeden</strong>{" "}
-                kullanabilirsiniz.
+                Bugünkü <strong>temel özellikler kalıcı ücretsiz</strong>. İleride
+                şube veya otomasyon gibi ileri özellikler Pro olabilir; temel plan
+                ücretsiz kalır. Ücretli bir özellik gelirse <strong>30 gün önce</strong>{" "}
+                haber verilir, kart bilgisi istenmez.
               </p>
             </div>
             <div className="kart p-6">
@@ -1112,12 +1140,20 @@ export default async function Home() {
                 Sorunu, önerini veya eksik gördüğün şeyi doğrudan yaz. Destek
                 Türkçe ve genellikle aynı iş günü içinde.
               </p>
-              <a
-                href="mailto:destek@zihnora.com.tr"
-                className="mt-3 inline-block break-all text-[13px] font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
-              >
-                destek@zihnora.com.tr
-              </a>
+              <div className="mt-3 flex flex-col gap-1">
+                <a
+                  href="mailto:destek@zihnora.com.tr"
+                  className="break-all text-[13px] font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
+                >
+                  destek@zihnora.com.tr
+                </a>
+                <a
+                  href="mailto:hmum117413@gmail.com"
+                  className="break-all text-[13px] font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
+                >
+                  hmum117413@gmail.com
+                </a>
+              </div>
             </div>
           </div>
 
@@ -1151,7 +1187,7 @@ export default async function Home() {
         <BolumBasligi
           etiket="Fiyatlandırma"
           baslik="Tek plan: tamamen ücretsiz."
-          aciklama="Küçük işletmenin profesyonel bir vardiya düzenine erişmesi için aylık ücret olmamalı."
+          aciklama="Bugünkü temel özellikler kalıcı ücretsiz. İleride şube/otomasyon gibi ileri özellikler Pro olabilir; temel plan ücretsiz kalır."
           ortala
         />
         <div className="mx-auto mt-10 max-w-2xl rounded-[24px] border-2 border-amber-500 bg-white p-7 shadow-[0_24px_60px_-30px_rgba(245,158,11,0.45)]">
@@ -1193,9 +1229,10 @@ export default async function Home() {
             Kredi kartı yok · abonelik yok · deneme süresi yok
           </p>
           <p className="mt-2 text-center text-[11px] leading-relaxed text-zinc-500">
-            <strong>Resmî taahhüt:</strong> Hizmet ücretli olmadan 1 ay önce
-            bilgilendirme yapılacaktır. Asla kart bilgileriniz vb. alınmayacaktır.
-            Bu süreçte dilediğiniz gibi ücret ödemeden kullanabilirsiniz.
+            <strong>Fiyat taahhüdü:</strong> Bugünkü temel özellikler kalıcı
+            ücretsiz. İleride şube/otomasyon gibi ileri özellikler Pro olabilir;
+            temel plan ücretsiz kalır. Ücretli bir özellik gelirse 30 gün önce
+            haber verilir, kart bilgisi istenmez.
           </p>
         </div>
       </section>

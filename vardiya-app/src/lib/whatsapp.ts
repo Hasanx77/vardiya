@@ -1,7 +1,7 @@
 import type { Assignments, Employee, ShiftTemplate } from "./types";
 import { assignmentKey } from "./types";
 import { formatDayDate } from "./dates";
-import { shiftHours } from "./shifts";
+import { shiftHours, shiftSaatMetni } from "./shifts";
 
 /** Telefonu wa.me formatına çevirir (90XXXXXXXXXX) */
 export function normalizePhone(raw: string): string {
@@ -31,7 +31,7 @@ export function buildScheduleText(
     const shift = byId.get(shiftId);
     if (!shift) continue;
     total += shiftHours(shift);
-    lines.push(`• ${formatDayDate(d)}: ${shift.name} (${shift.start}–${shift.end})`);
+    lines.push(`• ${formatDayDate(d)}: ${shift.name} (${shiftSaatMetni(shift)})`);
   }
 
   const header = `Merhaba ${employee.name}, ${businessName} bu haftaki vardiya programın:`;

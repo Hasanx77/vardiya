@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { istanbulGunu } from "@/lib/dates";
+import { tokenCoz } from "@/lib/employee-link";
+import { shiftSaatMetni } from "@/lib/shifts";
 
 type Ctx = { params: Promise<{ employeeId: string }> };
 
@@ -29,7 +31,14 @@ function escapeText(s: string): string {
 
 // Personelin vardiyalarını iCalendar (.ics) olarak döndürür
 export async function GET(_request: Request, { params }: Ctx) {
-  const { employeeId } = await params;
+  const { employeeId: token } = await params;
+
+  // Takvim bağlantısı da personel linkiyle aynı belirteci kullanır:
+  // link yenilenince/kapatılınca eski .ics adresi de çalışmaz.
+  const employeeId = await tokenCoz(token);
+  if (!employeeId) {
+    return new Response("Personel bulunamadı", { status: 404 });
+  }
 
   const employee = await prisma.employee.findFirst({
     where: { id: employeeId, active: true },
@@ -67,7 +76,7 @@ export async function GET(_request: Request, { params }: Ctx) {
       `DTSTAMP:${stamp}`,
       `DTSTART:${icsDateTime(a.date, t.start)}`,
       `DTEND:${icsDateTime(a.date, t.end, overnight ? 1 : 0)}`,
-      `SUMMARY:${escapeText(`${t.name} (${t.start}-${t.end})`)}`,
+      `SUMMARY:${escapeText(`${t.name} (${shiftSaatMetni(t)})`)}`,
       `LOCATION:${escapeText(employee.business.name)}`,
       `DESCRIPTION:${escapeText(`${employee.business.name} · ${employee.name}`)}`,
       "END:VEVENT"

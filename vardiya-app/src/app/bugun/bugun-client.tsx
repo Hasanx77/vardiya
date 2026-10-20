@@ -6,6 +6,7 @@ import type { Employee, StatePayload } from "@/lib/types";
 import { fetchState } from "@/lib/api-client";
 import { formatDayDate, toISODate } from "@/lib/dates";
 import { COLOR_CLASSES } from "@/lib/colors";
+import { shiftSaatMetni } from "@/lib/shifts";
 import SayfaBasligi from "@/components/SayfaBasligi";
 
 export default function BugunClient({ initialData }: { initialData: StatePayload }) {
@@ -112,7 +113,7 @@ export default function BugunClient({ initialData }: { initialData: StatePayload
                 <h2 className="text-sm font-semibold">
                   {t.name}{" "}
                   <span className="font-normal opacity-75">
-                    {t.start}–{t.end}
+                    {shiftSaatMetni(t)}
                   </span>
                 </h2>
                 <span className="text-xs opacity-75">{list.length} kişi</span>

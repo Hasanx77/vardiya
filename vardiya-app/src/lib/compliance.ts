@@ -37,7 +37,14 @@ export type ComplianceIssue = {
   message: string;
 };
 
-export type ShiftLike = { id: string; name: string; start: string; end: string };
+export type ShiftLike = {
+  id: string;
+  name: string;
+  start: string;
+  end: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+};
 export type AssignmentLike = {
   employeeId: string;
   date: string;
@@ -91,10 +98,41 @@ export function shiftBounds(shift: { start: string; end: string }): {
 }
 
 /**
+ * Bölünmüş vardiyadaki ücretsiz aranın sınırları (yoksa null).
+ * Gece hesabında aranın denk geldiği süre düşülür.
+ */
+function breakBounds(shift: {
+  start: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}): { start: number; end: number } | null {
+  if (!shift.breakStart || !shift.breakEnd) return null;
+
+  const hamBas = timeToMinutes(shift.breakStart);
+  let hamBit = timeToMinutes(shift.breakEnd);
+  if (hamBit <= hamBas) hamBit += 24 * 60;
+  const sure = hamBit - hamBas;
+  if (sure <= 0) return null;
+
+  // Aralığı vardiyanın başlangıç gününe hizala (gece yarısını aşan aralar).
+  const vardiyaBas = timeToMinutes(shift.start);
+  let start = hamBas;
+  while (start < vardiyaBas) start += 24 * 60;
+
+  return { start, end: start + sure };
+}
+
+/**
  * Bir vardiyanın gece dönemine (20:00–06:00) denk gelen saat miktarı.
  * 4857 m.69: gece çalışması 7,5 saati aşamaz.
+ * Bölünmüş vardiyada ara (ücretsiz) düşülür.
  */
-export function nightHours(shift: { start: string; end: string }): number {
+export function nightHours(shift: {
+  start: string;
+  end: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}): number {
   const { start, end } = shiftBounds(shift);
   let totalMinutes = 0;
   const from = Math.floor(start / 1440) - 1;
@@ -105,7 +143,19 @@ export function nightHours(shift: { start: string; end: string }): number {
     const overlap = Math.min(end, nightEnd) - Math.max(start, nightStart);
     if (overlap > 0) totalMinutes += overlap;
   }
-  return Math.round((totalMinutes / 60) * 10) / 10;
+
+  const br = breakBounds(shift);
+  if (br) {
+    for (let k = from; k <= to; k++) {
+      const nightStart = k * 1440 + NIGHT_START;
+      const nightEnd = nightStart + NIGHT_SPAN;
+      const overlap =
+        Math.min(br.end, nightEnd) - Math.max(br.start, nightStart);
+      if (overlap > 0) totalMinutes -= overlap;
+    }
+  }
+
+  return Math.round((Math.max(0, totalMinutes) / 60) * 10) / 10;
 }
 
 /**

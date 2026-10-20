@@ -99,6 +99,8 @@ export function addTemplate(input: {
   name: string;
   start: string;
   end: string;
+  breakStart?: string;
+  breakEnd?: string;
   color: string;
   minStaff?: number;
 }) {
@@ -110,7 +112,15 @@ export function addTemplate(input: {
 
 export function updateTemplate(
   id: string,
-  input: { name?: string; start?: string; end?: string; color?: string; minStaff?: number }
+  input: {
+    name?: string;
+    start?: string;
+    end?: string;
+    breakStart?: string;
+    breakEnd?: string;
+    color?: string;
+    minStaff?: number;
+  }
 ) {
   return jsonRequest<{ id: string }>(`/api/templates/${id}`, {
     method: "PATCH",

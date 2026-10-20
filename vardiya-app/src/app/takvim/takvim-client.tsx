@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { StatePayload } from "@/lib/types";
 import { DAY_SHORT_TR, MONTH_SHORT_TR, toISODate } from "@/lib/dates";
 import { getHoliday } from "@/lib/holidays";
+import { shiftSaatMetni } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
 import SayfaBasligi from "@/components/SayfaBasligi";
 
@@ -172,7 +173,7 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
                             COLOR_CLASSES[t.color]?.chip ?? ""
                           }`}
                         >
-                          {t.name} {t.start}–{t.end}
+                          {t.name} {shiftSaatMetni(t)}
                         </span>
                         <span className="text-zinc-700">{(dayMap.get(t.id) ?? []).join(", ")}</span>
                       </li>

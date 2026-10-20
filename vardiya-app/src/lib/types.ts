@@ -34,6 +34,12 @@ export type ShiftTemplate = {
   start: string;
   /** "HH:MM" */
   end: string;
+  /**
+   * Bölünmüş vardiya: iki çalışma bloğu arasındaki **ücretsiz** ara.
+   * Örnek: 09:00–22:00 + ara 13:00–17:00 → net 9 saat.
+   */
+  breakStart?: string | null;
+  breakEnd?: string | null;
   color: ColorKey;
   /** Hedeflenen en az kişi sayısı (0 = hedef yok) */
   minStaff: number;

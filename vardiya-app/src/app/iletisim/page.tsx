@@ -178,6 +178,12 @@ export default async function IletisimPage({
                 >
                   destek@zihnora.com.tr
                 </a>
+                <a
+                  href="mailto:hmum117413@gmail.com"
+                  className="mt-1 block break-all text-sm font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
+                >
+                  hmum117413@gmail.com
+                </a>
                 <p className="mt-2 text-xs leading-relaxed text-zinc-500">
                   Yanıt süresi: genellikle aynı iş günü, en geç 2 iş günü.
                 </p>

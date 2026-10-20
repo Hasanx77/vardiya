@@ -4,9 +4,18 @@ import { useState } from "react";
 import type { ShiftTemplate } from "@/lib/types";
 import { addTemplate, deleteTemplate, updateTemplate } from "@/lib/api-client";
 import { COLOR_PALETTE, COLOR_CLASSES } from "@/lib/colors";
-import { shiftHours } from "@/lib/shifts";
+import { shiftHours, shiftSaatMetni } from "@/lib/shifts";
 
-type Draft = { name: string; start: string; end: string; color: string; minStaff: string };
+type Draft = {
+  name: string;
+  start: string;
+  end: string;
+  /** Bölünmüş vardiya arası — ikisi de doluysa geçerli */
+  breakStart: string;
+  breakEnd: string;
+  color: string;
+  minStaff: string;
+};
 
 /**
  * Yeni şablon taslağı. Saatler **standart mesai saatlerinden** gelir:
@@ -17,9 +26,27 @@ function bosDraft(standart?: { openTime: string; closeTime: string }): Draft {
     name: "",
     start: standart?.openTime ?? "09:00",
     end: standart?.closeTime ?? "23:00",
+    breakStart: "",
+    breakEnd: "",
     color: "sky",
     minStaff: "0",
   };
+}
+
+/**
+ * Ara alanlarını API'ye uygun hâle getirir.
+ * - İkisi de dolu → ara gönderilir
+ * - İkisi de boş → ara kaldırılır ("")
+ * - Yalnız biri dolu → null (istek gönderilmez, kullanıcı uyarılır)
+ */
+function araPayload(d: Draft): { breakStart: string; breakEnd: string } | null {
+  if (d.breakStart && d.breakEnd) {
+    return { breakStart: d.breakStart, breakEnd: d.breakEnd };
+  }
+  if (!d.breakStart && !d.breakEnd) {
+    return { breakStart: "", breakEnd: "" };
+  }
+  return null;
 }
 
 function toNum(v: string): number {
@@ -75,9 +102,18 @@ export default function TemplateManager({
 
   async function add() {
     if (busy) return;
+    const ara = araPayload(draft);
+    if (!ara) return flash("Bölünmüş vardiya için ara başlangıç ve bitiş birlikte girilmeli.");
     setBusy(true);
     try {
-      await addTemplate({ ...draft, minStaff: toNum(draft.minStaff) });
+      await addTemplate({
+        name: draft.name,
+        start: draft.start,
+        end: draft.end,
+        color: draft.color,
+        minStaff: toNum(draft.minStaff),
+        ...ara,
+      });
       setDraft(bosDraft(standart));
       await onChanged();
       flash("Şablon eklendi ✅");
@@ -91,9 +127,18 @@ export default function TemplateManager({
   async function save(id: string) {
     const d = editing[id];
     if (!d || busy) return;
+    const ara = araPayload(d);
+    if (!ara) return flash("Bölünmüş vardiya için ara başlangıç ve bitiş birlikte girilmeli.");
     setBusy(true);
     try {
-      await updateTemplate(id, { ...d, minStaff: toNum(d.minStaff) });
+      await updateTemplate(id, {
+        name: d.name,
+        start: d.start,
+        end: d.end,
+        color: d.color,
+        minStaff: toNum(d.minStaff),
+        ...ara,
+      });
       setEditing((prev) => {
         const next = { ...prev };
         delete next[id];
@@ -144,7 +189,7 @@ export default function TemplateManager({
                     <span className={`h-2.5 w-2.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
                     <strong>{t.name}</strong>
                     <span className="text-zinc-500">
-                      {t.start}–{t.end} · {shiftHours(t)} sa
+                      {shiftSaatMetni(t)} · {shiftHours(t)} sa
                       {t.minStaff > 0 ? ` · min ${t.minStaff} kişi` : ""}
                     </span>
                   </span>
@@ -157,6 +202,8 @@ export default function TemplateManager({
                             name: t.name,
                             start: t.start,
                             end: t.end,
+                            breakStart: t.breakStart ?? "",
+                            breakEnd: t.breakEnd ?? "",
                             color: t.color,
                             minStaff: String(t.minStaff ?? 0),
                           },
@@ -176,7 +223,7 @@ export default function TemplateManager({
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <div className="grid gap-2 sm:grid-cols-4">
+                  <div className="grid gap-2 sm:grid-cols-3">
                     <input
                       value={d.name}
                       onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, name: e.target.value } }))}
@@ -186,13 +233,31 @@ export default function TemplateManager({
                     <input
                       type="time"
                       value={d.start}
+                      aria-label="Başlangıç saati"
                       onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, start: e.target.value } }))}
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
                     />
                     <input
                       type="time"
                       value={d.end}
+                      aria-label="Bitiş saati"
                       onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, end: e.target.value } }))}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
+                    />
+                    <input
+                      type="time"
+                      value={d.breakStart}
+                      aria-label="Ara başlangıç (opsiyonel)"
+                      title="Bölünmüş vardiya: ücretsiz aranın başlangıcı"
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, breakStart: e.target.value } }))}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
+                    />
+                    <input
+                      type="time"
+                      value={d.breakEnd}
+                      aria-label="Ara bitiş (opsiyonel)"
+                      title="Bölünmüş vardiya: ücretsiz aranın bitişi"
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, breakEnd: e.target.value } }))}
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
                     />
                     <input
@@ -203,6 +268,10 @@ export default function TemplateManager({
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
                     />
                   </div>
+                  <p className="text-[11px] text-zinc-500">
+                    Ara saatleri opsiyoneldir: 09:00–13:00 ve 17:00–22:00 gibi bölünmüş
+                    vardiyada 09:00–22:00 + ara 13:00–17:00 yazılır.
+                  </p>
                   <ColorPicker
                     value={d.color}
                     onChange={(c) => setEditing((prev) => ({ ...prev, [t.id]: { ...d, color: c } }))}
@@ -238,7 +307,7 @@ export default function TemplateManager({
       {/* Yeni şablon */}
       <div className="mt-4 rounded-xl border border-dashed border-zinc-300 p-3">
         <p className="text-xs font-medium text-zinc-500">Yeni şablon ekle</p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-4">
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
@@ -248,13 +317,31 @@ export default function TemplateManager({
           <input
             type="time"
             value={draft.start}
+            aria-label="Başlangıç saati"
             onChange={(e) => setDraft({ ...draft, start: e.target.value })}
             className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
           />
           <input
             type="time"
             value={draft.end}
+            aria-label="Bitiş saati"
             onChange={(e) => setDraft({ ...draft, end: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
+          />
+          <input
+            type="time"
+            value={draft.breakStart}
+            aria-label="Ara başlangıç (opsiyonel)"
+            title="Bölünmüş vardiya: ücretsiz aranın başlangıcı"
+            onChange={(e) => setDraft({ ...draft, breakStart: e.target.value })}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
+          />
+          <input
+            type="time"
+            value={draft.breakEnd}
+            aria-label="Ara bitiş (opsiyonel)"
+            title="Bölünmüş vardiya: ücretsiz aranın bitişi"
+            onChange={(e) => setDraft({ ...draft, breakEnd: e.target.value })}
             className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-900"
           />
           <input

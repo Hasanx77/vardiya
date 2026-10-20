@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { EkipPayload } from "@/lib/ekip";
 import { DAY_NAMES_TR, formatShort, formatWeekRange, getWeekDates, toISODate } from "@/lib/dates";
-import { shiftHours, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
+import { shiftHours, shiftSaatMetni, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { getHoliday } from "@/lib/holidays";
 
@@ -152,7 +152,7 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
                     COLOR_CLASSES[t.color]?.chip ?? ""
                   }`}
                 >
-                  {t.name} · {t.start}–{t.end}
+                  {t.name} · {shiftSaatMetni(t)}
                 </span>
               ) : (
                 <span className="text-xs text-zinc-400">İzin / boş</span>
@@ -162,7 +162,7 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
         })}
       </ul>
 
-      <a href={`/api/calendar/${veri.employee.id}`} className="btn-ikincil mt-5">
+      <a href={`/api/calendar/${veri.token}`} className="btn-ikincil mt-5">
         Telefon takvimine ekle (.ics)
       </a>
 
