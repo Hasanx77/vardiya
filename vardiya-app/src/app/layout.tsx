@@ -5,7 +5,6 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
 import { AltMenu, UstMenu } from "@/components/Menu";
-import SiteMenusu from "@/components/SiteMenusu";
 import { aktifKullanici } from "@/lib/auth";
 import "./globals.css";
 
@@ -103,7 +102,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </span>
                 <span className="tracking-tight">Vardiya</span>
               </Link>
-              {kullanici ? <UstMenu /> : <SiteMenusu />}
+              {kullanici ? <UstMenu /> : null}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -111,7 +110,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               {kullanici ? (
                 <ProfilMenusu email={kullanici.email} />
               ) : (
-                <div className="hidden items-center gap-1.5 sm:flex">
+                <div className="flex items-center gap-1.5">
                   <Link href="/giris" className="btn-sessiz">
                     Giriş
                   </Link>
@@ -134,6 +133,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               Vardiya — kafe &amp; restoranlar için vardiya yönetimi.
             </span>
             <span className="flex items-center gap-4">
+              <Link href="/hakkimizda" className="hover:text-zinc-900 hover:underline">
+                Hakkımızda
+              </Link>
+              <Link href="/yardim" className="hover:text-zinc-900 hover:underline">
+                Yardım
+              </Link>
               <Link href="/gizlilik" className="hover:text-zinc-900 hover:underline">
                 Gizlilik
               </Link>
