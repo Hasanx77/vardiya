@@ -8,7 +8,14 @@
  * uyuyorsa kabul edilir. Aksi halde isteğin kendi adresi kullanılır.
  */
 const GECERLI_PROTO = new Set(["http", "https"]);
-const GECERLI_HOST = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\d{1,5})?$/i;
+
+/** İzinli alan adları (env ile genişletilebilir). */
+const IZINLI_HOSTLAR = new Set(
+  (process.env.SITE_HOSTS ?? "zihnora.com.tr,www.zihnora.com.tr")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 function ilkDeger(deger: string | null): string {
   return (deger ?? "").split(",")[0].trim().toLowerCase();
@@ -27,6 +34,23 @@ function yerelHost(host: string): boolean {
   );
 }
 
+/** Yabancı/geçersiz Host başlığını kanonik alan adına çeker (açık yönlendirme önlenir). */
+export function guvenliHost(host: string): string {
+  const h = (host || "").trim().toLowerCase();
+  if (yerelHost(h)) return h;
+  if (IZINLI_HOSTLAR.has(h)) return h;
+  return IZINLI_HOSTLAR.values().next().value ?? "zihnora.com.tr";
+}
+
+/** İstemci IP'si: ters vekilin eklediği **son** X-Forwarded-For değeri güvenilir. */
+export function istemciIp(req: Request): string {
+  const xff = (req.headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return (req.headers.get("x-real-ip") ?? "").trim() || xff[xff.length - 1] || "yerel";
+}
+
 export function disAdres(req: Request, yol: string): URL {
   const h = req.headers;
   const host = ilkDeger(h.get("x-forwarded-host")) || ilkDeger(h.get("host"));
@@ -42,8 +66,9 @@ export function disAdres(req: Request, yol: string): URL {
 
   const yolGuvenli = yol.startsWith("/") ? yol : `/${yol}`;
 
-  if (host && GECERLI_HOST.test(host)) {
-    return new URL(`${proto}://${host}${yolGuvenli}`);
+  if (host) {
+    const guvenli = guvenliHost(host);
+    if (guvenli) return new URL(`${proto}://${guvenli}${yolGuvenli}`);
   }
   return new URL(yolGuvenli, req.url);
 }

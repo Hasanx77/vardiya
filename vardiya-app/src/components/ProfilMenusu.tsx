@@ -80,6 +80,7 @@ export default function ProfilMenusu({ email, sahip }: { email: string; sahip?: 
             {sahip ? (
               <Link
                 href="/mesajlar"
+                prefetch={false}
                 onClick={() => setAcik(false)}
                 className="block px-4 py-2 text-zinc-700 hover:bg-zinc-100"
               >

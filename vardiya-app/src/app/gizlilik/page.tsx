@@ -98,8 +98,10 @@ export default async function GizlilikPage() {
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">4) Nerede, neden ve kim tarafından saklanır?</h2>
           <p>
-            Veriler, Türkiye&apos;deki barındırma sunucusunda (Hosting Dünyam) işletmeye özel bir
-            veritabanında tutulur ve <strong>yurt dışına aktarılmaz</strong>. İşleme amacı tek:
+            Veriler, Türkiye&apos;deki barındırma sunucusunda (Hosting Dünyam) her işletmeye ait
+            ayrı kayıtlar hâlinde (işletme kimliğiyle izole) tutulur. Uygulama verileri
+            yurt dışına aktarılmaz; yalnızca <strong>destek e-postası</strong> Google
+            (ABD) altyapısı üzerinden yürütülebilir. İşleme amacı tek:
             vardiya planını oluşturmanı sağlamak ve çizelgeyi ekibine iletebilmek.
           </p>
           <p className="mt-2">
@@ -123,7 +125,8 @@ export default async function GizlilikPage() {
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Saklama süresi</h2>
           <p>
             Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
-            (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
+            (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir;
+            aynı e-postayla gönderdiğin iletişim mesajları da silinir.
             Ziyaret sayacı kayıtları <strong>120 gün</strong> sonra otomatik olarak silinir.
             İletişim formu mesajları ise talep yanıtlandıktan sonra en geç <strong>12 ay</strong> içinde
             silinir; daha erken silinmesini istersen destek adresimize yazman yeterli.

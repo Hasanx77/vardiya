@@ -1,12 +1,14 @@
 import type { StatePayload } from "@/lib/types";
 import { getStatePayload } from "@/lib/state";
 import { linkDurumu } from "@/lib/employee-link";
-import EkipClient from "./ekip-client";
+import { oturumGerekli } from "@/lib/oturum";
+import EkipClient from "../ekip-client";
 
 // Veri her istekte taze gelsin (statik on-render edilmesin).
 export const dynamic = "force-dynamic";
 
 export default async function EkipPage() {
+  await oturumGerekli("/ekip");
   const initialData: StatePayload = await getStatePayload();
 
   // Personele özel bağlantılar imzalıdır; kapatılmışsa null döner.

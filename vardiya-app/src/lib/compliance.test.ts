@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   analyzeWeek,
+  DAILY_LIMIT_HOURS,
   isoDiffDays,
   MIN_DAILY_REST_HOURS,
   NIGHT_LIMIT_HOURS,
@@ -161,8 +162,33 @@ describe("analyzeWeek", () => {
     expect(result.issues.some((i) => i.employeeId === "e2" && i.type === "dinlenme")).toBe(true);
   });
 
+  it("günlük 11 saati aşınca uyarır", () => {
+    const uzun = { id: "uzun", name: "Uzun", start: "09:00", end: "21:00" };
+    const result = analyzeWeek({
+      employees: [employees[0]],
+      shifts: [...shifts, uzun],
+      assignments: [{ employeeId: "e1", date: "2026-10-05", shiftTemplateId: "uzun" }],
+      weekDates,
+    });
+    const issue = result.issues.find((i) => i.type === "gunluk_limit");
+    expect(issue).toBeDefined();
+    expect(issue?.severity).toBe("error");
+  });
+
+  it("günlük 11 saat sınırındaysa uyarı vermez", () => {
+    const onbir = { id: "onbir", name: "Onbir", start: "10:00", end: "21:00" };
+    const result = analyzeWeek({
+      employees: [employees[0]],
+      shifts: [...shifts, onbir],
+      assignments: [{ employeeId: "e1", date: "2026-10-05", shiftTemplateId: "onbir" }],
+      weekDates,
+    });
+    expect(result.issues.some((i) => i.type === "gunluk_limit")).toBe(false);
+  });
+
   it("sabitler mevzuata uygun", () => {
     expect(MIN_DAILY_REST_HOURS).toBe(11);
+    expect(DAILY_LIMIT_HOURS).toBe(11);
     expect(NIGHT_LIMIT_HOURS).toBe(7.5);
   });
 

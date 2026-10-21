@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { mesajKaydet } from "@/lib/messages";
 import { denemeBasarisiz, denemeIzinli } from "@/lib/rate-limit";
-import { disAdres } from "@/lib/url";
+import { disAdres, istemciIp } from "@/lib/url";
 
 /**
  * İletişim formu.
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     return NextResponse.redirect(url, 303);
   };
 
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "yerel";
+  const ip = istemciIp(req);
   const anahtar = `iletisim|${ip}`;
 
   if (!denemeIzinli(anahtar, 5)) {

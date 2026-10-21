@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { aktifKullanici } from "@/lib/auth";
 import { getStatePayload } from "@/lib/state";
+import { mesajlariEpostaylaGetir } from "@/lib/messages";
 
 /**
  * Verilerimi indir (taşınabilirlik hakkı).
@@ -15,6 +16,7 @@ export async function GET() {
   }
 
   const durum = await getStatePayload();
+  const gonderdigimMesajlar = await mesajlariEpostaylaGetir(kullanici.email);
 
   const veri = {
     indirilmeZamani: new Date().toISOString(),
@@ -32,6 +34,12 @@ export async function GET() {
     vardiyalar: durum.assignments,
     duyurular: durum.announcements,
     gunNotlari: durum.dayNotes,
+    gonderdigimMesajlar: gonderdigimMesajlar.map((m) => ({
+      ad: m.ad,
+      email: m.email,
+      mesaj: m.mesaj,
+      tarih: m.createdAt.toISOString(),
+    })),
   };
 
   const tarih = new Date().toISOString().slice(0, 10);

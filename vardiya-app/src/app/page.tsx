@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { aktifKullanici } from "@/lib/auth";
 import { demoOzet } from "@/lib/demo-data";
 import { kaydetZiyaret } from "@/lib/visits";
+import LogoV from "@/components/LogoV";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ const ozellikler = [
   {
     baslik: "Süre uyarıları",
     metin:
-      "45 saat, 11 saat dinlenme, gece ve resmî tatil kontrolleri plan yaparken görünür. Kapsamı sınırlıdır; aşağıda yazıyor.",
+      "Haftalık 45 saat, günlük 11 saat, 11 saat dinlenme, gece ve resmî tatil kontrolleri plan yaparken görünür. Kapsamı sınırlıdır; aşağıda yazıyor.",
     yol: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
   },
   {
@@ -116,7 +117,7 @@ const nedenler = [
   {
     baslik: "Süre kontrolü",
     metin:
-      "45 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları yerleşik. Hukuki denetim değildir.",
+      "Haftalık 45 saat, günlük 11 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları yerleşik. Hukuki denetim değildir.",
   },
   {
     baslik: "Gizlilik odaklı",
@@ -146,7 +147,7 @@ const karsilastirma = [
     vardiya: "Hücreye tıkla; plan 5 dakikada hazır",
   },
   {
-    ozellik: "45 saat ve 11 saat kontrolü",
+    ozellik: "45 saat, günlük 11 saat ve dinlenme kontrolü",
     excel: "Formülü sen kurmalısın",
     kagit: "Gözle kontrol",
     vardiya: "Plan yaparken otomatik uyarı",
@@ -258,17 +259,17 @@ const sss = [
   {
     soru: "Kayıt olmadan ürünü görebilir miyim?",
     cevap:
-      "Evet. /demo adresinde örnek bir işletmenin haftalık planını açabilir, hücrelere tıklayarak vardiya değiştirebilir ve uyarıları canlı görebilirsin. Demo hiçbir veri kaydetmez.",
+      "Evet. /demo adresinde örnek bir işletmenin haftalık planını açabilir, hücrelere tıklayarak vardiya değiştirebilir ve uyarıları canlı görebilirsin. Demo, yaptığın değişiklikleri kaydetmez.",
   },
   {
     soru: "Verilerim nerede saklanıyor? Veri sorumlusu kim?",
     cevap:
-      "Veriler Türkiye'deki sunucuda, işletmeye özel veritabanında tutulur. Personel verileri için veri sorumlusu işletme (sen), Vardiya ise veri işleyen konumundadır. Ücret bilgisi istenmez ve saklanmaz. Personeline verilecek örnek aydınlatma metni /personel-aydinlatma sayfasında; verini dilediğin an profil sayfasından indirebilir, hesabını silebilirsin.",
+      "Veriler Türkiye'deki sunucuda, her işletmeye ait ayrı kayıtlar hâlinde (işletme kimliğiyle izole) tutulur. Personel verileri için veri sorumlusu işletme (sen), Vardiya ise veri işleyen konumundadır. Ücret bilgisi istenmez ve saklanmaz. Personeline verilecek örnek aydınlatma metni /personel-aydinlatma sayfasında; verini dilediğin an profil sayfasından indirebilir, hesabını silebilirsin.",
   },
   {
-    soru: "45 saat ve 11 saat uyarıları tam olarak neyi kontrol ediyor?",
+    soru: "45 saat, günlük 11 saat ve dinlenme uyarıları neyi kontrol ediyor?",
     cevap:
-      "Kontrol edilenler: haftalık 45 saat (İş Kanunu 4857 m.63), iki vardiya arası en az 11 saat dinlenme (m.69), aynı gün çift vardiya çakışması, gece çalışmasında 7,5 saat (m.69) ve resmî tatil günleri (2429 sayılı Kanun). Kapsam dışı: haftalık 24 saat kesintisiz hafta tatili, fazla mesai ücreti/puantaj/bordro, yıllık izin kullanımı ve bakiye düşümü, iş sözleşmesi veya sektörel istisnalar. Bu uyarılar hukuki danışmanlık değildir; nihai plandan işveren sorumludur. Ayrıntılı liste sayfadaki 'Mevzuat kapsamı' bölümünde.",
+      "Kontrol edilenler: haftalık 45 saat (İş Kanunu 4857 m.63), günlük en fazla 11 saat (m.63), iki vardiya arası en az 11 saat dinlenme (m.69), aynı gün çift vardiya çakışması, gece çalışmasında 7,5 saat (m.69) ve 2026–2027 tam gün resmî tatilleri (2429 sayılı Kanun). Kapsam dışı: haftalık 24 saat kesintisiz hafta tatili, arife/yarım gün tatiller, fazla mesai ücreti/puantaj/bordro, yıllık izin kullanımı ve bakiye düşümü, iş sözleşmesi veya sektörel istisnalar. Bu uyarılar hukuki danışmanlık değildir; nihai plandan işveren sorumludur. Ayrıntılı liste sayfadaki 'Mevzuat kapsamı' bölümünde.",
   },
   {
     soru: "Excel listemi yükleyebilir miyim?",
@@ -351,6 +352,16 @@ function OrnekCizelge() {
         className="amber-glow absolute -inset-8 -z-10 rounded-[3rem] blur-3xl"
         aria-hidden="true"
       />
+
+      {/* Marka küpü: çizelgenin üstünde süzülür. Masaüstünde mutlak konum,
+          mobilde akışın içinde (üstteki metinle çakışmasın). */}
+      <div className="mb-3 flex justify-end lg:hidden">
+        <LogoV boyut={124} />
+      </div>
+      <div className="suzul absolute -right-1 -top-[196px] hidden lg:block">
+        <LogoV boyut={170} />
+      </div>
+
       <div
         className="kart overflow-hidden rounded-[24px] shadow-[0_24px_70px_-30px_rgba(20,24,27,0.35)]"
         role="img"
@@ -431,7 +442,12 @@ function OrnekCizelge() {
   );
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ hesap?: string }>;
+}) {
+  const { hesap } = await searchParams;
   await kaydetZiyaret();
   const kullanici = await aktifKullanici();
 
@@ -455,7 +471,7 @@ export default async function Home() {
         operatingSystem: "Web",
         inLanguage: "tr-TR",
         description:
-          "5 dakikada haftalık vardiya planla, ekibine WhatsApp'tan gönder. 45 saat ve 11 saat dinlenme uyarıları.",
+          "5 dakikada haftalık vardiya planla, ekibine WhatsApp'tan gönder. 45 saat, günlük 11 saat ve 11 saat dinlenme uyarıları.",
         offers: {
           "@type": "Offer",
           price: "0",
@@ -482,6 +498,21 @@ export default async function Home() {
           __html: JSON.stringify(yapisalVeri).replace(/</g, "\\u003c"),
         }}
       />
+      {hesap === "silindi" ? (
+        <div className="kap pt-4">
+          <p
+            role="status"
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          >
+            Hesabın ve verilerin silindi. Yeni bir hesap açmak istersen{" "}
+            <Link href="/kayit" className="font-semibold underline underline-offset-2">
+              buradan
+            </Link>{" "}
+            devam edebilirsin.
+          </p>
+        </div>
+      ) : null}
+
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="hero-grid absolute inset-0 -z-10" aria-hidden="true" />
@@ -693,6 +724,10 @@ export default async function Home() {
                   Kanunu 4857 m.63. Aşım, fazla mesai uyarısı olarak gösterilir.
                 </li>
                 <li>
+                  <strong className="text-zinc-900">Günlük 11 saat</strong> — 4857
+                  m.63. Bir günde toplam çalışma 11 saati aşarsa hata olarak işaretlenir.
+                </li>
+                <li>
                   <strong className="text-zinc-900">Günlük 11 saat dinlenme</strong>{" "}
                   — 4857 m.69. İki vardiya arasındaki süre hesaplanır.
                 </li>
@@ -706,7 +741,8 @@ export default async function Home() {
                 </li>
                 <li>
                   <strong className="text-zinc-900">Resmî tatil günleri</strong> —
-                  2429 sayılı Kanun. Tatilde çalışma atanmışsa uyarı verilir.
+                  2429 sayılı Kanun. <strong>2026–2027</strong> tam gün tatilleri
+                  tanımlı; arife/yarım günler kapsam dışı.
                 </li>
               </ul>
             </div>
@@ -800,7 +836,7 @@ export default async function Home() {
                 </Link>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-                Demo hiçbir veri kaydetmez. Hesap açmadan tüm ekranı görebilirsin.
+                Demo, yaptığın değişiklikleri kaydetmez. Hesap açmadan tüm ekranı görebilirsin.
               </p>
             </div>
 
@@ -958,7 +994,7 @@ export default async function Home() {
                 {[
                   "Sınırsız personel ve haftalık plan",
                   "Excel'den kopyala-yapıştır veya CSV içe aktarma",
-                  "45 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları",
+                  "45 saat, günlük 11 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları",
                   "Personele özel, girişsiz program linki",
                   "WhatsApp'a hazır mesaj ve yazdırılabilir çizelge",
                   "Aylık rapor, CSV indirme, veri indirme ve hesap silme",

@@ -5,10 +5,12 @@
  * `crypto` modülü yoktur. Bu yüzden imzalama/doğrulama **Web Crypto** ile yapılır
  * ve şifre hash'leme (scrypt) gibi Node'a özel işler `lib/auth.ts`'te kalır.
  *
- * Çerez değeri: `<kullaniciId>.<sonKullanma>.<imza>`
+ * Çerez değeri: `<kullaniciId>.<surum>.<sonKullanma>.<imza>`
+ *   - `surum`       : kullanıcının `sessionVersion` değeri (şifre değişince artar)
  *   - `sonKullanma` : ms cinsinden zaman damgası
- *   - `imza`        : HMAC-SHA256(AUTH_SECRET, "<kullaniciId>.<sonKullanma>")
+ *   - `imza`        : HMAC-SHA256(AUTH_SECRET, "<kullaniciId>.<surum>.<sonKullanma>")
  * Böylece çerez değiştirilirse imza tutmaz; şifre çerezde hiç geçmez.
+ * Eski 3 parçalı çerezler (sürüm yok) sürüm 0 kabul edilerek okunur.
  */
 
 export const COOKIE_NAME = "vardiya_oturum";
@@ -64,20 +66,62 @@ function esitMi(a: string, b: string): boolean {
 }
 
 /** Kullanıcı için imzalı oturum çerezi değeri üretir. */
-export async function oturumTokeni(kullaniciId: string): Promise<string> {
+export async function oturumTokeni(
+  kullaniciId: string,
+  version = 0,
+): Promise<string> {
   const son = Date.now() + COOKIE_MAX_AGE * 1000;
-  const govde = `${kullaniciId}.${son}`;
+  const govde = `${kullaniciId}.${version}.${son}`;
   return `${govde}.${await imzaUret(govde)}`;
+}
+
+export type OturumBilgi = {
+  kullaniciId: string;
+  /** Şifre değişiminde artan sürüm; eski çerezler bu sayede reddedilir. */
+  version: number;
+};
+
+/** Çerez geçerliyse kullanıcı kimliği + oturum sürümünü döner. */
+export async function tokenBilgi(
+  token: string | undefined,
+): Promise<OturumBilgi | null> {
+  if (!token || !oturumAltyapisiHazir()) return null;
+  const parcalar = token.split(".");
+
+  // Yeni biçim: id.surum.sonKullanma.imza
+  if (parcalar.length === 4) {
+    const [kullaniciId, surumStr, sonStr, imza] = parcalar;
+    const surum = Number(surumStr);
+    const son = Number(sonStr);
+    if (
+      !kullaniciId ||
+      !Number.isInteger(surum) ||
+      surum < 0 ||
+      !Number.isFinite(son) ||
+      son < Date.now()
+    ) {
+      return null;
+    }
+    if (!esitMi(imza, await imzaUret(`${kullaniciId}.${surumStr}.${sonStr}`))) {
+      return null;
+    }
+    return { kullaniciId, version: surum };
+  }
+
+  // Eski biçim (sürüm yok): sürüm 0 kabul edilir.
+  if (parcalar.length === 3) {
+    const [kullaniciId, sonStr, imza] = parcalar;
+    const son = Number(sonStr);
+    if (!kullaniciId || !Number.isFinite(son) || son < Date.now()) return null;
+    if (!esitMi(imza, await imzaUret(`${kullaniciId}.${sonStr}`))) return null;
+    return { kullaniciId, version: 0 };
+  }
+
+  return null;
 }
 
 /** Çerez geçerliyse kullanıcı id'sini döner, aksi halde null. */
 export async function tokenKullanici(token: string | undefined): Promise<string | null> {
-  if (!token || !oturumAltyapisiHazir()) return null;
-  const parcalar = token.split(".");
-  if (parcalar.length !== 3) return null;
-  const [kullaniciId, sonStr, imza] = parcalar;
-  const son = Number(sonStr);
-  if (!kullaniciId || !Number.isFinite(son) || son < Date.now()) return null;
-  if (!esitMi(imza, await imzaUret(`${kullaniciId}.${sonStr}`))) return null;
-  return kullaniciId;
+  const bilgi = await tokenBilgi(token);
+  return bilgi?.kullaniciId ?? null;
 }

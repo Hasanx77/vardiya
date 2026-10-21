@@ -8,7 +8,30 @@ import { aktifKullaniciId } from "./auth";
  * Şablon kimlikleri artık üretildiği için isimden bulunur.
  */
 export async function seedDemoData(businessId: string) {
-  const sablonlar = await prisma.shiftTemplate.findMany({ where: { businessId } });
+  let sablonlar = await prisma.shiftTemplate.findMany({ where: { businessId } });
+
+  // Demo için gereken çekirdek şablonlar silinmiş/yeniden adlandırılmışsa
+  // sessizce boş plan oluşmasın: eksikleri varsayılandan tamamla.
+  const gerekliAdlar = ["Sabah", "Akşam", "Tam Gün"];
+  const eksik = DEFAULT_SHIFTS.filter(
+    (s) =>
+      gerekliAdlar.includes(s.name) &&
+      !sablonlar.some((mevcut) => mevcut.name.startsWith(s.name))
+  );
+  if (eksik.length > 0) {
+    await prisma.shiftTemplate.createMany({
+      data: eksik.map((s) => ({
+        businessId,
+        name: s.name,
+        start: s.start,
+        end: s.end,
+        color: s.color,
+        minStaff: s.minStaff,
+      })),
+    });
+    sablonlar = await prisma.shiftTemplate.findMany({ where: { businessId } });
+  }
+
   const bul = (ad: string) => sablonlar.find((s) => s.name.startsWith(ad))?.id;
   const sabah = bul("Sabah");
   const aksam = bul("Akşam");

@@ -4,7 +4,7 @@ import type { ShiftTemplate } from "./types";
 export const DEFAULT_SHIFTS: ShiftTemplate[] = [
   { id: "sabah", name: "Sabah", start: "09:00", end: "17:00", color: "amber", minStaff: 0 },
   { id: "aksam", name: "Akşam", start: "17:00", end: "01:00", color: "violet", minStaff: 0 },
-  { id: "tamgun", name: "Tam Gün", start: "10:00", end: "22:00", color: "rose", minStaff: 0 },
+  { id: "tamgun", name: "Tam Gün", start: "10:00", end: "21:00", color: "rose", minStaff: 0 },
   { id: "ara", name: "Ara Vardiya", start: "12:00", end: "20:00", color: "cyan", minStaff: 0 },
 ];
 
@@ -80,6 +80,29 @@ export function araGecerliMi(
   return span > 0 && bs > 0 && be > bs && be < span;
 }
 
+/**
+ * Vardiyayı takvim/ICS için çalışma bloklarına böler.
+ * Bölünmüş vardiyada ara atlanır: 09:00–13:00 + 17:00–22:00.
+ */
+export function shiftBlocks(shift: {
+  start: string;
+  end: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}): { start: string; end: string }[] {
+  if (
+    shift.breakStart &&
+    shift.breakEnd &&
+    araGecerliMi(shift.start, shift.end, shift.breakStart, shift.breakEnd)
+  ) {
+    return [
+      { start: shift.start, end: shift.breakStart },
+      { start: shift.breakEnd, end: shift.end },
+    ];
+  }
+  return [{ start: shift.start, end: shift.end }];
+}
+
 /** Haftalık yasal sınır (İş Kanunu: haftalık 45 saat) */
 export const WEEKLY_LIMIT_HOURS = 45;
 
@@ -125,10 +148,15 @@ export function standartSablonlar(acilis: string, kapanis: string) {
   // Ara vardiya, tam günün ortasından en fazla 2'şer saat içeride başlar/biter.
   const araPay = Math.max(0, Math.min(120, Math.floor(sure / 4)));
 
+  // "Tam Gün" açılış–kapanış olsa bile günlük yasal azamiyi (11 saat) aşmasın.
+  // 09:00–23:00 gibi 14 saatlik bir işletmede tam gün 09:00–20:00 olur;
+  // akşam kalan saatler ayrı vardiyayla kapatılır.
+  const tamGunDk = Math.min(sure, 11 * 60);
+
   return [
     { name: "Sabah", start: dakikaSaat(A), end: dakikaSaat(orta), color: "amber", minStaff: 0 },
     { name: "Akşam", start: dakikaSaat(orta), end: dakikaSaat(K), color: "violet", minStaff: 0 },
-    { name: "Tam Gün", start: dakikaSaat(A), end: dakikaSaat(K), color: "rose", minStaff: 0 },
+    { name: "Tam Gün", start: dakikaSaat(A), end: dakikaSaat(A + tamGunDk), color: "rose", minStaff: 0 },
     {
       name: "Ara Vardiya",
       start: dakikaSaat(A + araPay),

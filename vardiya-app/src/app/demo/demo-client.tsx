@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
+import { analyzeWeek, DAILY_LIMIT_HOURS, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
 import { DAY_SHORT_TR } from "@/lib/dates";
 import { DEFAULT_SHIFTS, shiftSaatMetni, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { buildScheduleText } from "@/lib/whatsapp";
@@ -117,8 +117,9 @@ export default function DemoClient() {
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-zinc-600">
               Bu, gerçek panelin örnek verili hâli. Hücrelere tıklayarak vardiya
-              değiştir; toplam saatler ve 45 saat / {MIN_DAILY_REST_HOURS} saat
-              dinlenme uyarıları anında güncellenir.
+              değiştir; toplam saatler, haftalık 45 saat, günlük{" "}
+              {DAILY_LIMIT_HOURS} saat ve {MIN_DAILY_REST_HOURS} saat dinlenme
+              uyarıları anında güncellenir.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               <Link href="/kayit" className="btn-cta h-11 px-6">
@@ -355,7 +356,7 @@ export default function DemoClient() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-          <p className="font-semibold">Bu demo hiçbir veri kaydetmez.</p>
+          <p className="font-semibold">Bu demo, yaptığın değişiklikleri kaydetmez.</p>
           <p className="mt-1 text-[13px] leading-relaxed">
             Gerçek hesabında personelini ekler, haftayı doldurur ve her kişiye hazır
             mesajı WhatsApp&apos;ta açarsın. Ücretsiz; kredi kartı istenmez.

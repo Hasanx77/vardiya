@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "./prisma";
+import { mesajTemizligi } from "./messages";
 
 /**
  * Çerezsiz, gizlilik dostu ziyaret sayacı.
@@ -66,9 +67,13 @@ async function tabloKur(): Promise<void> {
 }
 
 function istemciIp(h: Headers): string {
+  const xff = (h.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const adaylar = [
-    h.get("x-forwarded-for")?.split(",")[0],
     h.get("x-real-ip"),
+    xff[xff.length - 1],
     h.get("cf-connecting-ip"),
     h.get("x-client-ip"),
   ];
@@ -121,6 +126,8 @@ export async function kaydetZiyaret(): Promise<void> {
     const ozet = createHash("sha256").update(`${ip}|${ua}|${tuz}`).digest("hex");
 
     after(() => ziyaretYaz(gun, ozet));
+    // Günde bir kez iletişim mesajı saklama süresini de uygula.
+    after(() => mesajTemizligi());
   } catch (e) {
     // Sayaç yüzünden sayfa açılmasın.
     console.error("ziyaret sayacı:", e);

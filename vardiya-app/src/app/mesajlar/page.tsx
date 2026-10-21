@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { aktifKullanici } from "@/lib/auth";
+import { oturumGerekli } from "@/lib/oturum";
 import { mesajlariGetir, mesajlariOkunduYap } from "@/lib/messages";
 import { sahipMi } from "@/lib/visits";
 
@@ -26,8 +26,8 @@ const tarihSaat = (d: Date) =>
  * diğer hesaplar için sayfa 404 döner.
  */
 export default async function MesajlarPage() {
-  const kullanici = await aktifKullanici();
-  if (!kullanici || !sahipMi(kullanici.email)) notFound();
+  const kullanici = await oturumGerekli("/mesajlar");
+  if (!sahipMi(kullanici.email)) notFound();
 
   const mesajlar = await mesajlariGetir();
   // Sahibi sayfayı açtı: okunmamışları okundu işaretle (liste zaten alındı).

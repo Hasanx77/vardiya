@@ -121,7 +121,7 @@ export default async function ProfilPage({
                 ) : null}
               </p>
             </div>
-            <Link href="/mesajlar" className="btn-ikincil">
+            <Link href="/mesajlar" prefetch={false} className="btn-ikincil">
               Gelen mesajlar
             </Link>
           </section>

@@ -17,6 +17,8 @@ model User {
   id           String    @id @default(cuid())
   email        String    @unique
   passwordHash String
+  /** Şifre değişince artırılır; eski oturum çerezleri geçersizleşir. */
+  sessionVersion Int     @default(0)
   createdAt    DateTime  @default(now())
   lastLoginAt  DateTime?
 

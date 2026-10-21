@@ -4,7 +4,7 @@ import { COOKIE_NAME, cerezAyarlari, girdilerGecerliMi, sifreOzetle } from "@/li
 import { oturumAltyapisiHazir, oturumTokeni } from "@/lib/session";
 import { standartSablonlar } from "@/lib/shifts";
 import { normalizeTime } from "@/lib/validate";
-import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
+import { disAdres, guvenliHedef, httpsMi, istemciIp } from "@/lib/url";
 import { denemeBasarisiz, denemeIzinli } from "@/lib/rate-limit";
 
 /**
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   };
 
   // Bot koruması: (1) gizli bal küpü alanı, (2) IP başına 10 dakikada 5 kayıt denemesi.
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "yerel";
+  const ip = istemciIp(req);
   const anahtar = `kayit|${ip}`;
   if (!denemeIzinli(anahtar, 5)) {
     return hataYonlendir("Çok fazla kayıt denemesi. Lütfen 10 dakika sonra tekrar dene.");
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
   const kapanisHam = normalizeTime(String(form.get("kapanis") ?? "")) || "23:00";
   const kapanis = kapanisHam === acilis ? "23:59" : kapanisHam;
 
-  let kullanici: { id: string };
+  let kullanici: { id: string; sessionVersion: number };
   try {
     // Kullanıcı + işletme + şablonlar tek işlemde: yarıda hata olursa
     // "işletmesi olmayan hesap" kalmaz.
@@ -103,6 +103,6 @@ export async function POST(req: Request) {
   }
 
   const res = NextResponse.redirect(disAdres(req, next), 303);
-  res.cookies.set(COOKIE_NAME, await oturumTokeni(kullanici.id), cerezAyarlari(httpsMi(req)));
+  res.cookies.set(COOKIE_NAME, await oturumTokeni(kullanici.id, kullanici.sessionVersion), cerezAyarlari(httpsMi(req)));
   return res;
 }

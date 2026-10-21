@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { istanbulGunu } from "@/lib/dates";
 import { tokenCoz } from "@/lib/employee-link";
-import { shiftSaatMetni } from "@/lib/shifts";
+import { shiftBlocks } from "@/lib/shifts";
 
 type Ctx = { params: Promise<{ employeeId: string }> };
 
@@ -69,18 +69,23 @@ export async function GET(_request: Request, { params }: Ctx) {
 
   for (const a of assignments) {
     const t = a.shiftTemplate;
-    const overnight = t.end <= t.start;
-    lines.push(
-      "BEGIN:VEVENT",
-      `UID:${a.id}@vardiya`,
-      `DTSTAMP:${stamp}`,
-      `DTSTART:${icsDateTime(a.date, t.start)}`,
-      `DTEND:${icsDateTime(a.date, t.end, overnight ? 1 : 0)}`,
-      `SUMMARY:${escapeText(`${t.name} (${shiftSaatMetni(t)})`)}`,
-      `LOCATION:${escapeText(employee.business.name)}`,
-      `DESCRIPTION:${escapeText(`${employee.business.name} · ${employee.name}`)}`,
-      "END:VEVENT"
-    );
+    const bloklar = shiftBlocks(t);
+    for (let i = 0; i < bloklar.length; i++) {
+      const b = bloklar[i];
+      const overnight = b.end <= b.start;
+      const parca = bloklar.length > 1 ? `-${i + 1}` : "";
+      lines.push(
+        "BEGIN:VEVENT",
+        `UID:${a.id}${parca}@vardiya`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART:${icsDateTime(a.date, b.start)}`,
+        `DTEND:${icsDateTime(a.date, b.end, overnight ? 1 : 0)}`,
+        `SUMMARY:${escapeText(`${t.name} (${b.start}-${b.end})`)}`,
+        `LOCATION:${escapeText(employee.business.name)}`,
+        `DESCRIPTION:${escapeText(`${employee.business.name} · ${employee.name}`)}`,
+        "END:VEVENT"
+      );
+    }
   }
 
   lines.push("END:VCALENDAR");

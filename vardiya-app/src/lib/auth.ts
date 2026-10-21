@@ -11,7 +11,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
-import { COOKIE_NAME, COOKIE_MAX_AGE, tokenKullanici } from "./session";
+import { COOKIE_NAME, COOKIE_MAX_AGE, tokenBilgi } from "./session";
 
 export { COOKIE_NAME, COOKIE_MAX_AGE };
 
@@ -47,7 +47,16 @@ export function girdilerGecerliMi(email: string, sifre: string): string | null {
 /** İstekteki oturumdan kullanıcı id'si (yoksa null). */
 export async function aktifKullaniciId(): Promise<string | null> {
   const c = await cookies();
-  return tokenKullanici(c.get(COOKIE_NAME)?.value);
+  const bilgi = await tokenBilgi(c.get(COOKIE_NAME)?.value);
+  if (!bilgi) return null;
+
+  // Şifre değişince sürüm artar; eski çerezler burada reddedilir.
+  const kullanici = await prisma.user.findUnique({
+    where: { id: bilgi.kullaniciId },
+    select: { id: true, sessionVersion: true },
+  });
+  if (!kullanici || kullanici.sessionVersion !== bilgi.version) return null;
+  return kullanici.id;
 }
 
 /** Oturumdaki kullanıcı kaydı (yoksa null). */

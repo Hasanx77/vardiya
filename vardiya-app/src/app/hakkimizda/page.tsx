@@ -38,12 +38,12 @@ const nedenler = [
   {
     baslik: "Süre uyarıları",
     metin:
-      "Haftalık 45 saat, iki vardiya arası 11 saat dinlenme, gece ve resmî tatil uyarıları plan yaparken görünür. Kapsamı sınırlıdır; hukuki danışmanlık değildir.",
+      "Haftalık 45 saat, günlük 11 saat, iki vardiya arası 11 saat dinlenme, gece ve resmî tatil uyarıları plan yaparken görünür. Kapsamı sınırlıdır; hukuki danışmanlık değildir.",
   },
   {
     baslik: "Gizliliğe saygı",
     metin:
-      "Ücret bilgisi istenmez ve saklanmaz. Veriler Türkiye'deki sunucuda, işletmeye özel veritabanında tutulur.",
+      "Ücret bilgisi istenmez ve saklanmaz. Veriler Türkiye'deki sunucuda, her işletmeye ait ayrı kayıtlar hâlinde (işletme kimliğiyle izole) tutulur.",
   },
   {
     baslik: "Gerçekten ücretsiz",

@@ -37,6 +37,11 @@ export async function PATCH(request: Request, { params }: Ctx) {
     if (!bs && !be) {
       data.breakStart = null;
       data.breakEnd = null;
+    } else if (!bs || !be) {
+      return NextResponse.json(
+        { error: "Ara için başlangıç ve bitiş saatleri birlikte girilmeli." },
+        { status: 400 },
+      );
     } else {
       data.breakStart = bs;
       data.breakEnd = be;
@@ -74,6 +79,16 @@ export async function PATCH(request: Request, { params }: Ctx) {
           { status: 400 },
         );
       }
+    } else if (
+      !araIstendi &&
+      mevcut.breakStart &&
+      mevcut.breakEnd &&
+      !araGecerliMi(yeniStart, yeniEnd, mevcut.breakStart, mevcut.breakEnd)
+    ) {
+      // Saatler değişti ve mevcut ara artık vardiyaya sığmıyor:
+      // ekranda "ara" görünüp saat hesabında yok sayılmasın diye temizle.
+      data.breakStart = null;
+      data.breakEnd = null;
     }
   }
 

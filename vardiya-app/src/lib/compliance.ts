@@ -13,6 +13,8 @@ import { isFullHoliday } from "./holidays";
 
 /** İki vardiya arası en az dinlenme süresi (saat) — 4857 m.69 */
 export const MIN_DAILY_REST_HOURS = 11;
+/** Günlük azami çalışma süresi (saat) — 4857 m.63 */
+export const DAILY_LIMIT_HOURS = 11;
 /** Gece çalışması azami süre (saat) — 4857 m.69 */
 export const NIGHT_LIMIT_HOURS = 7.5;
 
@@ -23,6 +25,7 @@ export type ComplianceIssueType =
   | "cift_vardiya"
   | "dinlenme"
   | "fazla_mesai"
+  | "gunluk_limit"
   | "gece"
   | "tatil";
 
@@ -245,6 +248,24 @@ export function analyzeWeek(input: WeekAnalysisInput): WeekAnalysis {
         date: weekDates[weekDates.length - 1] ?? "",
         message: `Haftalık ${WEEKLY_LIMIT_HOURS} saati ${overtimeHours} saat aştı (fazla mesai).`,
       });
+    }
+
+    // 1a) Günlük azami süre (4857 m.63: günde en çok 11 saat)
+    for (const iso of weekDates) {
+      const list = dayAssignments(iso);
+      if (list.length === 0) continue;
+      const gunlukSaat = round1(
+        list.reduce((toplam, a) => toplam + shiftHours(shiftOf(a)), 0)
+      );
+      if (gunlukSaat > DAILY_LIMIT_HOURS) {
+        issues.push({
+          employeeId: emp.id,
+          type: "gunluk_limit",
+          severity: "error",
+          date: iso,
+          message: `${dayLabel(iso)} günü ${gunlukSaat} saat; günlük en fazla ${DAILY_LIMIT_HOURS} saat olmalı.`,
+        });
+      }
     }
 
     // 1b) Gece çalışması (7,5 saat) + resmî tatilde çalışma

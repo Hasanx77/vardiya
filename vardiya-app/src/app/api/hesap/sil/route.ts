@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { aktifKullanici } from "@/lib/auth";
 import { COOKIE_NAME } from "@/lib/session";
+import { mesajlariEpostaylaSil } from "@/lib/messages";
 import { disAdres } from "@/lib/url";
 
 /**
@@ -25,6 +26,9 @@ export async function POST(req: Request) {
     // Zaten silinmişse (P2025) aynı sonucu ver: çerez temizlenip çıkış yapılır.
     if ((e as { code?: string })?.code !== "P2025") throw e;
   }
+
+  // "Tüm verilerim" sözü: bu e-postayla gönderilmiş iletişim mesajları da silinir.
+  await mesajlariEpostaylaSil(kullanici.email);
 
   const res = NextResponse.redirect(disAdres(req, "/?hesap=silindi"), 303);
   res.cookies.set(COOKIE_NAME, "", { path: "/", maxAge: 0 });

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_NAME, tokenKullanici } from "@/lib/session";
+import { guvenliHost } from "@/lib/url";
 
 /**
  * Oturum kapısı + HTTPS zorlaması.
@@ -111,8 +112,23 @@ export async function middleware(req: NextRequest) {
     proto === "http" &&
     !yerelAdres
   ) {
-    const hedef = new URL(`${pathname}${req.nextUrl.search}`, `https://${host}`);
+    const hedef = new URL(`${pathname}${req.nextUrl.search}`, `https://${guvenliHost(host)}`);
     return NextResponse.redirect(hedef, 308);
+  }
+
+  // CSRF: tarayıcıdan gelen yazma isteklerinde Origin aynı sitede olmalı.
+  // (Origin yoksa curl/API istemcisi kabul edilir; çerez zaten SameSite=lax.)
+  if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    const origin = req.headers.get("origin");
+    if (origin) {
+      try {
+        if (new URL(origin).host.toLowerCase() !== guvenliHost(host)) {
+          return new NextResponse("Çapraz kaynaklı istek reddedildi.", { status: 403 });
+        }
+      } catch {
+        return new NextResponse("Geçersiz Origin başlığı.", { status: 403 });
+      }
+    }
   }
 
   if (acikMi(pathname)) return NextResponse.next();

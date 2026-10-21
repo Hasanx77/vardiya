@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { COOKIE_NAME, cerezAyarlari, sifreDogruMu, sifreOzetle } from "@/lib/auth";
 import { oturumAltyapisiHazir, oturumTokeni } from "@/lib/session";
-import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
+import { disAdres, guvenliHedef, httpsMi, istemciIp } from "@/lib/url";
 import { denemeBasarisiz, denemeIzinli, denemeTemizle } from "@/lib/rate-limit";
 
 /**
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const sifre = String(form.get("sifre") ?? "");
   let next = guvenliHedef(String(form.get("next") ?? "/panel"));
   if (next.startsWith("/giris") || next.startsWith("/kayit")) next = "/panel";
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "yerel";
+  const ip = istemciIp(req);
   const anahtar = `${ip}|${email}`;
 
   const hata = (mesaj: string) => {
@@ -63,6 +63,6 @@ export async function POST(req: Request) {
   });
 
   const res = NextResponse.redirect(disAdres(req, next), 303);
-  res.cookies.set(COOKIE_NAME, await oturumTokeni(kullanici.id), cerezAyarlari(httpsMi(req)));
+  res.cookies.set(COOKIE_NAME, await oturumTokeni(kullanici.id, kullanici.sessionVersion), cerezAyarlari(httpsMi(req)));
   return res;
 }

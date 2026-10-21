@@ -26,7 +26,7 @@ const sections: { id: string; title: string; items: string[] }[] = [
     items: [
       "Ana sayfadaki 'Demoyu dene' bağlantısı /demo sayfasını açar.",
       "Hücrelere tıklayarak vardiya değiştirebilirsin; toplam saat ve uyarılar anında güncellenir.",
-      "Demo hiçbir veri kaydetmez; gerçek hesabına dokunmaz.",
+      "Demo, yaptığın değişiklikleri kaydetmez; gerçek hesabına dokunmaz.",
     ],
   },
   {
@@ -125,14 +125,14 @@ export default async function YardimPage() {
       </div>
 
       <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-900">
-        <strong>Mevzuat notu:</strong> Kontrol edilenler haftalık 45 saat (İş
-        Kanunu 4857 m.63), iki vardiya arası 11 saat dinlenme (m.69), gece
-        çalışmasında 7,5 saat (m.69), aynı gün çift vardiya ve resmî tatil
-        günleridir (2429 sayılı Kanun). Haftalık 24 saat kesintisiz hafta tatili,
-        fazla mesai ücreti, puantaj/bordro ve yıllık izin bakiye düşümü kapsam
-        dışıdır. Uyarılar hukuki danışmanlık değildir; nihai plandan işveren
-        sorumludur. Şüpheli durumlarda iş hukuku uzmanına veya mali müşavire
-        danış.
+        <strong>Mevzuat notu:</strong> Kontrol edilenler haftalık 45 saat ve
+        günlük 11 saat (İş Kanunu 4857 m.63), iki vardiya arası 11 saat dinlenme
+        (m.69), gece çalışmasında 7,5 saat (m.69), aynı gün çift vardiya ve
+        2026–2027 tam gün resmî tatillerdir (2429 sayılı Kanun). Haftalık 24 saat
+        kesintisiz hafta tatili, arife/yarım gün tatiller, fazla mesai ücreti,
+        puantaj/bordro ve yıllık izin bakiye düşümü kapsam dışıdır. Uyarılar
+        hukuki danışmanlık değildir; nihai plandan işveren sorumludur. Şüpheli
+        durumlarda iş hukuku uzmanına veya mali müşavire danış.
       </div>
 
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">

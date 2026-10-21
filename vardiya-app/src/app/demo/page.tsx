@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Demo — Vardiya'yı kayıt olmadan dene",
   description:
-    "Vardiya'nın haftalık plan ekranını kayıt olmadan dene. Hücrelere tıkla, 45 saat ve 11 saat dinlenme uyarılarını canlı gör.",
+    "Vardiya'nın haftalık plan ekranını kayıt olmadan dene. Hücrelere tıkla, 45 saat, günlük 11 saat ve 11 saat dinlenme uyarılarını canlı gör.",
   alternates: { canonical: "/demo" },
   openGraph: {
     title: "Demo — Vardiya'yı kayıt olmadan dene",

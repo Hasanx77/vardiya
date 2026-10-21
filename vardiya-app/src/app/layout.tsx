@@ -6,8 +6,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
 import { AltMenu, UstMenu } from "@/components/Menu";
 import SiteMenusu from "@/components/SiteMenusu";
-import Animasyon from "@/components/Animasyon";
-import Ilerleme from "@/components/Ilerleme";
+import Logo3D from "@/components/Logo3D";
+import LogoV from "@/components/LogoV";
+import Animasyon from "@/components/Animasyon";import Ilerleme from "@/components/Ilerleme";
 import KaydirmaDurumu from "@/components/KaydirmaDurumu";
 import { aktifKullanici } from "@/lib/auth";
 import { sahipMi } from "@/lib/visits";
@@ -120,10 +121,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
           <div className="kap flex h-14 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-6">
-              <Link href="/" className="marka flex shrink-0 items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-[13px] font-bold text-zinc-950">
-                  V
-                </span>
+              <Link
+                href="/"
+                className="marka flex shrink-0 items-center gap-2"
+                aria-label="Vardiya — ana sayfa"
+              >
+                <LogoV boyut={38} />
                 <span className="tracking-tight">Vardiya</span>
               </Link>
               {kullanici ? <UstMenu /> : null}
@@ -176,7 +179,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
           <div className="kap flex flex-col gap-3 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Vardiya, Zihnora&apos;nın ürünüdür · Yayın adresi: zihnora.com.tr
+              <span className="flex items-center gap-2">
+                <Logo3D boyut={20} id="alt-logo" />
+                <span>
+                  Vardiya, Zihnora&apos;nın ürünüdür · Yayın adresi: zihnora.com.tr
+                </span>
+              </span>
               <span className="mt-1 block text-[11px] text-zinc-400">
                 İleride vardiya.app adresine taşınacak; bu adres de çalışmaya devam
                 edecek. Destek:{" "}

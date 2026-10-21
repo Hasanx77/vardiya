@@ -3,6 +3,7 @@ import {
   DEFAULT_SHIFTS,
   WEEKLY_LIMIT_HOURS,
   araGecerliMi,
+  shiftBlocks,
   shiftHours,
   shiftSaatMetni,
   standartSablonlar,
@@ -59,6 +60,22 @@ describe("shiftSaatMetni", () => {
   });
 });
 
+describe("shiftBlocks", () => {
+  it("bölünmüş vardiyayı iki çalışma bloğuna ayırır", () => {
+    expect(
+      shiftBlocks({ start: "09:00", end: "22:00", breakStart: "13:00", breakEnd: "17:00" })
+    ).toEqual([
+      { start: "09:00", end: "13:00" },
+      { start: "17:00", end: "22:00" },
+    ]);
+  });
+  it("arasız vardiyayı tek blok bırakır", () => {
+    expect(shiftBlocks({ start: "09:00", end: "17:00" })).toEqual([
+      { start: "09:00", end: "17:00" },
+    ]);
+  });
+});
+
 describe("standartSablonlar", () => {
   it("kısa mesai saatlerinde ara vardiya ters dönmez", () => {
     const sablonlar = standartSablonlar("09:00", "11:00");
@@ -79,7 +96,7 @@ describe("standartSablonlar", () => {
       "Ara Vardiya",
     ]);
     expect(sablonlar[0]).toMatchObject({ start: "09:00", end: "16:00" });
-    expect(sablonlar[2]).toMatchObject({ start: "09:00", end: "23:00" });
+    expect(sablonlar[2]).toMatchObject({ start: "09:00", end: "20:00" });
   });
 });
 
