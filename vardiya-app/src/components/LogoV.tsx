@@ -6,10 +6,35 @@
  * WebGL sahnesini (`src/lib/logo-v/sahne.ts`) yalnızca görünürken çalıştırır;
  * sekme arkadayken ve ekran dışındayken durur. DPR 2'yi geçmez.
  * "Hareketi azalt" tercihinde tek bir statik kare çizer.
+ *
+ * Fare etkileşimi: logo **yalnız kendi kutusunun üstündeyken** değil,
+ * çevresindeki geniş bir alanda da tepki verir (`etki`, varsayılan 2,6 kat).
+ * Böylece imleç logoya değmeden yaklaşırken V dönmeye başlar; alanın dışına
+ * çıkınca yumuşakça dinlenme açısına döner.
  */
 import { useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { VLogoSahnesi } from "@/lib/logo-v/sahne";
+
+/**
+ * Tepki alanı: logo kutusunun kaç katı genişlikte fareyi dinler.
+ * 2,6 → kutunun her yanına, boyunun %80'i kadar bir boşluk eklenir.
+ */
+const ETKI_ALANI = 2.6;
+
+/**
+ * Bir eksende -1..1 arası dönüş payı.
+ *
+ * Kutunun içinde doğrusal büyür (merkezde 0, kenarda 1). Kutunun dışında,
+ * alanın sınırına doğru tam açının %55'ine kadar yumuşakça azalır: imleç
+ * logoya yaklaştıkça V daha çok döner, uzaktayken "fark eder" ama abartmaz.
+ */
+function eksenPayi(mesafe: number, yariBoy: number, yariAlan: number): number {
+  const mutlak = Math.abs(mesafe);
+  if (mutlak <= yariBoy) return mesafe / yariBoy;
+  const oran = Math.min((mutlak - yariBoy) / Math.max(yariAlan - yariBoy, 1), 1);
+  return Math.sign(mesafe) * (1 - 0.45 * oran);
+}
 
 type Props = {
   /** Kenar uzunluğu: sayı (px) veya CSS ölçüsü ("min(420px, 80vw)"). */
@@ -17,6 +42,8 @@ type Props = {
   sinif?: string;
   etiket?: string;
   durgun?: boolean;
+  /** Fare tepki alanı çarpanı (kutu boyunun katı). */
+  etki?: number;
 };
 
 export default function LogoV({
@@ -24,6 +51,7 @@ export default function LogoV({
   sinif = "",
   etiket = "Vardiya logosu: ışığı yansıtan üç boyutlu V",
   durgun = false,
+  etki = ETKI_ALANI,
 }: Props) {
   const kapRef = useRef<HTMLDivElement>(null);
   const tuvalRef = useRef<HTMLCanvasElement>(null);
@@ -83,6 +111,7 @@ export default function LogoV({
     let onceki = 0;
     let gorunur = false;
     let sekmeAcik = !document.hidden;
+    let icerde = false;
 
     const dongu = (simdi: number) => {
       const dt = onceki ? Math.min((simdi - onceki) / 1000, 0.05) : 0.016;
@@ -120,18 +149,43 @@ export default function LogoV({
     document.addEventListener("visibilitychange", sekmeDurumu);
 
     const isaret = (e: PointerEvent) => {
+      // Dokunmatikte sayfa kaydırması sırasında logo dönmesin.
+      if (e.pointerType === "touch") return;
       const olcu = kap.getBoundingClientRect();
       if (olcu.width < 1 || olcu.height < 1) return;
+
+      const yariGenislik = olcu.width / 2;
+      const yariYukseklik = olcu.height / 2;
+      const dx = e.clientX - (olcu.left + yariGenislik);
+      const dy = e.clientY - (olcu.top + yariYukseklik);
+
+      // Genişletilmiş alanın dışında: tepkiyi bırak.
+      const alanX = yariGenislik * etki;
+      const alanY = yariYukseklik * etki;
+      if (Math.abs(dx) > alanX || Math.abs(dy) > alanY) {
+        if (icerde) {
+          icerde = false;
+          sahne.isaretBirak();
+        }
+        return;
+      }
+
+      icerde = true;
       sahne.isaretle(
-        ((e.clientX - olcu.left) / olcu.width) * 2 - 1,
-        ((e.clientY - olcu.top) / olcu.height) * 2 - 1,
+        eksenPayi(dx, yariGenislik, alanX),
+        eksenPayi(dy, yariYukseklik, alanY),
       );
     };
-    const birak = () => sahne.isaretBirak();
+    const birak = () => {
+      icerde = false;
+      sahne.isaretBirak();
+    };
 
-    kap.addEventListener("pointermove", isaret);
-    kap.addEventListener("pointerleave", birak);
-    kap.addEventListener("pointercancel", birak);
+    // Kutuya değil pencereye bağlıyız: logo, kendi kutusunun dışındayken de
+    // (tepki alanı içinde) fareyi takip eder.
+    document.addEventListener("pointermove", isaret, { passive: true });
+    document.addEventListener("pointerleave", birak);
+    window.addEventListener("blur", birak);
 
     const hareketDegisti = () => {
       sahne.hareketAyarla(oynasin());
@@ -152,14 +206,14 @@ export default function LogoV({
       gorunurlukGozlemci.disconnect();
       window.removeEventListener("resize", dprYenile);
       document.removeEventListener("visibilitychange", sekmeDurumu);
-      kap.removeEventListener("pointermove", isaret);
-      kap.removeEventListener("pointerleave", birak);
-      kap.removeEventListener("pointercancel", birak);
+      document.removeEventListener("pointermove", isaret);
+      document.removeEventListener("pointerleave", birak);
+      window.removeEventListener("blur", birak);
       tuval.removeEventListener("webglcontextlost", baglamKaybi);
       hareketMedya.removeEventListener("change", hareketDegisti);
       sahne.bosalt();
     };
-  }, [durgun]);
+  }, [durgun, etki]);
 
   const olcu = typeof boyut === "number" ? `${boyut}px` : boyut;
 
