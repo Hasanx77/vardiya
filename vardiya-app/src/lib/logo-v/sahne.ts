@@ -14,6 +14,13 @@ import { sinirla } from "./matematik";
 
 export type SahneSecenek = { hareket: boolean };
 
+/** V'nin baktığı sanal nokta: ekran kenarı ≈ yatay 43°, dikey 30°. */
+const HEDEF_X = 2.4;
+const HEDEF_Y = 1.5;
+const HEDEF_Z = 2.6;
+/** İmleç yokken hafif aşağı bakan dinlenme açısı (radyan). */
+const DINLENME_PITCH = 0.06;
+
 type Nokta = { x: number; y: number; r: number };
 
 /** Köşeleri yuvarlatılmış 2B yol → THREE.Shape. */
@@ -91,9 +98,11 @@ export class VLogoSahnesi {
   private baslangic = -1;
 
   private hedefYaw = 0;
-  private hedefPitch = 0;
-  private yawEk = 0;
-  private pitchEk = 0;
+  private hedefPitch = DINLENME_PITCH;
+  private yumusakYaw = 0;
+  private yumusakPitch = DINLENME_PITCH;
+  /** İmleç takibi açık mı (açıkken kendi kendine salınım kısılır). */
+  private takip = false;
 
   constructor(tuval: HTMLCanvasElement, secenek: SahneSecenek) {
     this.hareket = secenek.hareket;
@@ -183,6 +192,8 @@ export class VLogoSahnesi {
     ]);
 
     this.grup = new THREE.Group();
+    // Önce yatay (yaw), sonra dikey (pitch): imleci "takip eden" doğal sıra.
+    this.grup.rotation.order = "YXZ";
     this.grup.add(this.mesh);
     this.scene.add(this.grup);
 
@@ -250,14 +261,26 @@ export class VLogoSahnesi {
     this.camera.updateProjectionMatrix();
   }
 
+  /**
+   * İmleç konumu — ekranın tamamına göre -1..1 (sol üst = -1,-1).
+   * V, imlecin bulunduğu yöne bakar: sağdaysa sağa, yukarıdaysa yukarı döner.
+   */
   isaretle(x: number, y: number): void {
-    this.hedefYaw = sinirla(x, -1, 1) * 0.34;
-    this.hedefPitch = sinirla(y, -1, 1) * 0.16;
+    const nx = sinirla(x, -1, 1);
+    const ny = sinirla(y, -1, 1);
+    const hx = nx * HEDEF_X;
+    const hy = -ny * HEDEF_Y; // ekranda aşağı = dünyada aşağı
+    const uzunluk = Math.hypot(hx, hy, HEDEF_Z) || 1;
+    this.hedefYaw = Math.atan2(hx, HEDEF_Z);
+    this.hedefPitch = -Math.asin(hy / uzunluk);
+    this.takip = true;
   }
 
+  /** İmleç pencereden çıktı: öne, hafif aşağı bakışa dön. */
   isaretBirak(): void {
     this.hedefYaw = 0;
-    this.hedefPitch = 0;
+    this.hedefPitch = DINLENME_PITCH;
+    this.takip = false;
   }
 
   hareketAyarla(deger: boolean): void {
@@ -271,18 +294,23 @@ export class VLogoSahnesi {
     const gecen = zaman - this.baslangic;
     const t = this.hareket ? gecen : 2.6;
 
-    const yumusaklik = 1 - Math.exp(-Math.max(dt, 0) * 5);
-    this.yawEk += (this.hedefYaw - this.yawEk) * yumusaklik;
-    this.pitchEk += (this.hedefPitch - this.pitchEk) * yumusaklik;
+    const yumusaklik = 1 - Math.exp(-Math.max(dt, 0) * 6);
+    this.yumusakYaw += (this.hedefYaw - this.yumusakYaw) * yumusaklik;
+    this.yumusakPitch += (this.hedefPitch - this.yumusakPitch) * yumusaklik;
 
     // Giriş: hafif taşarak yerine oturur.
     const g = this.hareket ? girisEgrisi(gecen / 1.1) : 1;
     const olcek = 0.72 + 0.28 * g;
 
+    // İmleç yokken (özellikle dokunmatikte) kendi kendine salınır; imleç
+    // varken salınım kısılır ki V tam olarak imlece baksın.
+    const salinim = this.takip ? 0.02 : 0.12;
+
     const yaw =
-      (this.hareket ? Math.sin(t * 0.3) * 0.3 : 0) + this.yawEk + (1 - g) * -0.5;
-    const pitch = 0.06 + (this.hareket ? Math.sin(t * 0.22 + 1) * 0.05 : 0) + this.pitchEk;
-    const roll = this.hareket ? Math.sin(t * 0.17) * 0.025 : 0;
+      this.yumusakYaw + (this.hareket ? Math.sin(t * 0.3) * salinim : 0) + (1 - g) * -0.5;
+    const pitch =
+      this.yumusakPitch + (this.hareket ? Math.sin(t * 0.22 + 1) * (this.takip ? 0.012 : 0.03) : 0);
+    const roll = this.hareket ? Math.sin(t * 0.17) * 0.02 : 0;
 
     this.grup.rotation.set(pitch, yaw, roll);
     this.grup.position.y = this.hareket ? Math.sin(t * 0.8) * 0.055 : 0;
