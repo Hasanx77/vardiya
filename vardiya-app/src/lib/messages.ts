@@ -135,34 +135,3 @@ export async function mesajTemizligi(): Promise<void> {
     console.error("mesaj bakımı:", e);
   }
 }
-
-/** Hesap silinirken o e-postayla gönderilmiş iletişim mesajlarını da siler. */
-export async function mesajlariEpostaylaSil(email: string): Promise<void> {
-  try {
-    await tabloKur();
-    await prisma.$executeRaw`DELETE FROM "Message" WHERE lower("email") = ${email.trim().toLowerCase()}`;
-  } catch (e) {
-    console.error("mesaj silme:", e);
-  }
-}
-
-/** Veri indirmede kullanıcının kendi gönderdiği mesajlar. */
-export async function mesajlariEpostaylaGetir(email: string): Promise<Mesaj[]> {
-  try {
-    await tabloKur();
-    const satirlar = await prisma.$queryRaw<Satir[]>`
-      SELECT "id", "ad", "email", "mesaj", "okundu", "createdAt"
-      FROM "Message"
-      WHERE lower("email") = ${email.trim().toLowerCase()}
-      ORDER BY "createdAt" DESC
-    `;
-    return satirlar.map((s) => ({
-      ...s,
-      okundu: Number(s.okundu) === 1,
-      createdAt: s.createdAt instanceof Date ? s.createdAt : new Date(s.createdAt),
-    }));
-  } catch (e) {
-    console.error("mesaj indirme:", e);
-    return [];
-  }
-}
