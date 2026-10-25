@@ -120,7 +120,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 className="marka flex shrink-0 items-center gap-2"
                 aria-label="Vardiya — ana sayfa"
               >
-                <LogoV boyut={32} sinif="logo-kucuk" />
+                {/* Üst çubuktaki küçük logo bilinçli olarak **durgun**: görüntü
+                    aynı, ama dönmez/nefes almaz ve fareyi takip etmez. */}
+                <LogoV boyut={32} sinif="logo-kucuk" durgun />
                 <span className="text-[15px] tracking-tight">Vardiya</span>
                 <span
                   aria-hidden="true"
