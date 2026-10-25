@@ -8,6 +8,15 @@ type IncomingEmployee = { name?: unknown; role?: unknown; phone?: unknown };
 
 // Kurulum sihirbazı için: birden fazla personeli tek istekte ekler
 export async function POST(request: Request) {
+  // Gövde boyutu sınırı: paylaşımlı sunucuda belleği korur (en fazla 200 kişi).
+  const boyut = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(boyut) && boyut > 512 * 1024) {
+    return NextResponse.json(
+      { error: "İçe aktarma dosyası çok büyük (en fazla 200 personel)." },
+      { status: 413 },
+    );
+  }
+
   const body = await request.json().catch(() => ({}));
   const list: IncomingEmployee[] = Array.isArray(body?.employees) ? body.employees : [];
 

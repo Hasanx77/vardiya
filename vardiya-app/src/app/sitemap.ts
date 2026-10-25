@@ -5,9 +5,17 @@ const TABAN = "https://zihnora.com.tr";
 /** Her istekte üretilir (eski ön-render önbelleği servis edilmesin). */
 export const dynamic = "force-dynamic";
 
-/** Yalnızca herkese açık sayfalar dizine eklenir; panel ve hesap sayfaları kapalı. */
+/**
+ * Yalnızca herkese açık sayfalar dizine eklenir; panel ve hesap sayfaları kapalı.
+ *
+ * `lastModified` sabit: her istekte "şimdi" yazmak, arama motorlarına sayfanın
+ * sürekli değiştiğini söyler (tarama bütçesini boşa harcar). İçerik değişince
+ * bu tarihi elle güncelleyin.
+ */
+const SON_GUNCELLEME = new Date("2026-10-25T00:00:00.000Z");
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const son = new Date();
+  const son = SON_GUNCELLEME;
   return [
     { url: `${TABAN}/`, lastModified: son, changeFrequency: "weekly", priority: 1 },
     { url: `${TABAN}/demo`, lastModified: son, changeFrequency: "weekly", priority: 0.9 },

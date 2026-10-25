@@ -125,11 +125,11 @@ export default async function GizlilikPage() {
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Saklama süresi</h2>
           <p>
             Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
-            (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir;
-            aynı e-postayla gönderdiğin iletişim mesajları da silinir.
+            (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
             Ziyaret sayacı kayıtları <strong>120 gün</strong> sonra otomatik olarak silinir.
-            İletişim formu mesajları ise talep yanıtlandıktan sonra en geç <strong>12 ay</strong> içinde
-            silinir; daha erken silinmesini istersen destek adresimize yazman yeterli.
+            İletişim formundan gönderilen mesajlar, kişisel veri içerdiği için e-posta eşleşmesiyle
+            silinmez; talep yanıtlandıktan sonra en geç <strong>12 ay</strong> içinde otomatik silinir.
+            Daha erken silinmesini istersen destek adresimize yazman yeterli.
           </p>
 
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">7) Haklarınız (KVKK m.11)</h2>
@@ -137,6 +137,11 @@ export default async function GizlilikPage() {
             Verilerinin işlenip işlenmediğini öğrenme, düzeltilmesini isteme, silinmesini (unutulma)
             ve taşınabilirliğini talep etme hakkın var. Verini JSON olarak indirme ve hesabını
             silme düğmeleri aşağıdadır; diğer talepler için destek adresine yazabilirsin.
+          </p>
+          <p className="text-sm text-zinc-600">
+            İndirilen JSON dosyası hesabına ve işletmene bağlı verileri içerir. İletişim formundan
+            gönderdiğin mesajlar bu dosyada yer almaz (onları yalnızca site sahibi görür); kopyasını
+            destek adresinden talep edebilirsin.
           </p>
         </section>
 

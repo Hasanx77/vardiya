@@ -28,6 +28,8 @@ export async function POST(req: Request) {
 
   // Bal küpü (honeypot): gerçek kullanıcı bu alanı görmez.
   if (String(form.get("website") ?? "").trim()) {
+    // Botun denemesi de sayılsın: aksi halde sınırsız POST atabilir.
+    denemeBasarisiz(anahtar);
     return geri({ ok: "1" });
   }
 
