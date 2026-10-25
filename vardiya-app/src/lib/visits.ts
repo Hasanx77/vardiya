@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "./prisma";
+import { authSecret } from "./sir";
 import { mesajTemizligi } from "./messages";
 
 /**
@@ -122,7 +123,7 @@ export async function kaydetZiyaret(): Promise<void> {
 
     const gun = istanbulGunu();
     const ay = gun.slice(0, 7);
-    const tuz = `${process.env.AUTH_SECRET ?? "varsayilan"}:${ay}`;
+    const tuz = `${authSecret()}:${ay}`;
     const ozet = createHash("sha256").update(`${ip}|${ua}|${tuz}`).digest("hex");
 
     after(() => ziyaretYaz(gun, ozet));

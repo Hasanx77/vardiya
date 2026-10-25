@@ -13,31 +13,38 @@
  * Eski 3 parçalı çerezler (sürüm yok) sürüm 0 kabul edilerek okunur.
  */
 
+import { authSecret, authSecretVarMi } from "./sir";
+
 export const COOKIE_NAME = "vardiya_oturum";
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 gün
+
+/**
+ * İki adımlı doğrulama **bekleme** çerezi.
+ *
+ * Akış: şifre doğru → 2FA açıksa oturum çerezi HENÜZ verilmez; bunun yerine
+ * 10 dakika geçerli bu imzalı çerez verilir ve kullanıcı `/iki-adim` sayfasına
+ * gider. Kod doğruysa asıl oturum çerezi o zaman oluşur. Böylece şifresi
+ * çalınan biri tek başına içeri giremez.
+ */
+export const IKI_ADIM_COOKIE = "vardiya_iki_adim";
+export const IKI_ADIM_BEKLEME_MS = 10 * 60 * 1000; // 10 dakika
 
 const enc = new TextEncoder();
 
 /**
  * Oturum imzası için ortam değişkeni.
  *
- * 🔒 Bu değer yoksa (veya çok kısaysa) imzalı çerez üretilemez. Sessizce boş
- * anahtarla imzalamak "giriş yaptım ama giriş yapılmamış görünüyor" hatasına
- * yol açıyordu; bu yüzden burada açıkça hata veriyoruz ve giriş/kayıt uçları
- * önceden kontrol ediyor.
+ * 🔒 `AUTH_SECRET` yoksa (veya 32 karakterden kısaysa) imzalı çerez üretilemez.
+ * Sessizce sabit bir anahtara düşmek jetonları tahmin edilebilir yapardı; bu
+ * yüzden `lib/sir.ts` açıkça hata verir. Giriş/kayıt uçları önceden
+ * `oturumAltyapisiHazir()` ile kontrol edip kullanıcıya söylüyor.
  */
-const ASGARI_ANAHTAR_UZUNLUGU = 16;
-
 export function oturumAltyapisiHazir(): boolean {
-  return (process.env.AUTH_SECRET ?? "").trim().length >= ASGARI_ANAHTAR_UZUNLUGU;
+  return authSecretVarMi();
 }
 
 function gizliAnahtar(): string {
-  const anahtar = (process.env.AUTH_SECRET ?? "").trim();
-  if (anahtar.length < ASGARI_ANAHTAR_UZUNLUGU) {
-    throw new Error("AUTH_SECRET tanımlı değil veya çok kısa (en az 16 karakter).");
-  }
-  return anahtar;
+  return authSecret();
 }
 
 function hex(buf: ArrayBuffer): string {
@@ -124,4 +131,27 @@ export async function tokenBilgi(
 export async function tokenKullanici(token: string | undefined): Promise<string | null> {
   const bilgi = await tokenBilgi(token);
   return bilgi?.kullaniciId ?? null;
+}
+
+/** 2FA bekleme çerezi: `2fa.<kullaniciId>.<sonKullanma>.<hatirla>.<imza>` */
+export async function beklemeTokeni(kullaniciId: string, hatirla = false): Promise<string> {
+  const son = Date.now() + IKI_ADIM_BEKLEME_MS;
+  const bayrak = hatirla ? "1" : "0";
+  const govde = `2fa.${kullaniciId}.${son}.${bayrak}`;
+  return `${govde}.${await imzaUret(govde)}`;
+}
+
+/** Bekleme çerezi geçerliyse kullanıcı id'sini döner. */
+export async function beklemeBilgi(
+  token: string | undefined,
+): Promise<{ kullaniciId: string; hatirla: boolean } | null> {
+  if (!token || !oturumAltyapisiHazir()) return null;
+  const parcalar = token.split(".");
+  if (parcalar.length !== 5 || parcalar[0] !== "2fa") return null;
+
+  const [, kullaniciId, sonStr, bayrak, imza] = parcalar;
+  const son = Number(sonStr);
+  if (!kullaniciId || !Number.isFinite(son) || son < Date.now()) return null;
+  if (!esitMi(imza, await imzaUret(`2fa.${kullaniciId}.${sonStr}.${bayrak}`))) return null;
+  return { kullaniciId, hatirla: bayrak === "1" };
 }

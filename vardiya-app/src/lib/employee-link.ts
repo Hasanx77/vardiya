@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "./prisma";
+import { authSecret } from "./sir";
 
 /**
  * Personele verilen girişsiz bağlantının **iptal edilebilir** olması için
@@ -32,15 +33,8 @@ async function tabloyuHazirla() {
   tabloHazir = true;
 }
 
-function anahtar(): string {
-  const s = (process.env.AUTH_SECRET ?? "").trim();
-  // Geliştirme ortamında AUTH_SECRET yoksa tahmin edilemez olmayan ama
-  // tutarlı bir anahtar kullanılır; canlıda gerçek değer okunur.
-  return s.length >= 16 ? s : "vardiya-gelistirme-baglanti-anahtari";
-}
-
 function imza(employeeId: string, version: number): string {
-  return createHmac("sha256", anahtar())
+  return createHmac("sha256", authSecret())
     .update(`ekip:${employeeId}:${version}`)
     .digest("base64url")
     .slice(0, 24);
