@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { aktifKullanici } from "@/lib/auth";
 import { COOKIE_NAME } from "@/lib/session";
+import { kullaniciArtiKayitlariSil } from "@/lib/hesap-temizligi";
 import { disAdres } from "@/lib/url";
 
 /**
@@ -24,6 +25,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Ham SQL tabloları (TOTP sırrı, personel link sürümü, giriş sayaçları)
+    // personel id'leri hâlâ okunabilirken temizlenir.
+    await kullaniciArtiKayitlariSil({ id: kullanici.id, email: kullanici.email });
     await prisma.user.delete({ where: { id: kullanici.id } });
   } catch (e) {
     // Zaten silinmişse (P2025) aynı sonucu ver: çerez temizlenip çıkış yapılır.

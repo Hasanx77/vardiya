@@ -15,6 +15,8 @@ const takip = vi.hoisted(() => ({
   epostaylaGetir: vi.fn(),
   epostaylaSil: vi.fn(),
   kullaniciSil: vi.fn(),
+  queryRaw: vi.fn(),
+  exec: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -44,7 +46,11 @@ vi.mock("@/lib/messages", () => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: { user: { delete: takip.kullaniciSil } },
+  prisma: {
+    user: { delete: takip.kullaniciSil },
+    $queryRawUnsafe: takip.queryRaw,
+    $executeRawUnsafe: takip.exec,
+  },
 }));
 
 import { GET as veriIndir } from "./veri/route";
@@ -64,6 +70,8 @@ beforeEach(() => {
   ]);
   takip.epostaylaSil.mockResolvedValue(undefined);
   takip.kullaniciSil.mockResolvedValue({ id: "u1" });
+  takip.queryRaw.mockResolvedValue([]);
+  takip.exec.mockResolvedValue(1);
 });
 
 describe("GET /api/hesap/veri", () => {
