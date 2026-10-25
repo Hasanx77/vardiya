@@ -6,6 +6,8 @@ export const metadata = {
   title: "Vardiya programı — Vardiya",
   // Kişisel program: arama motorlarına girmesin.
   robots: { index: false, follow: false },
+  // 🔒 Jeton URL'de: dış bağlantılara referer olarak sızmasın.
+  referrer: "no-referrer",
 };
 
 export const dynamic = "force-dynamic";
