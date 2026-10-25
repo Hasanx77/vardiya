@@ -42,8 +42,19 @@ export function guvenliHost(host: string): string {
   return IZINLI_HOSTLAR.values().next().value ?? "zihnora.com.tr";
 }
 
-/** İstemci IP'si: ters vekilin eklediği **son** X-Forwarded-For değeri güvenilir. */
+/**
+ * İstemci IP'si: ters vekilin eklediği **son** X-Forwarded-For değeri güvenilir.
+ *
+ * Cloudflare önüne geçildiğinde (`CLOUDFLARE_AKTIF=1`) gerçek istemci IP'si
+ * `cf-connecting-ip` başlığında gelir ve XFF zinciri Cloudflare'in kendi
+ * adreslerini içerir. Bu bayrak kapalıyken başlık **yok sayılır**: aksi halde
+ * saldırgan başlığı taklit edip giriş sınırlarını atlatabilirdi.
+ */
 export function istemciIp(req: Request): string {
+  if (process.env.CLOUDFLARE_AKTIF === "1") {
+    const cf = (req.headers.get("cf-connecting-ip") ?? "").trim();
+    if (cf) return cf;
+  }
   const xff = (req.headers.get("x-forwarded-for") ?? "")
     .split(",")
     .map((s) => s.trim())

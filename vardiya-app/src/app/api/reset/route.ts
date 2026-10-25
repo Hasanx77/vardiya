@@ -14,6 +14,8 @@ export async function POST(request: Request) {
   await prisma.employee.deleteMany({ where: { businessId: business.id } });
   await prisma.announcement.deleteMany({ where: { businessId: business.id } });
   await prisma.dayNote.deleteMany({ where: { businessId: business.id } });
+  // Yayın durumu da sıfırlanır: yeni plan taslak olarak başlar.
+  await prisma.weekPlan.deleteMany({ where: { businessId: business.id } });
 
   if (mode === "demo") {
     await seedDemoData(business.id);

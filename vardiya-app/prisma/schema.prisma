@@ -17,12 +17,35 @@ model User {
   id           String    @id @default(cuid())
   email        String    @unique
   passwordHash String
+  /** Görünen ad (e-posta yerine). Küçük harf, 3-24 karakter, tekil. */
+  username     String?   @unique
+  /** E-posta doğrulandıysa dolu. Doğrulanmamış hesaplar giriş yapabilir. */
+  emailVerifiedAt DateTime?
+  /** Google ile giriş: Google'ın kullanıcı kimliği (sub). Bağlıysa dolu. */
+  googleId     String?   @unique
+  /** Başlangıç adımları tamamlandı mı? (ad + marka + mesai saatleri) */
+  onboardedAt  DateTime?
   /** Şifre değişince artırılır; eski oturum çerezleri geçersizleşir. */
   sessionVersion Int     @default(0)
   createdAt    DateTime  @default(now())
   lastLoginAt  DateTime?
 
   business Business?
+  resets   PasswordReset[]
+}
+
+/// Şifre sıfırlama anahtarı. Ham anahtar yalnızca e-postada; burada SHA-256 özeti durur.
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // İşletme
@@ -44,6 +67,7 @@ model Business {
   assignments    Assignment[]
   announcements  Announcement[]
   dayNotes       DayNote[]
+  weekPlans      WeekPlan[]
 }
 
 model Employee {
@@ -116,4 +140,24 @@ model DayNote {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, date])
+}
+
+/**
+ * Haftalık planın **yayın durumu**.
+ *
+ * Kayıt varsa o hafta yayınlanmıştır: personel bağlantısı ve `.ics` takvimi
+ * yalnızca yayınlanmış haftaların vardiyalarını gösterir. Kayıt yoksa hafta
+ * taslaktır ve ekibe sızmaz.
+ */
+model WeekPlan {
+  id          String   @id @default(cuid())
+  businessId  String
+  /** Haftanın pazartesi günü: "YYYY-MM-DD" */
+  weekStart   String
+  publishedAt DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, weekStart])
+  @@index([businessId])
 }

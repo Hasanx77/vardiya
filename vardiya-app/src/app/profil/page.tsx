@@ -6,6 +6,7 @@ import { getStatePayload } from "@/lib/state";
 import HesapSilButonu from "@/components/HesapSilButonu";
 import { mesajOzeti } from "@/lib/messages";
 import { sahipMi } from "@/lib/visits";
+import { ikiAdimDurumu } from "@/lib/iki-adim";
 
 export const metadata = {
   title: "Profilim — Vardiya",
@@ -43,6 +44,7 @@ export default async function ProfilPage({
   });
   const sahip = sahipMi(kullanici.email);
   const mesajlar = sahip ? await mesajOzeti() : null;
+  const ikiAdim = await ikiAdimDurumu(kullanici.id);
 
   return (
     <main className="flex-1">
@@ -185,6 +187,23 @@ export default async function ProfilPage({
               Şifremi güncelle
             </button>
           </form>
+        </section>
+
+        {/* Güvenlik */}
+        <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold">Güvenlik</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              İki adımlı doğrulama:{" "}
+              <strong className={ikiAdim.aktif ? "text-emerald-700" : "text-zinc-700"}>
+                {ikiAdim.aktif ? "açık" : "kapalı"}
+              </strong>
+              {ikiAdim.aktif ? ` · ${ikiAdim.yedekKalan} yedek kod` : " · şifre + tek kullanımlık kod ile giriş"}
+            </p>
+          </div>
+          <Link href="/profil/guvenlik" className="btn-ikincil">
+            Güvenlik ayarları
+          </Link>
         </section>
 
         {/* Verilerim */}

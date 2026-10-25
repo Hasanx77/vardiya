@@ -6,11 +6,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 import ProfilMenusu from "@/components/ProfilMenusu";
 import { AltMenu, UstMenu } from "@/components/Menu";
 import SiteMenusu from "@/components/SiteMenusu";
-import Logo3D from "@/components/Logo3D";
+import Marka from "@/components/Marka";
 import LogoV from "@/components/LogoV";
-import Animasyon from "@/components/Animasyon";import Ilerleme from "@/components/Ilerleme";
-import KaydirmaDurumu from "@/components/KaydirmaDurumu";
 import { aktifKullanici } from "@/lib/auth";
+import { TEMA_BETIGI } from "@/lib/tema-betik";
+import { prisma } from "@/lib/prisma";
 import { sahipMi } from "@/lib/visits";
 import "./globals.css";
 
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://zihnora.com.tr"),
   title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
   description:
-    "5 dakikada haftalık vardiya planla, personele WhatsApp mesajını hazırla. Türkçe, mevzuat uyarılarıyla, cebinde.",
+    "Haftalık vardiya planını tek ekranda hazırla, personele WhatsApp mesajını gönder. Türkçe, mevzuat uyarılarıyla, cebinde.",
   applicationName: "Vardiya",
   openGraph: {
     type: "website",
@@ -42,14 +42,14 @@ export const metadata: Metadata = {
     siteName: "Vardiya",
     title: "Vardiya — Kafe & Restoran için Vardiya Yönetimi",
     description:
-      "Haftalık vardiya planını 5 dakikada hazırla, ekibine WhatsApp'tan gönder. Ücretsiz, reklamsız, Türkiye'de barındırılıyor.",
+      "Haftalık vardiya planını tek ekranda hazırla, ekibine WhatsApp'tan gönder. Ücretsiz, reklamsız, Türkiye'de barındırılıyor.",
     url: "/",
     images: [
       {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "Vardiya — haftalık vardiya planı, 5 dakikada hazır.",
+        alt: "Vardiya — haftalık vardiya planı, tek ekranda.",
       },
     ],
   },
@@ -83,6 +83,12 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Sağ üst menü ve alt menü oturuma göre değişir (giriş yapılmış / yapılmamış).
   const kullanici = await aktifKullanici();
+  const isletme = kullanici
+    ? await prisma.business.findUnique({
+        where: { userId: kullanici.id },
+        select: { name: true },
+      })
+    : null;
   const yil = new Date().getFullYear();
 
   return (
@@ -97,19 +103,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         }`}
       >
         {/* Tema tercihini ilk boyamadan önce uygula (flicker önleyici) */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{var t=localStorage.getItem('vardiya-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
-          }}
-        />
-
-        <Ilerleme />
-        <KaydirmaDurumu />
-        <Animasyon />
-        <noscript>
-          <style>{`[data-reveal]{transform:none!important}`}</style>
-        </noscript>
+        <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
 
         <a
           href="#icerik"
@@ -118,7 +112,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           İçeriğe geç
         </a>
 
-        <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
+        <header className="site-header sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
           <div className="kap flex h-14 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-6">
               <Link
@@ -126,8 +120,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 className="marka flex shrink-0 items-center gap-2"
                 aria-label="Vardiya — ana sayfa"
               >
-                <LogoV boyut={38} />
-                <span className="tracking-tight">Vardiya</span>
+                <LogoV boyut={32} sinif="logo-kucuk" />
+                <span className="text-[15px] tracking-tight">Vardiya</span>
+                <span
+                  aria-hidden="true"
+                  className="h-[5px] w-[5px] rounded-full bg-[#e8ae55]"
+                />
               </Link>
               {kullanici ? <UstMenu /> : null}
             </div>
@@ -143,18 +141,26 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <ThemeToggle />
               {kullanici ? (
                 <>
+                  {/* Sağ üst: görünen ad (e-posta değil) + altında marka adı */}
+                  <div className="mr-1 hidden text-right leading-tight sm:block">
+                    <p className="max-w-[150px] truncate text-[12.5px] font-semibold text-zinc-800 dark:text-zinc-100">
+                      @{kullanici.username ?? kullanici.email.split("@")[0]}
+                    </p>
+                    <p className="max-w-[150px] truncate text-[11px] text-zinc-500">
+                      {isletme?.name ?? "İşletmem"}
+                    </p>
+                  </div>
                   <ProfilMenusu email={kullanici.email} sahip={sahipMi(kullanici.email)} />
                   {/* Giriş yapıldığında sağ üstte görünür çıkış düğmesi.
                       (Avatar menüsünün içinde de var; burada tek tıkla erişim.) */}
-                  <form action="/api/auth/logout" method="post" className="shrink-0">
+                  <form action="/api/auth/logout" method="post" className="hidden shrink-0 lg:block">
                     <button
                       type="submit"
                       className="btn-sessiz px-3"
                       title="Oturumu kapat"
                       aria-label="Çıkış yap"
                     >
-                      <span className="sm:hidden">Çıkış</span>
-                      <span className="hidden sm:inline">Çıkış Yap</span>
+                      Çıkış Yap
                     </button>
                   </form>
                 </>
@@ -176,28 +182,47 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {children}
         </div>
 
-        <footer className="mt-auto border-t border-zinc-200 bg-white print:hidden">
-          <div className="kap flex flex-col gap-3 py-5 text-[13px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-            <span>
-              <span className="flex items-center gap-2">
-                <Logo3D boyut={20} id="alt-logo" />
-                <span>
-                  Vardiya, Zihnora&apos;nın ürünüdür · Yayın adresi: zihnora.com.tr
-                </span>
+        <footer className="site-footer mt-auto border-t border-zinc-200 bg-white print:hidden">
+          <div className="kap flex flex-col gap-4 py-6 text-[12.5px] md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="alt-marka text-zinc-700">
+                <Marka boyut={16} yazi />
               </span>
-              <span className="mt-1 block text-[11px] text-zinc-400">
-                İleride vardiya.app adresine taşınacak; bu adres de çalışmaya devam
-                edecek. Destek:{" "}
-                <a
-                  href="mailto:destek@zihnora.com.tr"
-                  className="underline underline-offset-2 hover:text-zinc-700"
-                >
-                  destek@zihnora.com.tr
-                </a>
+              <span className="alt-soluk text-zinc-400">
+                Zihnora&apos;nın ürünü · zihnora.com.tr
               </span>
-            </span>
-            {/* Menü bağlantıları üst çubukta; altbilgide yalnızca telif. */}
-            <span className="text-zinc-400">© {yil}</span>
+            </div>
+
+            <nav
+              aria-label="Alt menü"
+              className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-zinc-500"
+            >
+              <Link href="/hakkimizda" className="hover:text-zinc-900">
+                Hakkımızda
+              </Link>
+              <Link href="/yardim" className="hover:text-zinc-900">
+                Yardım
+              </Link>
+              <Link href="/gizlilik" className="hover:text-zinc-900">
+                Gizlilik
+              </Link>
+              <Link href="/iletisim" className="hover:text-zinc-900">
+                İletişim
+              </Link>
+            </nav>
+
+            <div className="alt-soluk flex flex-wrap items-center gap-x-3 gap-y-1.5 text-zinc-400">
+              <a
+                href="mailto:destek@zihnora.com.tr"
+                className="underline underline-offset-2 hover:text-zinc-700"
+              >
+                destek@zihnora.com.tr
+              </a>
+              <span aria-hidden className="hidden text-zinc-300 sm:inline">
+                ·
+              </span>
+              <span>© {yil}</span>
+            </div>
           </div>
         </footer>
 

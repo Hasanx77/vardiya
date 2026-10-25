@@ -34,6 +34,8 @@ const sections: { id: string; title: string; items: string[] }[] = [
     title: "Yönetim Paneli",
     items: [
       "Haftalık ızgarada her hücreye tıklayıp vardiya seç.",
+      "Plan hafta bazında yayınlanır: hazırlayıp 'Planı yayınla' dediğinde o hafta personel linkinde ve takvimde görünür. Yayınlanmayan hafta taslaktır, ekibe sızmaz.",
+      "Yayından sonra düzenleme yaparsan 'Değişiklikleri yayınla' uyarısı çıkar; 'Yayını geri al' ile haftayı yeniden taslağa alabilirsin.",
       "Gün başlığındaki kalem simgesiyle o güne not ekle (ör. canlı müzik).",
       "Vardiya şablonlarını 'Yönet' düğmesinden düzenle; 'min. kişi' hedefini belirle. Bölünmüş vardiyada ara saatlerini de tanımlayabilirsin.",
       "Kapsam uyarıları: hedefin altında kalan gün/vardiyalar kendiliğinden listelenir.",

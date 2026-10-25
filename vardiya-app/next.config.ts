@@ -1,29 +1,15 @@
 import type { NextConfig } from "next";
 
 /**
- * Güvenlik başlıkları.
+ * Vardiya — Next yapılandırması.
  *
- * CSP'de `'unsafe-inline'` var: Next hidrasyon betiği ve tema tercihi için
- * sayfaya gömülü küçük bir betik kullanıyor. Dış kaynak (CDN, reklam, üçüncü
- * taraf analitik) YOK; bu yüzden geri kalan her şey `'self'` ile sınırlı.
+ * Güvenlik başlıkları burada; **CSP artık middleware'de** üretiliyor
+ * (`src/middleware.ts`). Sebep: uygulama sayfalarında `nonce` tabanlı sıkı
+ * politika kullanıyoruz. Burada da CSP yazsaydık iki başlık kesişir ve
+ * `'unsafe-inline'` içeren gevşek taraf kazanırdı.
  */
-const icerikGuvenligi = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "style-src 'self' 'unsafe-inline'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
-  "connect-src 'self'",
-  "manifest-src 'self'",
-  "worker-src 'self' blob:",
-].join("; ");
-
 const nextConfig: NextConfig = {
-  // Uygulama kökü açıkça belirtilir; üst dizindeki fazladan lockfile'lar
+  // Uygulama küçük ağaçta belirtilir; üst dizindeki fazladan lockfile'lar
   // Next'in yanlış workspace kökü seçmesine neden olmasın.
   turbopack: {
     root: process.cwd(),
@@ -41,16 +27,20 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "Content-Security-Policy", value: icerikGuvenligi },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+            value:
+              "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
           },
-          { key: "Strict-Transport-Security", value: "max-age=15552000" },
+          // 1 yıl. includeSubDomains/preload bilinçli olarak yok: alt alan adları
+          // (posta, cPanel) HTTP kullanıyorsa siteyi erişilemez hale getirebilir.
+          { key: "Strict-Transport-Security", value: "max-age=31536000" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           { key: "X-DNS-Prefetch-Control", value: "off" },
         ],
       },

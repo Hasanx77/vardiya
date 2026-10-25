@@ -71,6 +71,12 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
         </span>
       </div>
 
+      {veri.taslakHaftaVar && (
+        <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+          Yeni bir plan hazırlanıyor; yayınlanınca burada görünecek.
+        </p>
+      )}
+
       {veri.announcements.length > 0 && (
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">

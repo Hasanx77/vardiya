@@ -1,4 +1,4 @@
-import type { ShiftTemplate } from "./types";
+﻿import type { ShiftTemplate } from "./types";
 
 /** Varsayılan vardiya şablonları (HORECA dostu) */
 export const DEFAULT_SHIFTS: ShiftTemplate[] = [
@@ -44,7 +44,7 @@ export function breakMinutes(shift: {
   if (!/^\d{2}:\d{2}$/.test(breakStart) || !/^\d{2}:\d{2}$/.test(breakEnd)) return 0;
   if (breakStart === breakEnd) return 0;
 
-  let bas = saatDakika(breakStart);
+  const bas = saatDakika(breakStart);
   let bit = saatDakika(breakEnd);
   if (bit < bas) bit += 24 * 60;
   return bit - bas;

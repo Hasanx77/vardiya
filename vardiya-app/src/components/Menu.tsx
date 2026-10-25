@@ -67,7 +67,7 @@ export function UstMenu() {
             key={o.href}
             href={o.href}
             aria-current={aktif ? "page" : undefined}
-            className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+            className={`menu-baglanti rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
               aktif
                 ? "bg-zinc-100 text-zinc-900"
                 : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"

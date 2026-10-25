@@ -7,7 +7,7 @@
  * sekme arkadayken ve ekran dışındayken durur. DPR 2'yi geçmez.
  * "Hareketi azalt" tercihinde tek bir statik kare çizer.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { VLogoSahnesi } from "@/lib/logo-v/sahne";
 
@@ -27,6 +27,9 @@ export default function LogoV({
 }: Props) {
   const kapRef = useRef<HTMLDivElement>(null);
   const tuvalRef = useRef<HTMLCanvasElement>(null);
+  // WebGL yoksa veya bağlam düşerse boş kutu göstermeyelim: statik V'ye düşer.
+  const [cizimYok, setCizimYok] = useState(false);
+  const gradyanKimlik = `logo-yedek-${useId().replace(/:/g, "")}`;
 
   useEffect(() => {
     const kap = kapRef.current;
@@ -36,7 +39,21 @@ export default function LogoV({
     const hareketMedya = window.matchMedia("(prefers-reduced-motion: reduce)");
     const oynasin = () => !hareketMedya.matches && !durgun;
 
-    const sahne = new VLogoSahnesi(tuval, { hareket: oynasin() });
+    let sahne: VLogoSahnesi;
+    try {
+      sahne = new VLogoSahnesi(tuval, { hareket: oynasin() });
+    } catch {
+      // WebGL kurulamadı → statik yedeğe geç. Senkron setState uyarısını
+      // önlemek için durum güncellemesi sıraya alınır.
+      queueMicrotask(() => setCizimYok(true));
+      return;
+    }
+
+    const baglamKaybi = (e: Event) => {
+      e.preventDefault();
+      setCizimYok(true);
+    };
+    tuval.addEventListener("webglcontextlost", baglamKaybi);
     if (process.env.NODE_ENV === "development") {
       const kutu = window as unknown as { __vardiyaV?: VLogoSahnesi[] };
       kutu.__vardiyaV = kutu.__vardiyaV ?? [];
@@ -138,6 +155,7 @@ export default function LogoV({
       kap.removeEventListener("pointermove", isaret);
       kap.removeEventListener("pointerleave", birak);
       kap.removeEventListener("pointercancel", birak);
+      tuval.removeEventListener("webglcontextlost", baglamKaybi);
       hareketMedya.removeEventListener("change", hareketDegisti);
       sahne.bosalt();
     };
@@ -157,7 +175,23 @@ export default function LogoV({
         } as CSSProperties
       }
     >
-      <canvas ref={tuvalRef} role="img" aria-label={etiket} />
+      {cizimYok ? (
+        <svg viewBox="0 0 24 24" className="h-full w-full p-[12%]" role="img" aria-label={etiket}>
+          <defs>
+            <linearGradient id={gradyanKimlik} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f6cd7e" />
+              <stop offset="55%" stopColor="#e8ae55" />
+              <stop offset="100%" stopColor="#c98a2e" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M3.6 4.4h3.7L12 15.6 16.7 4.4h3.7L13.8 20.4h-3.6L3.6 4.4Z"
+            fill={`url(#${gradyanKimlik})`}
+          />
+        </svg>
+      ) : (
+        <canvas ref={tuvalRef} role="img" aria-label={etiket} />
+      )}
     </div>
   );
 }

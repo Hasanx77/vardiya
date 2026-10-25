@@ -1,9 +1,9 @@
-import Link from "next/link";
-import Image from "next/image";
+﻿import Link from "next/link";
 import type { Metadata } from "next";
 import { aktifKullanici } from "@/lib/auth";
 import { demoOzet } from "@/lib/demo-data";
 import { kaydetZiyaret } from "@/lib/visits";
+import Marka from "@/components/Marka";
 import LogoV from "@/components/LogoV";
 
 export const dynamic = "force-dynamic";
@@ -12,82 +12,40 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const istatistikler = [
-  { deger: "5 dk", etiket: "Haftalık plan" },
-  { deger: "45 saat", etiket: "Mevzuat uyarısı" },
-  { deger: "11 saat", etiket: "Dinlenme kontrolü" },
-  { deger: "₺0", etiket: "Sınırsız kullanım" },
-];
-
-const guvenceler = [
-  "KVKK aydınlatması",
-  "Veri indir / sil",
-  "Reklamsız",
-  "Türkiye'de barındırılıyor",
-  "Kredi kartı yok",
-  "Demo kayıt istemez",
-];
-
-const sorunlar = [
-  {
-    baslik: "Son sürüm kimde?",
-    metin:
-      "Plan Excel'de hazırlanıyor, değişiklikler WhatsApp'ta onlarca mesaja bölünüyor. Kimse hangi versiyonun güncel olduğunu bilmiyor.",
-  },
-  {
-    baslik: "Kim hangi gün çalışıyor?",
-    metin:
-      "Personel her hafta aynı soruyu soruyor. İşletme sahibi de aynı cevabı tekrar tekrar yazıyor.",
-  },
-  {
-    baslik: "45 saat aşıldı mı?",
-    metin:
-      "Haftalık sınır ve dinlenme süreleri elle kontrol ediliyor. Gözden kaçan bir gün, işletmeyi riske atıyor.",
-  },
-];
+/* ------------------------------------------------------------------
+   İçerik — tek yerde, sade cümleler.
+   ------------------------------------------------------------------ */
 
 const ozellikler = [
   {
     baslik: "Haftalık plan ızgarası",
     metin:
-      "Personel × gün tablosunda her hücreye tıklayıp vardiya seç. Sürükleme, formül ve sekme yok.",
-    yol: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
+      "Personel × gün tablosunda her hücreye tıkla, vardiya seç. Sürükleme, formül ve sekme yok.",
   },
   {
     baslik: "Excel / CSV içe aktarma",
     metin:
-      "Mevcut personel listesini Excel'den kopyalayıp yapıştır veya CSV yükle. Başlık satırı otomatik atlanır.",
-    yol: "M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2",
+      "Mevcut listeyi Excel'den kopyalayıp yapıştır veya CSV yükle. Başlık satırı otomatik atlanır.",
   },
   {
     baslik: "WhatsApp'a hazır mesaj",
     metin:
-      "Her personele kendi haftalık programı hazırlanır; mesajı tek tıkla WhatsApp'ta açarsın. Toplu otomatik gönderim yoktur.",
-    yol: "M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z",
-  },
-  {
-    baslik: "Süre uyarıları",
-    metin:
-      "Haftalık 45 saat, günlük 11 saat, 11 saat dinlenme, gece ve resmî tatil kontrolleri plan yaparken görünür. Kapsamı sınırlıdır; aşağıda yazıyor.",
-    yol: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+      "Her personele kendi haftalık programı hazırlanır; mesajı tek tıkla WhatsApp'ta açarsın.",
   },
   {
     baslik: "Personele özel link",
     metin:
-      "Çalışan, giriş yapmadan kendi programını görür. Uygulama indirmesi veya hesap açması gerekmez.",
-    yol: "M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1",
+      "Çalışan giriş yapmadan kendi programını görür. Linki dilediğin an yenile veya kapat.",
   },
   {
-    baslik: "Aylık rapor & CSV",
+    baslik: "Süre ve mevzuat uyarıları",
+    metin:
+      "45 saat, günlük 11 saat, 11 saat dinlenme, gece çalışması ve resmî tatil kontrolü plan yaparken görünür.",
+  },
+  {
+    baslik: "Aylık rapor ve CSV",
     metin:
       "Kim kaç gün, kaç saat çalıştı? Aylık özeti görüntüle, Excel'e tek tıkla indir.",
-    yol: "M4 20V10M10 20V4M16 20v-7M22 20H2",
-  },
-  {
-    baslik: "Yazdırılabilir çizelge",
-    metin:
-      "Duvara asılacak haftalık çizelgeyi tek tıkla yazdır. Kâğıt ve kalemle uğraşma.",
-    yol: "M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z",
   },
 ];
 
@@ -100,139 +58,38 @@ const adimlar = [
   {
     baslik: "Haftayı doldur",
     metin:
-      "Hazır şablonlardan seç. 45 saati aşanı ve dinlenmesi yetersiz olanı anında gör.",
+      "Hazır şablonlardan seç. 45 saati aşan ve dinlenmesi yetersiz olanı anında gör.",
   },
   {
-    baslik: "WhatsApp mesajını hazırla",
+    baslik: "Mesajı hazırla",
     metin:
       "Her personel kendi programını alır; mesajı tek tıkla WhatsApp'ta açarsın. Personel giriş yapmadan telefondan görür.",
   },
 ];
 
-const nedenler = [
-  {
-    baslik: "Sade arayüz",
-    metin: "Kullanılmayan özellik yok. Açtığın anda planlamaya başlarsın.",
-  },
-  {
-    baslik: "Süre kontrolü",
-    metin:
-      "Haftalık 45 saat, günlük 11 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları yerleşik. Hukuki denetim değildir.",
-  },
-  {
-    baslik: "Gizlilik odaklı",
-    metin: "Ücret bilgisi istenmez; her işletme yalnızca kendi verisini görür.",
-  },
-  {
-    baslik: "Gerçekten ücretsiz",
-    metin:
-      "Bugünkü temel özellikler kalıcı olarak ücretsiz; ileri özellikler ileride Pro olabilir. Kredi kartı, abonelik veya deneme süresi yok.",
-  },
-  {
-    baslik: "Türkçe destek",
-    metin:
-      "Ürün de destek de Türkçe. destek@zihnora.com.tr adresine yaz, genellikle aynı iş günü dönüş yapıyoruz.",
-  },
-  {
-    baslik: "Hızlı kurulum",
-    metin: "Kurulum yok. Kayıt ol, personelini ekle, planı hazırla.",
-  },
+const kontrolEdilen = [
+  "Haftalık 45 saat (4857 m.63)",
+  "Günlük en fazla 11 saat (m.63)",
+  "İki vardiya arası 11 saat dinlenme (m.69)",
+  "Aynı gün çift vardiya çakışması",
+  "Gece çalışması 7,5 saat (m.69)",
+  "2026–2027 tam gün resmî tatiller",
 ];
 
-const karsilastirma = [
-  {
-    ozellik: "Haftalık planı hazırlama",
-    excel: "Formül, renk ve hücre elle kurulur",
-    kagit: "Elle yazılır, silinince kaybolur",
-    vardiya: "Hücreye tıkla; plan 5 dakikada hazır",
-  },
-  {
-    ozellik: "45 saat, günlük 11 saat ve dinlenme kontrolü",
-    excel: "Formülü sen kurmalısın",
-    kagit: "Gözle kontrol",
-    vardiya: "Plan yaparken otomatik uyarı",
-  },
-  {
-    ozellik: "Personele ulaştırma",
-    excel: "WhatsApp'a elle kopyalanır",
-    kagit: "Panoya asılır",
-    vardiya: "Kişiye hazır mesaj + kişisel link",
-  },
-  {
-    ozellik: "Güncel sürüm",
-    excel: "Dosya kopyaları karışır",
-    kagit: "Tek nüsha, kaybolabilir",
-    vardiya: "Tek kaynak; herkes son hâli görür",
-  },
-  {
-    ozellik: "Personel kendi programını görür",
-    excel: "Hayır",
-    kagit: "Yalnızca panoda",
-    vardiya: "Giriş yapmadan, kendi linkinden",
-  },
-  {
-    ozellik: "Aylık rapor",
-    excel: "Elle hesaplanır",
-    kagit: "Yok",
-    vardiya: "Aylık özet + CSV indirme",
-  },
-  {
-    ozellik: "Kurulum",
-    excel: "Şablonu sen kurarsın",
-    kagit: "Kalem ve kâğıt",
-    vardiya: "Kayıt + 3 adım",
-  },
-  {
-    ozellik: "Ücret",
-    excel: "Excel lisansı",
-    kagit: "Ücretsiz",
-    vardiya: "₺0 · kredi kartı yok",
-  },
+const kapsamDisi = [
+  "Fazla mesai ücreti, puantaj ve bordro",
+  "Yıllık izin bakiyesi ve otomatik düşüm",
+  "Haftalık 24 saat kesintisiz hafta tatili",
+  "İş sözleşmesi ve sektörel istisnalar",
+  "Hukuki görüş veya mali müşavir denetimi",
 ];
 
-const sektorler = [
-  {
-    ad: "Kafe",
-    alt: "Barista & servis",
-    yollar: [
-      "M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z",
-      "M16 9h1.5a2.5 2.5 0 0 1 0 5H16",
-      "M6 3v2M10 3v2M14 3v2",
-    ],
-  },
-  {
-    ad: "Restoran",
-    alt: "Mutfak & salon",
-    yollar: ["M4 17h16", "M6 17a6 6 0 0 1 12 0", "M12 8v3"],
-  },
-  {
-    ad: "Pastane",
-    alt: "Üretim & tezgâh",
-    yollar: [
-      "M5 12a7 7 0 0 1 14 0v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-4Z",
-      "M9 9v2M12 8v3M15 9v2",
-    ],
-  },
-  {
-    ad: "Bar",
-    alt: "Gece vardiyası",
-    yollar: ["M4 4h16l-8 9v7", "M8 20h8", "M7 9h10"],
-  },
-  {
-    ad: "Otel restoranı",
-    alt: "Vardiyalı ekip",
-    yollar: [
-      "M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16",
-      "M16 9h2a2 2 0 0 1 2 2v10",
-      "M8 7h2M8 11h2M8 15h2M12 7h2M12 11h2M12 15h2",
-      "M3 21h18",
-    ],
-  },
-  {
-    ad: "Zincir şube",
-    alt: "Çoklu lokasyon · yol haritasında",
-    yollar: ["M12 3 3 8l9 5 9-5-9-5Z", "M3 12l9 5 9-5", "M3 16l9 5 9-5"],
-  },
+const henuzYok = [
+  "Çok şube ve müdür yetkileri",
+  "Uygulama içi vardiya takası ve izin talebi",
+  "Okundu bilgisi ve otomatik bildirim",
+  "WhatsApp Business API ile toplu gönderim",
+  "Muhasebe / bordro entegrasyonu",
 ];
 
 const sss = [
@@ -242,175 +99,108 @@ const sss = [
       "Evet. Sınırsız personel, sınırsız şablon ve bugünkü tüm özellikler ücretsiz. Kredi kartı, abonelik veya deneme süresi yok.",
   },
   {
-    soru: "Marka Vardiya ama adres neden zihnora.com.tr?",
-    cevap:
-      "Vardiya ürünün adı; zihnora.com.tr ise yayın adresimiz (Zihnora'nın ürünü). İleride vardiya.app adresine taşımayı planlıyoruz; bu adres de çalışmaya devam edecek. İki isim aynı ürünü gösterir, farklı bir şirket veya kopya site yok.",
-  },
-  {
-    soru: "Bu iş nasıl ayakta kalacak? Bir yıl sonra kapanır mı?",
-    cevap:
-      "Bugünkü temel özellikler (personel, haftalık plan, rapor, personele özel link) kalıcı olarak ücretsiz kalacak. İleride şube yönetimi veya otomatik bildirim gibi ileri özellikler ücretli bir Pro plana dönüşebilir; bugün kullandığın temel özellikler ücretli hâle gelmeyecek. Ücretli bir özellik eklenirse en az 30 gün önce haber verilir, kart bilgisi istenmez. Tek kişilik bir proje olduğu için kapanma riskini de saklamıyoruz: hizmet sona ererse verini Profil → Verilerimi indir ile JSON olarak dışa aktarabilirsin.",
-  },
-  {
-    soru: "Personel uygulama indirmek zorunda mı? Telefona kurulabiliyor mu?",
-    cevap:
-      "Hayır. Personel kişisel bağlantıyı tarayıcıdan açar; uygulama mağazası veya hesap gerekmez. Sen de siteyi telefondan kullanabilirsin; tarayıcı menüsünden 'Ana Ekrana Ekle' ile uygulama gibi açılır (PWA). Mağazada indirilecek bir uygulama yok.",
-  },
-  {
     soru: "Kayıt olmadan ürünü görebilir miyim?",
     cevap:
-      "Evet. /demo adresinde örnek bir işletmenin haftalık planını açabilir, hücrelere tıklayarak vardiya değiştirebilir ve uyarıları canlı görebilirsin. Demo, yaptığın değişiklikleri kaydetmez.",
+      "Evet. Demo ekranında örnek bir işletmenin haftalık planını açıp hücrelere tıklayabilir, süre uyarılarını canlı görebilirsin. Demo yaptığın değişiklikleri kaydetmez.",
   },
   {
-    soru: "Verilerim nerede saklanıyor? Veri sorumlusu kim?",
+    soru: "Personel uygulama indirmek zorunda mı?",
     cevap:
-      "Veriler Türkiye'deki sunucuda, her işletmeye ait ayrı kayıtlar hâlinde (işletme kimliğiyle izole) tutulur. Personel verileri için veri sorumlusu işletme (sen), Vardiya ise veri işleyen konumundadır. Ücret bilgisi istenmez ve saklanmaz. Personeline verilecek örnek aydınlatma metni /personel-aydinlatma sayfasında; verini dilediğin an profil sayfasından indirebilir, hesabını silebilirsin.",
+      "Hayır. Personel sana ait bağlantıyı tarayıcıdan açar; mağaza veya hesap gerekmez. Sen de siteyi telefondan kullanabilir, 'Ana Ekrana Ekle' ile uygulama gibi açabilirsin.",
   },
   {
-    soru: "45 saat, günlük 11 saat ve dinlenme uyarıları neyi kontrol ediyor?",
+    soru: "Verilerim nerede saklanıyor?",
     cevap:
-      "Kontrol edilenler: haftalık 45 saat (İş Kanunu 4857 m.63), günlük en fazla 11 saat (m.63), iki vardiya arası en az 11 saat dinlenme (m.69), aynı gün çift vardiya çakışması, gece çalışmasında 7,5 saat (m.69) ve 2026–2027 tam gün resmî tatilleri (2429 sayılı Kanun). Kapsam dışı: haftalık 24 saat kesintisiz hafta tatili, arife/yarım gün tatiller, fazla mesai ücreti/puantaj/bordro, yıllık izin kullanımı ve bakiye düşümü, iş sözleşmesi veya sektörel istisnalar. Bu uyarılar hukuki danışmanlık değildir; nihai plandan işveren sorumludur. Ayrıntılı liste sayfadaki 'Mevzuat kapsamı' bölümünde.",
+      "Türkiye'deki sunucuda, her işletmeye ait ayrı kayıtlar hâlinde tutulur. Ücret bilgisi istenmez ve saklanmaz. Verini profilinden JSON olarak indirebilir, hesabını silebilirsin.",
   },
   {
     soru: "Excel listemi yükleyebilir miyim?",
     cevap:
-      "Evet. Personel listesini Excel'den olduğu gibi kopyalayıp yapıştırabilirsin; ekran görüntüsü değil, hücreleri seçip kopyaladığında sütunlar korunur. Alternatif olarak .csv, .tsv veya .txt dosyası yükleyebilirsin. Başlık satırı otomatik atlanır.",
+      "Evet. Personel listesini Excel'den olduğu gibi kopyalayıp yapıştırabilir veya .csv, .tsv, .txt dosyası yükleyebilirsin. Başlık satırı otomatik atlanır.",
   },
   {
-    soru: "Çok şubeli işletmeler için şube ve müdür yetkisi var mı?",
+    soru: "Marka Vardiya ama adres neden zihnora.com.tr?",
     cevap:
-      "Henüz yok. Bugün tek işletme ve tek yönetici hesabıyla çalışıyor; her şube kendi hesabıyla kullanabilir. Tek panelden şube yönetimi ile 'müdür yalnız kendi şubesini görsün' yetkisi yol haritasında ve hazır olduğunda duyurulacak.",
-  },
-  {
-    soru: "Vardiya değişimi, izin ve bildirim nasıl işliyor?",
-    cevap:
-      "Şu an uygulama içi talep akışı, okundu/onay bilgisi ve otomatik bildirim yok. Personel değişiklik veya izin talebini sana WhatsApp'tan iletir; sen panelde hücreyi değiştirip güncel mesajı gönderirsin. Personel linki her zaman son hâli gösterir. İzin gününü boş bırakırsın; yıllık izin hakkı profilde görünür ama bakiye otomatik düşmez. Bu adımlar yol haritasında.",
-  },
-  {
-    soru: "15 kişilik ekipte WhatsApp'a 15 kez mi tıklayacağım?",
-    cevap:
-      "Evet, şu an her personele ayrı mesaj hazırlanır ve ayrı ayrı açılır. Tek mesajla gruba veya herkese otomatik gönderim yoktur; WhatsApp Business API entegrasyonu da yoktur. Personel linki sayesinde çalışan programını kendi açar; yine de dağıtım sorumluluğu sende. Toplu gönderim yol haritasında.",
-  },
-  {
-    soru: "Personel linkini bilen herkes görebilir mi? Link iptal edilebiliyor mu?",
-    cevap:
-      "Link, personelin benzersiz kimliğini içerir; tahmin edilmesi zordur ama linki ele geçiren veya yönlendiren herkes programı görebilir. Linkte telefon numarası ve diğer personelin bilgileri yoktur. Şu an link yenileme/iptal düğmesi yok; işten ayrılan personeli silmek linki geçersiz kılar. Link yenileme ve son kullanma tarihi yol haritasında.",
-  },
-  {
-    soru: "Şu an kaç işletme kullanıyor?",
-    cevap:
-      "20 Ekim 2026 itibarıyla 8 işletme hesap açtı; 6'sı personel ekledi, 4'ü vardiya planı oluşturdu. Bunlar kayıt sayılarıdır, 'aktif müşteri' iddiası değildir. Uydurma yorum veya logo yayınlamıyoruz; ilk pilot işletmelerin izinli geri bildirimlerini burada yayınlayacağız.",
-  },
-  {
-    soru: "Kaç personel ekleyebilirim?",
-    cevap:
-      "Sınır yok. Küçük bir kafeden kalabalık bir ekibe kadar aynı hesapla kullanabilirsin. İçe aktarma tek seferde en fazla 200 kişi alır; gerekirse birkaç dosyada aktarabilirsin.",
+      "Vardiya ürünün adı; zihnora.com.tr yayın adresimiz ve Zihnora'nın ürünüdür. İki isim aynı ürünü gösterir; farklı bir şirket veya kopya site yok.",
   },
 ];
 
-function BolumBasligi({
-  etiket,
-  baslik,
-  aciklama,
-  ortala = false,
-}: {
-  etiket: string;
-  baslik: string;
-  aciklama?: string;
-  ortala?: boolean;
-}) {
-  return (
-    <div className={ortala ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">
-        {etiket}
-      </p>
-      <h2 className="mt-3 text-3xl font-extrabold leading-[1.08] tracking-[-0.04em] text-zinc-900 sm:text-4xl">
-        {baslik}
-      </h2>
-      {aciklama ? (
-        <p className="mt-3 text-[15px] leading-relaxed text-zinc-600">{aciklama}</p>
-      ) : null}
-    </div>
-  );
-}
+/* ------------------------------------------------------------------
+   Örnek plan — /demo ekranıyla aynı kaynaktan (lib/demo-data).
+   ------------------------------------------------------------------ */
 
-/** Ürünü gösteren mini çizelge — tarayıcı penceresi içinde (etkileşimsiz).
- *  Sayılar /demo ekranıyla **aynı kaynaktan** (lib/demo-data) gelir. */
+const hucreRengi: Record<string, string> = {
+  sabah: "border-[#e8ae55]/25 bg-[#e8ae55]/10 text-[#ecc383]",
+  aksam: "border-[#8f7fe0]/25 bg-[#8f7fe0]/10 text-[#c8bef5]",
+  tamgun: "border-[#d97a7a]/25 bg-[#d97a7a]/10 text-[#efb4b4]",
+  ara: "border-[#6fb3c9]/25 bg-[#6fb3c9]/10 text-[#a9d8e4]",
+};
+
 function OrnekCizelge() {
   const ozet = demoOzet();
 
-  const hucreRengi: Record<string, string> = {
-    sabah: "border-amber-200 bg-amber-100 text-amber-900",
-    aksam: "border-violet-200 bg-violet-100 text-violet-800",
-    tamgun: "border-rose-200 bg-rose-100 text-rose-800",
-    ara: "border-cyan-200 bg-cyan-100 text-cyan-800",
-  };
-
   return (
-    <div className="relative">
+    <div className="mx-auto max-w-[1080px]">
       <div
-        className="amber-glow absolute -inset-8 -z-10 rounded-[3rem] blur-3xl"
-        aria-hidden="true"
-      />
-
-      {/* Marka küpü: çizelgenin üstünde süzülür. Masaüstünde mutlak konum,
-          mobilde akışın içinde (üstteki metinle çakışmasın). */}
-      <div className="mb-3 flex justify-end lg:hidden">
-        <LogoV boyut={124} />
-      </div>
-      <div className="suzul absolute -right-1 -top-[196px] hidden lg:block">
-        <LogoV boyut={170} />
-      </div>
-
-      <div
-        className="kart overflow-hidden rounded-[24px] shadow-[0_24px_70px_-30px_rgba(20,24,27,0.35)]"
+        className="overflow-hidden rounded-xl border border-[#232327] bg-[#0d0d0f] shadow-[0_40px_120px_-60px_rgba(0,0,0,0.9)]"
         role="img"
-        aria-label={`Örnek haftalık vardiya planı: ${ozet.kisi} personel, Pazartesi–Pazar, toplam ${ozet.toplamVardiya} vardiya ve 45 saat kontrolü açık.`}
+        aria-label={`Örnek haftalık vardiya planı: ${ozet.kisi} personel, ${ozet.toplamVardiya} vardiya, ${ozet.uyari} süre uyarısı.`}
       >
         <div aria-hidden="true">
-          <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-4 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-            <span className="ml-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-medium text-zinc-500">
+          {/* Pencere çubuğu */}
+          <div className="flex items-center gap-2 border-b border-[#1c1c20] px-4 py-3">
+            <span className="h-2 w-2 rounded-full bg-[#2f2f35]" />
+            <span className="h-2 w-2 rounded-full bg-[#2f2f35]" />
+            <span className="h-2 w-2 rounded-full bg-[#2f2f35]" />
+            <span className="mx-auto rounded border border-[#232327] px-3 py-1 font-mono text-[10px] tracking-tight text-[#7d7d86]">
               zihnora.com.tr/panel
             </span>
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+            <span className="rounded border border-[#232327] px-2 py-0.5 text-[10px] font-medium text-[#8b8b93]">
               örnek veri
             </span>
           </div>
 
-          <div className="px-4 pb-3 pt-4">
-            <div className="flex items-end justify-between">
+          <div className="px-3 pb-4 pt-5 sm:px-6 sm:pb-5">
+            <div className="flex items-end justify-between gap-4">
               <div>
-                <div className="text-[13px] font-bold text-zinc-900">{ozet.isletme}</div>
-                <div className="text-[11px] text-zinc-500">19 – 25 Ekim · Pzt–Paz</div>
+                <div className="text-[14px] font-semibold tracking-tight text-[#ededf0]">
+                  {ozet.isletme}
+                </div>
+                <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#85858e]">
+                  19 – 25 Ekim · Pzt–Paz
+                </div>
               </div>
-              <span className="cip !px-2 !py-0.5 !text-[10px]">
+              <span className="rounded border border-[#232327] px-2.5 py-1 text-[11px] text-[#9a9aa2]">
                 {ozet.kisi} personel
               </span>
             </div>
 
-            <div className="mt-3 grid grid-cols-[52px_repeat(7,minmax(0,1fr))] gap-1 text-[10px]">
+            <div className="mt-4 grid grid-cols-[44px_repeat(7,minmax(0,1fr))] gap-[3px] sm:grid-cols-[72px_repeat(7,minmax(0,1fr))] sm:gap-1">
               <div />
               {ozet.gunler.map((g) => (
-                <div key={g} className="pb-1 text-center font-semibold text-zinc-500">
+                <div
+                  key={g}
+                  className="pb-1.5 text-center font-mono text-[9px] uppercase tracking-wider text-[#85858e] sm:text-[10px]"
+                >
                   {g}
                 </div>
               ))}
+
               {ozet.satirlar.map((s) => (
                 <div key={s.id} className="contents">
-                  <div className="flex min-w-0 items-center gap-1.5 py-1.5 text-[10px] font-semibold text-zinc-700">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.renk}`} />
+                  <div className="flex min-w-0 items-center gap-1 py-1 text-[8.5px] text-[#b6b6bd] sm:gap-1.5 sm:text-[10.5px]">
+                    <span
+                      className={`hidden h-1.5 w-1.5 shrink-0 rounded-full sm:block ${s.renk}`}
+                    />
                     <span className="truncate">{s.ad}</span>
                   </div>
                   {s.hucreler.map((h, i) => (
                     <div
                       key={i}
-                      className={`my-0.5 truncate rounded-md border px-1 py-1 text-center text-[9px] font-medium ${
+                      className={`my-0.5 truncate rounded border px-0.5 py-1 text-center text-[8.5px] leading-tight sm:px-1 sm:text-[9.5px] ${
                         h.tur
-                          ? hucreRengi[h.tur] ?? "border-zinc-200 bg-zinc-50 text-zinc-700"
-                          : "border-dashed border-zinc-200 text-zinc-400"
+                          ? hucreRengi[h.tur] ?? "border-[#232327] bg-[#141417] text-[#9a9aa2]"
+                          : "border-dashed border-[#232327] text-[#3c3c42]"
                       }`}
                     >
                       {h.etiket ?? "—"}
@@ -420,24 +210,41 @@ function OrnekCizelge() {
               ))}
             </div>
 
-            <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-2.5 text-[10px] text-zinc-500">
+            <div className="mt-4 flex items-center justify-between border-t border-[#1c1c20] pt-3 font-mono text-[10px] uppercase tracking-[0.1em] text-[#85858e]">
               <span>
                 Toplam {ozet.toplamVardiya} vardiya · {ozet.calisan}/{ozet.kisi} kişi
               </span>
-              <span className="font-semibold text-emerald-700">
-                ✓ {ozet.uyari > 0 ? `${ozet.uyari} uyarı` : "uyarı yok"}
+              <span className="flex items-center gap-1.5 text-[#c9a15c]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c9a15c]" />
+                {ozet.uyari} uyarı
               </span>
             </div>
           </div>
         </div>
       </div>
+      <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-[#7d7d86]">
+        Örnek veri · gerçek panel /panel adresinde
+      </p>
+    </div>
+  );
+}
 
-      <div
-        className="suzul absolute -right-3 -top-4 hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-800 sm:block"
-        style={{ animationDelay: "1.2s" }}
-      >
-        5 dakikada hazır
-      </div>
+/* ------------------------------------------------------------------ */
+
+function BolumBasligi({
+  etiket,
+  baslik,
+  aciklama,
+}: {
+  etiket: string;
+  baslik: string;
+  aciklama?: string;
+}) {
+  return (
+    <div className="max-w-[560px]">
+      <p className="v-etiket">{etiket}</p>
+      <h2 className="v-h2 mt-4">{baslik}</h2>
+      {aciklama ? <p className="v-p mt-4">{aciklama}</p> : null}
     </div>
   );
 }
@@ -471,7 +278,7 @@ export default async function Home({
         operatingSystem: "Web",
         inLanguage: "tr-TR",
         description:
-          "5 dakikada haftalık vardiya planla, ekibine WhatsApp'tan gönder. 45 saat, günlük 11 saat ve 11 saat dinlenme uyarıları.",
+          "Haftalık vardiya planla, ekibine WhatsApp mesajını hazırla. 45 saat, günlük 11 saat ve 11 saat dinlenme uyarıları.",
         offers: {
           "@type": "Offer",
           price: "0",
@@ -491,21 +298,22 @@ export default async function Home({
   };
 
   return (
-    <main className="flex-1">
+    <main className="vitrin flex-1">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(yapisalVeri).replace(/</g, "\\u003c"),
         }}
       />
+
       {hesap === "silindi" ? (
-        <div className="kap pt-4">
+        <div className="v-kap pt-6">
           <p
             role="status"
-            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+            className="rounded-md border border-[#2c3a30] bg-[#121a15] px-4 py-3 text-[13px] text-[#a8d5b5]"
           >
             Hesabın ve verilerin silindi. Yeni bir hesap açmak istersen{" "}
-            <Link href="/kayit" className="font-semibold underline underline-offset-2">
+            <Link href="/kayit" className="underline underline-offset-2">
               buradan
             </Link>{" "}
             devam edebilirsin.
@@ -513,907 +321,386 @@ export default async function Home({
         </div>
       ) : null}
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="hero-grid absolute inset-0 -z-10" aria-hidden="true" />
-        <div
-          className="amber-glow absolute -right-32 -top-40 -z-10 h-[520px] w-[520px] blur-3xl"
-          aria-hidden="true"
-        />
-        <div className="kap grid min-h-[calc(100svh-3.5rem)] items-center gap-12 pb-16 pt-12 sm:pt-16 lg:grid-cols-[1.03fr_0.97fr] lg:gap-10 lg:pb-24">
-          <div className="hero-gel">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              Kafe &amp; restoranlar için
-            </span>
-            <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.045em] text-zinc-900 sm:text-6xl">
-              Haftalık vardiya planı,{" "}
-              <span className="relative whitespace-nowrap text-amber-600">
-                5 dakikada
-                <span
-                  className="absolute inset-x-0 -bottom-1 -z-10 h-2.5 rounded-full bg-amber-200/70"
-                  aria-hidden="true"
-                />
-              </span>{" "}
-              hazır.
-            </h1>
-            <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-zinc-600 sm:text-lg">
-              Personelini ekle, günleri doldur, WhatsApp mesajını hazırla.
-              Excel, kâğıt ve mesaj karmaşası olmadan.
-            </p>
+      {/* ---------------------------------------------------------- HERO */}
+      <section className="v-kap pb-14 pt-10 sm:pb-16 sm:pt-12">
+        <div className="mx-auto max-w-[860px] text-center">
+          {/* Marka nesnesi: gerçek WebGL sahnesi (Three.js). Sayfanın tek
+              hareketli öğesi; geri kalan her şey durgun. */}
+          <div className="flex justify-center">
+            <LogoV boyut={132} etiket="Vardiya logosu: ışığı yansıtan üç boyutlu V" />
+          </div>
 
-            <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
-              {kullanici ? (
-                <Link href="/panel" className="btn-cta h-12 px-7">
-                  Panele git <span aria-hidden>→</span>
+          <p className="v-etiket mt-1">Vardiya yönetimi · Kafe ve restoranlar için</p>
+
+          <h1 className="v-h1 mx-auto mt-7">
+            Haftalık vardiya planı,{" "}
+            <br className="hidden sm:block" />
+            tek ekranda.
+          </h1>
+
+          <p className="v-p mx-auto mt-6 max-w-[54ch]">
+            Personelini ekle, günleri doldur, mesajı hazırla. Excel tablosu,
+            kâğıt çizelge ve WhatsApp karmaşası olmadan.
+          </p>
+
+          <div className="mt-9 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
+            {kullanici ? (
+              <Link href="/panel" className="v-btn">
+                Panele git <span aria-hidden>→</span>
+              </Link>
+            ) : (
+              <>
+                <Link href="/kayit" className="v-btn">
+                  Ücretsiz başla <span aria-hidden>→</span>
                 </Link>
-              ) : (
-                <>
-                  <Link href="/kayit" className="btn-cta h-12 px-7">
-                    Ücretsiz hesap aç <span aria-hidden>→</span>
-                  </Link>
-                  <Link href="/demo" className="btn-ghost h-12 px-7">
-                    Demoyu dene <span aria-hidden>↗</span>
-                  </Link>
-                </>
-              )}
-            </div>
-
-            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-zinc-600">
-              {[
-                "Kredi kartı yok",
-                "Demo kayıt istemez",
-                "Türkçe & mevzuat uyarıları",
-                "Türkiye'de barındırılıyor",
-              ].map(
-                (m) => (
-                  <li key={m} className="flex items-center gap-1.5">
-                    <span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
-                      ✓
-                    </span>
-                    {m}
-                  </li>
-                )
-              )}
-            </ul>
-
-            <p className="mt-5 text-[13px] leading-relaxed text-zinc-500">
-              Sorun mu var?{" "}
-              <a
-                href="mailto:destek@zihnora.com.tr"
-                className="font-semibold text-zinc-700 underline underline-offset-2 hover:text-amber-700"
-              >
-                destek@zihnora.com.tr
-              </a>
-              <span className="mx-1.5 text-zinc-300" aria-hidden>
-                ·
-              </span>
-              <a
-                href="mailto:hmum117413@gmail.com"
-                className="font-semibold text-zinc-700 underline underline-offset-2 hover:text-amber-700"
-              >
-                hmum117413@gmail.com
-              </a>
-            </p>
+                <Link href="/demo" className="v-btn v-btn-ghost">
+                  Demoyu gör
+                </Link>
+              </>
+            )}
           </div>
 
-          <div className="hero-gel hero-gel-2">
-            <OrnekCizelge />
-          </div>
+          <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-[#7d7d86]">
+            <li>Kredi kartı yok</li>
+            <li aria-hidden className="hidden text-[#3a3a40] sm:block">
+              ·
+            </li>
+            <li>Sınırsız personel</li>
+            <li aria-hidden className="hidden text-[#3a3a40] sm:block">
+              ·
+            </li>
+            <li>Türkiye&apos;de barındırılıyor</li>
+          </ul>
         </div>
       </section>
 
-      {/* İstatistik + güvence bandı */}
-      <section className="bolum-gri">
-        <div className="kap py-8 sm:py-10" data-reveal>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {istatistikler.map((s) => (
-              <div key={s.etiket}>
-                <div className="text-3xl font-extrabold tracking-tight text-zinc-900">
-                  {s.deger}
-                </div>
-                <div className="mt-1 text-xs font-medium text-zinc-500">{s.etiket}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-7 flex flex-wrap gap-2 border-t border-zinc-200/80 pt-5">
-            {guvenceler.map((g) => (
-              <span key={g} className="cip">
-                <span className="text-emerald-600">✓</span> {g}
-              </span>
-            ))}
-          </div>
+      <section className="v-kap pb-20 sm:pb-24">
+        <OrnekCizelge />
+      </section>
+
+      {/* ------------------------------------------------------- SEKTÖRLER */}
+      <section className="border-y border-[#1c1c20]">
+        <div className="v-kap flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="v-etiket">Kimler için</p>
+          <p className="text-[13px] text-[#9a9aa2]">
+            Kafe <span className="mx-2 text-[#3a3a40]">·</span> Restoran
+            <span className="mx-2 text-[#3a3a40]">·</span> Pastane
+            <span className="mx-2 text-[#3a3a40]">·</span> Bar
+            <span className="mx-2 text-[#3a3a40]">·</span> Otel restoranı
+            <span className="mx-2 text-[#3a3a40]">·</span> Zincir şube
+          </p>
         </div>
       </section>
 
-      {/* Sorun */}
-      <section className="kap py-16 sm:py-24" data-reveal>
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-          <div>
-            <BolumBasligi
-              etiket="Sorun"
-              baslik="Plan Excel'de başlıyor, WhatsApp'ta kayboluyor."
-              aciklama="Çoğu işletme vardiya planını bir tabloda kuruyor; ama plan ekip içinde dağıldığı anda görünmez oluyor. Vardiya, bu üç sorunu tek ekranda çözüyor."
-            />
-            <Link
-              href="#ozellikler"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
+      {/* ----------------------------------------------------------- ÜRÜN */}
+      <section id="urun" className="v-kap scroll-mt-20 py-20 sm:py-28">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <BolumBasligi
+            etiket="01 — Ürün"
+            baslik="Plan, mesaj ve rapor. Aynı yerde."
+            aciklama="Vardiya planlamak için gereken altı şey; fazlası değil. Her ekran aynı işi yapar: haftayı doldurmanı ve ekibin aynı planı görmesini sağlar."
+          />
+          <Link
+            href="/demo"
+            className="v-link shrink-0 self-start lg:self-end"
+          >
+            Demoyu kayıt olmadan aç <span aria-hidden>→</span>
+          </Link>
+        </div>
+
+        <div className="mt-12 grid border-t border-[#1c1c20] sm:grid-cols-2">
+          {ozellikler.map((o, i) => (
+            <div
+              key={o.baslik}
+              className={`border-b border-[#1c1c20] py-7 ${
+                i % 2 === 0 ? "sm:pr-10" : "sm:border-l sm:border-[#1c1c20] sm:pl-10"
+              }`}
             >
-              Çözümü gör <span aria-hidden>→</span>
-            </Link>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            {sorunlar.map((s, i) => (
-              <div key={s.baslik} className="kart p-5">
-                <span className="text-[11px] font-bold tracking-[0.18em] text-amber-700">
+              <div className="flex items-baseline gap-4">
+                <span className="font-mono text-[10px] tracking-[0.18em] text-[#7d7d86]">
                   0{i + 1}
                 </span>
-                <h3 className="mt-3 text-[15px] font-bold text-zinc-900">{s.baslik}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-600">{s.metin}</p>
+                <h3 className="text-[15px] font-semibold tracking-tight text-[#ededf0]">
+                  {o.baslik}
+                </h3>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Özellikler */}
-      <section id="ozellikler" className="bolum-gri scroll-mt-20">
-        <div className="kap py-16 sm:py-24" data-reveal>
-          <BolumBasligi
-            etiket="Özellikler"
-            baslik="İhtiyacın olan her şey, fazlası değil."
-            aciklama="Vardiya planlamak için gereken altı şey; tek ekranda, birbirine bağlı ve sade."
-            ortala
-          />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ozellikler.map((o) => (
-              <div
-                key={o.baslik}
-                className="kart group p-6 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_16px_40px_-24px_rgba(20,24,27,0.35)]"
-              >
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-700">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    className="h-5 w-5"
-                    aria-hidden
-                  >
-                    <path d={o.yol} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <h3 className="mt-4 text-[15px] font-bold text-zinc-900">{o.baslik}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-600">{o.metin}</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-6 text-[12px] leading-relaxed text-zinc-500">
-            &quot;Mevzuata uygun&quot; demiyoruz; çünkü bu bir hukuki uygunluk
-            iddiası olur. Neyi kontrol ettiğimizi, neyi etmediğimizi ve sorumluluk
-            notunu{" "}
-            <a href="#mevzuat" className="font-semibold text-amber-700 underline underline-offset-2">
-              Mevzuat kapsamı
-            </a>{" "}
-            bölümünde açıkça yazdık.
-          </p>
-        </div>
-      </section>
-
-      {/* Mevzuat kapsamı */}
-      <section id="mevzuat" className="bolum-gri scroll-mt-20">
-        <div className="kap py-16 sm:py-24" data-reveal>
-          <BolumBasligi
-            etiket="Mevzuat kapsamı"
-            baslik="Neyi kontrol ediyoruz, neyi etmiyoruz?"
-            aciklama="Plan yaparken bazı süre kurallarını işaretliyoruz. Bu, bağımsız bir hukuk veya mali müşavir denetimi değildir; 'mevzuata uygun' sertifikası da değildir."
-          />
-          <div className="mt-8 grid gap-4 lg:grid-cols-2">
-            <div className="kart p-6">
-              <h3 className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">
-                  ✓
-                </span>
-                Kontrol edilir
-              </h3>
-              <ul className="mt-4 space-y-3 text-[13px] leading-relaxed text-zinc-600">
-                <li>
-                  <strong className="text-zinc-900">Haftalık 45 saat</strong> — İş
-                  Kanunu 4857 m.63. Aşım, fazla mesai uyarısı olarak gösterilir.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Günlük 11 saat</strong> — 4857
-                  m.63. Bir günde toplam çalışma 11 saati aşarsa hata olarak işaretlenir.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Günlük 11 saat dinlenme</strong>{" "}
-                  — 4857 m.69. İki vardiya arasındaki süre hesaplanır.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Aynı gün çift vardiya</strong> —
-                  çakışan atamalar hata olarak işaretlenir.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Gece çalışması 7,5 saat</strong>{" "}
-                  — 4857 m.69. 20:00–06:00 arasına denk gelen süre kontrol edilir.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Resmî tatil günleri</strong> —
-                  2429 sayılı Kanun. <strong>2026–2027</strong> tam gün tatilleri
-                  tanımlı; arife/yarım günler kapsam dışı.
-                </li>
-              </ul>
-            </div>
-
-            <div className="kart p-6">
-              <h3 className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-800">
-                  ✗
-                </span>
-                Kapsam dışı
-              </h3>
-              <ul className="mt-4 space-y-3 text-[13px] leading-relaxed text-zinc-600">
-                <li>
-                  <strong className="text-zinc-900">
-                    Haftalık 24 saat kesintisiz hafta tatili
-                  </strong>{" "}
-                  — ayrıca kontrol edilmez; plana işaretlenmez.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">
-                    Fazla mesai ücreti, puantaj ve bordro
-                  </strong>{" "}
-                  — ürün para hesabı yapmaz, muhasebe/bordro aktarımı yoktur.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">
-                    Yıllık izin kullanımı ve bakiye
-                  </strong>{" "}
-                  — yalnızca hak günü görünür; izin düşümü otomatik yapılmaz.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">
-                    İş sözleşmesi, toplu iş sözleşmesi, sektörel istisnalar
-                  </strong>{" "}
-                  — işletmeye özel kurallar araca girilmez.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Hukuki görüş</strong> — bağımsız
-                  hukukçu veya mali müşavir denetimi yoktur.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-900">
-            <strong>Sorumluluk notu:</strong> Vardiya bir planlama ve hatırlatma
-            aracıdır. Uyarılar bilgilendirme amaçlıdır, hukuki danışmanlık
-            değildir. Mevzuatın işletmene nasıl uygulanacağından ve nihai plandan
-            işveren sorumludur. Şüpheli durumlarda iş hukuku uzmanına veya mali
-            müşavire danış.
-          </div>
-        </div>
-      </section>
-
-      {/* Nasıl çalışır */}
-      <section id="nasil" className="kap scroll-mt-20 py-16 sm:py-24" data-reveal>
-        <BolumBasligi
-          etiket="Nasıl çalışır"
-          baslik="Üç adımda haftalık plan."
-          aciklama="Kurulum yok. Kayıt olduktan sonra ilk planını birkaç dakika içinde hazırlarsın."
-        />
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          {adimlar.map((a, i) => (
-            <div key={a.baslik} className="kart relative p-6">
-              <span className="text-[11px] font-bold tracking-[0.2em] text-amber-700">
-                0{i + 1}
-              </span>
-              <h3 className="mt-3 text-lg font-bold text-zinc-900">{a.baslik}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-600">{a.metin}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Ürün ekranı */}
-      <section id="urun" className="scroll-mt-20">
-        <div className="kap py-16 sm:py-24" data-reveal>
-          <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:gap-12">
-            <div>
-              <BolumBasligi
-                etiket="Ürün"
-                baslik="Ekranı gör, sonra karar ver."
-                aciklama="Aşağıdaki görüntü ürünün plan ekranından, örnek veriyle alındı. Kayıt olmadan aynı ekranı açıp hücrelere tıklayabilir, 45 saat ve dinlenme uyarılarını canlı görebilirsin."
-              />
-              <div className="mt-6 flex flex-wrap gap-2">
-                <Link href="/demo" className="btn-cta h-11 px-6">
-                  Demoyu aç <span aria-hidden>→</span>
-                </Link>
-                <Link href="/kayit" className="btn-ghost h-11 px-6">
-                  Ücretsiz başla
-                </Link>
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-                Demo, yaptığın değişiklikleri kaydetmez. Hesap açmadan tüm ekranı görebilirsin.
+              <p className="mt-2 pl-8 text-[13.5px] leading-relaxed text-[#8f8f98]">
+                {o.metin}
               </p>
             </div>
-
-            <Link
-              href="/demo"
-              className="group relative block overflow-hidden rounded-[20px] border border-zinc-200 bg-white shadow-[0_24px_70px_-30px_rgba(20,24,27,0.35)]"
-              aria-label="Ürün ekran görüntüsü — demoyu aç"
-            >
-              <Image
-                src="/urun-paneli.png"
-                alt="Vardiya panelinin haftalık plan ekranı: personel, günler, vardiyalar ve toplam saatler."
-                width={1440}
-                height={960}
-                sizes="(max-width: 1024px) 100vw, 60vw"
-                className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.01]"
-              />
-              <span className="absolute bottom-3 right-3 rounded-full bg-zinc-950/85 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur">
-                Demoyu dene ↗
-              </span>
-            </Link>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Neden Vardiya */}
-      <section className="bolum-gri">
-        <div className="kap py-16 sm:py-24" data-reveal>
+      {/* --------------------------------------------------- NASIL ÇALIŞIR */}
+      <section id="nasil" className="border-t border-[#1c1c20]">
+        <div className="v-kap scroll-mt-20 py-20 sm:py-28">
           <BolumBasligi
-            etiket="Neden Vardiya"
-            baslik="Vitrin değil, işini kolaylaştıran bir araç."
-            aciklama="Yeni özellik eklemeden önce tek bir soruyu soruyoruz: Bu, işletmenin işini gerçekten kolaylaştırıyor mu?"
+            etiket="02 — Nasıl çalışır"
+            baslik="Üç adımda haftalık plan."
+            aciklama="Kurulum yok. Hesabını açtıktan sonra ilk planını birkaç dakika içinde hazırlarsın."
           />
-          <div className="kart mt-10 grid gap-x-10 gap-y-7 p-7 sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
-            {nedenler.map((n) => (
-              <div key={n.baslik} className="flex gap-3">
-                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">
-                  ✓
+
+          <div className="mt-12 grid gap-px border-t border-[#1c1c20] sm:grid-cols-3">
+            {adimlar.map((a, i) => (
+              <div
+                key={a.baslik}
+                className="border-b border-[#1c1c20] py-8 sm:border-b-0 sm:border-l sm:border-[#1c1c20] sm:px-8 sm:first:border-l-0 sm:first:pl-0"
+              >
+                <span className="font-mono text-[10px] tracking-[0.18em] text-[#7d7d86]">
+                  0{i + 1}
                 </span>
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-900">{n.baslik}</h3>
-                  <p className="mt-1 text-[13px] leading-relaxed text-zinc-600">{n.metin}</p>
-                </div>
+                <h3 className="mt-3 text-base font-semibold tracking-tight text-[#ededf0]">
+                  {a.baslik}
+                </h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-[#8f8f98]">
+                  {a.metin}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Karşılaştırma */}
-      <section id="karsilastirma" className="kap scroll-mt-20 py-16 sm:py-24" data-reveal>
-        <BolumBasligi
-          etiket="Neden Vardiya?"
-          baslik="Excel, kâğıt ve mesaj karmaşasıyla yan yana."
-          aciklama="Aynı işi yapan üç yöntem. Satırlar gerçek günlük işleyişten; sütunlar abartısız."
-        />
-        <div className="mt-8 overflow-x-auto rounded-[20px] border border-zinc-200 bg-white">
-          <table className="w-full min-w-[760px] border-collapse text-sm">
-            <caption className="sr-only">
-              Excel, kâğıt ve Vardiya&apos;nın günlük vardiya yönetimindeki farkları
-            </caption>
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-left">
-                <th scope="col" className="px-4 py-3 text-xs font-semibold text-zinc-500">
-                  İhtiyaç
-                </th>
-                <th scope="col" className="px-4 py-3 text-xs font-semibold text-zinc-500">
-                  Excel
-                </th>
-                <th scope="col" className="px-4 py-3 text-xs font-semibold text-zinc-500">
-                  Kâğıt
-                </th>
-                <th scope="col" className="px-4 py-3 text-xs font-bold text-amber-800">
-                  Vardiya
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {karsilastirma.map((k) => (
-                <tr key={k.ozellik} className="border-b border-zinc-100 last:border-0">
-                  <th scope="row" className="px-4 py-3 text-left text-[13px] font-semibold text-zinc-800">
-                    {k.ozellik}
-                  </th>
-                  <td className="px-4 py-3 text-[13px] text-zinc-500">{k.excel}</td>
-                  <td className="px-4 py-3 text-[13px] text-zinc-500">{k.kagit}</td>
-                  <td className="bg-amber-50 px-4 py-3 text-[13px] font-medium text-zinc-900">
-                    <span className="mr-1.5 text-emerald-600" aria-hidden>
-                      ✓
-                    </span>
-                    {k.vardiya}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-xs text-zinc-500">
-          Karşılaştırma genel bir çerçevedir; Excel ve kâğıt da doğru kurulduğunda
-          iş görür. Fark, planın ekip içinde güncel kalması ve süre kontrolünün
-          otomatik olmasıdır.
-        </p>
-      </section>
-
-      {/* Kimler için */}
-      <section className="kap py-16 sm:py-24" data-reveal>
-        <BolumBasligi
-          etiket="Kimler için"
-          baslik="Kafe, restoran ve pastaneler için tasarlandı."
-          aciklama="Personel sayısı 5 ile 30 arasında olan işletmeler için ideal. Şu an tek işletme ve tek yönetici hesabı var; çok şubeli ekipler her şubeyi ayrı hesapla kullanabilir."
-          ortala
-        />
-        <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {sektorler.map((s) => (
-            <div
-              key={s.ad}
-              className="kart p-4 text-center transition-colors hover:border-amber-300"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mx-auto h-6 w-6 text-amber-700"
-                aria-hidden="true"
-              >
-                {s.yollar.map((d) => (
-                  <path key={d} d={d} />
-                ))}
-              </svg>
-              <div className="mt-2 text-sm font-bold text-zinc-900">{s.ad}</div>
-              <div className="mt-0.5 text-[11px] text-zinc-500">{s.alt}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Yol haritası / şeffaflık */}
-      <section id="yol-haritasi" className="bolum-gri scroll-mt-20">
-        <div className="kap py-16 sm:py-24" data-reveal>
+      {/* --------------------------------------------------------- SINIRLAR */}
+      <section id="sinirlar" className="border-t border-[#1c1c20]">
+        <div className="v-kap scroll-mt-20 py-20 sm:py-28">
           <BolumBasligi
-            etiket="Yol haritası"
-            baslik="Bugün ne var, ne yok?"
-            aciklama="Satın almadan önce eksikleri bilmen daha iyi. Vardiya'nın bugünkü sınırlarını açıkça yazıyoruz; sıradaki işleri de tahminle değil, bu listeyle takip ediyoruz."
+            etiket="03 — Sınırlar"
+            baslik="Neyi kontrol ediyoruz, neyi etmiyoruz?"
+            aciklama="Uyarılar bilgilendirme amaçlıdır; hukuki danışmanlık değildir. Kapsamı abartmıyoruz, olmayan özelliği varmış gibi göstermiyoruz."
           />
-          <div className="mt-8 grid gap-4 lg:grid-cols-2">
-            <div className="kart p-6">
-              <h3 className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">
-                  ✓
-                </span>
-                Bugün kullanabilirsin
+
+          <div className="mt-12 grid gap-10 border-t border-[#1c1c20] pt-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#ededf0]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#7fae8b]" aria-hidden />
+                Kontrol edilir
               </h3>
-              <ul className="mt-4 space-y-2.5 text-[13px] leading-relaxed text-zinc-600">
-                {[
-                  "Sınırsız personel ve haftalık plan",
-                  "Excel'den kopyala-yapıştır veya CSV içe aktarma",
-                  "45 saat, günlük 11 saat, 11 saat dinlenme, gece ve resmî tatil uyarıları",
-                  "Personele özel, girişsiz program linki",
-                  "WhatsApp'a hazır mesaj ve yazdırılabilir çizelge",
-                  "Aylık rapor, CSV indirme, veri indirme ve hesap silme",
-                ].map((m) => (
-                  <li key={m} className="flex gap-2">
-                    <span className="mt-0.5 text-emerald-600" aria-hidden>
-                      ✓
-                    </span>
-                    <span>{m}</span>
+              <ul className="mt-4 space-y-2.5">
+                {kontrolEdilen.map((m) => (
+                  <li
+                    key={m}
+                    className="flex gap-3 text-[13px] leading-relaxed text-[#9a9aa2]"
+                  >
+                    <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-[#3a3a40]" />
+                    {m}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="kart p-6">
-              <h3 className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-800">
-                  →
-                </span>
-                Sırada
+            <div>
+              <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#ededf0]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#8a6a4a]" aria-hidden />
+                Kapsam dışı
               </h3>
-              <ul className="mt-4 space-y-3 text-[13px] leading-relaxed text-zinc-600">
-                <li>
-                  <strong className="text-zinc-900">Çok şube yönetimi:</strong> tek
-                  panelden şube açma, şube bazlı personel ve rapor. Şimdilik her
-                  şube kendi hesabıyla kullanılabilir.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Müdür ve çalışan yetkileri:</strong>{" "}
-                  müdürün yalnız kendi şubesini görmesi, çalışanın salt-okunur erişimi.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Vardiya değişim talebi:</strong>{" "}
-                  personelin uygulama içinden talep göndermesi ve onay akışı.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">İzin / mazeret girişi:</strong>{" "}
-                  talep, bakiye ve planın otomatik güncellenmesi.
-                </li>
-                <li>
-                  <strong className="text-zinc-900">Otomatik bildirim:</strong> plan
-                  değişince personele WhatsApp/e-posta bildirimi.
-                </li>
+              <ul className="mt-4 space-y-2.5">
+                {kapsamDisi.map((m) => (
+                  <li
+                    key={m}
+                    className="flex gap-3 text-[13px] leading-relaxed text-[#9a9aa2]"
+                  >
+                    <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-[#3a3a40]" />
+                    {m}
+                  </li>
+                ))}
               </ul>
-              <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-[12px] leading-relaxed text-zinc-500">
-                Bunlar hazır olduğunda duyurulacak. Bugün olmayan bir özelliği
-                varmış gibi göstermiyoruz.
+            </div>
+
+            <div>
+              <h3 className="flex items-center gap-2 text-[13px] font-semibold text-[#ededf0]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#5c5c64]" aria-hidden />
+                Henüz yok
+              </h3>
+              <ul className="mt-4 space-y-2.5">
+                {henuzYok.map((m) => (
+                  <li
+                    key={m}
+                    className="flex gap-3 text-[13px] leading-relaxed text-[#9a9aa2]"
+                  >
+                    <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-[#3a3a40]" />
+                    {m}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 border-t border-[#1c1c20] pt-6">
+            <p className="max-w-[76ch] text-[12px] leading-relaxed text-[#85858e]">
+              <strong className="font-medium text-[#9a9aa2]">Sorumluluk notu:</strong>{" "}
+              Vardiya bir planlama ve hatırlatma aracıdır. Mevzuatın işletmene nasıl
+              uygulanacağından ve nihai plandan işveren sorumludur. Şüpheli durumlarda
+              iş hukuku uzmanına veya mali müşavire danış.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- GİZLİLİK */}
+      <section className="border-t border-[#1c1c20]">
+        <div className="v-kap py-14">
+          <div className="grid gap-8 lg:grid-cols-[200px_1fr] lg:gap-12">
+            <p className="v-etiket">Gizlilik</p>
+            <div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { b: "Hesaba kilitli", m: "Başka bir hesap senin verini göremez." },
+                  { b: "Ücret istenmez", m: "Maaş ve maliyet bilgisi toplanmaz." },
+                  { b: "Yurt içinde", m: "Veriler Türkiye'deki sunucuda tutulur." },
+                  { b: "Reklamsız", m: "Üçüncü taraf takip betiği yok." },
+                ].map((k) => (
+                  <div key={k.b}>
+                    <p className="text-[13px] font-semibold text-[#ededf0]">{k.b}</p>
+                    <p className="mt-1 text-[12.5px] leading-relaxed text-[#8f8f98]">
+                      {k.m}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-7 flex flex-wrap gap-x-8 gap-y-2">
+                <Link href="/gizlilik" className="v-link">
+                  Gizlilik ve KVKK aydınlatması <span aria-hidden>→</span>
+                </Link>
+                <Link href="/personel-aydinlatma" className="v-link">
+                  Personel aydınlatma örneği <span aria-hidden>→</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------ FİYAT */}
+      <section id="fiyat" className="border-t border-[#1c1c20]">
+        <div className="v-kap scroll-mt-20 py-20 sm:py-28">
+          <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
+            <div>
+              <p className="v-etiket">04 — Fiyat</p>
+              <p className="v-h1 mt-6 !text-[clamp(4rem,9vw,7rem)]">₺0</p>
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#85858e]">
+                aylık · sınırsız personel
+              </p>
+            </div>
+
+            <div className="max-w-[46ch]">
+              <h2 className="v-h2">Tek plan. Tamamen ücretsiz.</h2>
+              <p className="v-p mt-4">
+                Sınırsız personel, sınırsız vardiya şablonu ve bugünkü tüm
+                özellikler ücretsiz. Kredi kartı, abonelik veya deneme süresi yok.
+              </p>
+
+              <ul className="mt-6 space-y-2 text-[13px] text-[#9a9aa2]">
+                {[
+                  "Sınırsız personel ve haftalık plan",
+                  "Excel / CSV içe aktarma",
+                  "WhatsApp'a hazır mesaj ve personele özel link",
+                  "Aylık rapor, CSV indirme, veri indirme ve hesap silme",
+                ].map((m) => (
+                  <li key={m} className="flex gap-3">
+                    <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-[#3a3a40]" />
+                    {m}
+                  </li>
+                ))}
+              </ul>
+
+              <Link href={kullanici ? "/panel" : "/kayit"} className="v-btn mt-8">
+                {kullanici ? "Panele git" : "Ücretsiz başla"} <span aria-hidden>→</span>
+              </Link>
+
+              <p className="mt-6 border-t border-[#1c1c20] pt-5 text-[12px] leading-relaxed text-[#85858e]">
+                <strong className="font-medium text-[#9a9aa2]">Fiyat taahhüdü:</strong>{" "}
+                Hizmet ücretli olmadan 1 ay önce bilgilendirme yapılır. Asla kart
+                bilgilerin istenmez; bu süreçte dilediğin gibi ücretsiz kullanırsın.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Günlük işleyiş */}
-      <section id="gunluk" className="kap scroll-mt-20 py-16 sm:py-24" data-reveal>
-        <BolumBasligi
-          etiket="Günlük işleyiş"
-          baslik="Vardiya değişimi, izin, onay ve puantaj."
-          aciklama="Bunlar gerçek hayatta en çok sorulan şeyler. Bugün ne yapabildiğini ve neyi uygulama dışında çözmen gerektiğini açıkça yazıyoruz."
-        />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <div className="kart p-5">
-            <h3 className="text-[15px] font-bold text-zinc-900">Vardiya değişimi</h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              <strong>Bugün:</strong> Personel talebi WhatsApp&apos;tan iletir; sen
-              panelde iki hücreyi değiştirip güncel mesajı gönderirsin.
-              <br />
-              <strong>Yok:</strong> Uygulama içi takas isteği ve onay akışı.
-            </p>
-          </div>
-          <div className="kart p-5">
-            <h3 className="text-[15px] font-bold text-zinc-900">
-              İzin ve mazeret
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              <strong>Bugün:</strong> İzin gününü planda boş bırakırsın; yıllık izin
-              hakkı personel detayında görünür.
-              <br />
-              <strong>Yok:</strong> İzin talebi, bakiye düşümü ve otomatik onay.
-            </p>
-          </div>
-          <div className="kart p-5">
-            <h3 className="text-[15px] font-bold text-zinc-900">
-              Gördü / onayladı mı?
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              <strong>Bugün:</strong> Personel linki salt-okunur; programı her zaman
-              son hâliyle görür.
-              <br />
-              <strong>Yok:</strong> Okundu bilgisi, &quot;onayladım&quot; düğmesi ve
-              okunmayanlara hatırlatma.
-            </p>
-          </div>
-          <div className="kart p-5">
-            <h3 className="text-[15px] font-bold text-zinc-900">
-              Fazla mesai ve puantaj
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              <strong>Bugün:</strong> Haftalık saatleri ve 45 saat üstünü hesaplar;
-              aylık raporu CSV olarak indirirsin.
-              <br />
-              <strong>Yok:</strong> Ücret, bordro, muhasebe aktarımı ve resmî
-              puantaj.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Gizlilik */}
-      <section className="bolum-gri">
-        <div className="kap grid gap-8 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16" data-reveal>
-          <div>
-            <BolumBasligi
-              etiket="Gizlilik"
-              baslik="Verin senin. Reklam yok, takip yok."
-              aciklama="Ücret bilgisi istenmez; üçüncü taraf analitik betiği kullanılmaz. Her işletmenin verisi kendi hesabına kilitlidir. Personel verilerinde veri sorumlusu işletme, Vardiya veri işleyendir."
-            />
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/gizlilik"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
-              >
-                Gizlilik ve KVKK aydınlatması <span aria-hidden>→</span>
-              </Link>
-              <Link
-                href="/personel-aydinlatma"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
-              >
-                Personel aydınlatma metni örneği <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { b: "Hesaba kilitli", m: "Başka bir hesap senin verini göremez." },
-              { b: "Ücret istenmez", m: "Maaş ve maliyet bilgisi toplanmaz." },
-              { b: "Yurt içinde", m: "Veriler Türkiye'deki sunucuda tutulur." },
-              { b: "Roller net", m: "Sorumlu işletme, işleyen Vardiya." },
-            ].map((k) => (
-              <div key={k.b} className="kart p-4">
-                <div className="text-sm font-bold text-zinc-900">{k.b}</div>
-                <div className="mt-1 text-[12px] leading-relaxed text-zinc-600">{k.m}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Kurucu */}
-      <section className="kap pt-14" data-reveal>
-        <div className="kart flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-7">
-          <span
-            className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-700 text-lg font-bold tracking-tight text-white"
-            aria-hidden="true"
-          >
-            HM
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">
-              Kurucu
-            </p>
-            <h2 className="mt-0.5 text-lg font-bold tracking-tight text-zinc-900">
-              Hasan Mum{" "}
-              <span className="font-medium text-zinc-500">
-                · Kurucu &amp; Geliştirici
-              </span>
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-600">
-              Vardiya&apos;yı, kafe ve restoranlarda haftalık planın Excel&apos;de
-              kurulup WhatsApp&apos;ta kaybolduğunu gördüğü için geliştirdi.
-              Amacı tek: planı tek ekranda tutmak ve ekibin her zaman güncel
-              sürümü görmesini sağlamak.
-            </p>
-          </div>
-          <Link href="/hakkimizda" className="btn-ghost h-10 shrink-0 px-5 text-[13px]">
-            Hakkımızda <span aria-hidden>→</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* Şeffaflık + destek */}
-      <section id="seffaflik" className="bolum-gri scroll-mt-20">
-        <div className="kap py-16 sm:py-24" data-reveal>
+      {/* -------------------------------------------------------------- SSS */}
+      <section id="sss" className="border-t border-[#1c1c20]">
+        <div className="v-kap grid scroll-mt-20 gap-10 py-20 sm:py-28 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
           <BolumBasligi
-            etiket="Erken erişim"
-            baslik="Uydurma yorum yok. Olduğu gibi."
-            aciklama="Vardiya 18 Ekim 2026'da yayına girdi. Henüz yayınlanmış müşteri yorumu, işletme logosu veya 'binlerce kullanıcı' iddiası yok. İlk pilotların izinli geri bildirimlerini burada yayınlayacağız."
-            ortala
+            etiket="05 — SSS"
+            baslik="Sık sorulan sorular"
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="kart p-6">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-emerald-700"
-                aria-hidden="true"
-              >
-                <path d="M12 21V10" />
-                <path d="M12 10C12 6 9 4 4 4c0 5 3 7 8 6Z" />
-                <path d="M12 13c0-4 3-6 8-6 0 5-3 7-8 6Z" />
-              </svg>
-              <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Erken erişim
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                Ürün yeni ve tek kişi tarafından geliştiriliyor. Yorum yerine ne
-                olduğunu ve ne olmadığını yazıyoruz. Pilot kullanıcı olmak istersen
-                doğrudan yazabilirsin.
-              </p>
-            </div>
-            <div className="kart border-amber-300 bg-amber-50 p-6">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-amber-700"
-                aria-hidden="true"
-              >
-                <path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3Z" />
-                <path d="M9 12l2 2 4-4" />
-              </svg>
-              <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Fiyat taahhüdü
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-zinc-700">
-                Bugünkü <strong>temel özellikler kalıcı ücretsiz</strong>. İleride
-                şube veya otomasyon gibi ileri özellikler Pro olabilir; temel plan
-                ücretsiz kalır. Ücretli bir özellik gelirse <strong>30 gün önce</strong>{" "}
-                haber verilir, kart bilgisi istenmez.
-              </p>
-            </div>
-            <div className="kart p-6">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.7}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-zinc-700"
-                aria-hidden="true"
-              >
-                <path d="M3 6h18v12H3z" />
-                <path d="M3 7l9 6 9-6" />
-              </svg>
-              <h3 className="mt-3 text-[15px] font-bold text-zinc-900">
-                Doğrudan kurucuya yaz
-              </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-                Sorunu, önerini veya eksik gördüğün şeyi doğrudan yaz. Destek
-                Türkçe ve genellikle aynı iş günü içinde.
-              </p>
-              <div className="mt-3 flex flex-col gap-1">
-                <a
-                  href="mailto:destek@zihnora.com.tr"
-                  className="break-all text-[13px] font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
-                >
-                  destek@zihnora.com.tr
-                </a>
-                <a
-                  href="mailto:hmum117413@gmail.com"
-                  className="break-all text-[13px] font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
-                >
-                  hmum117413@gmail.com
-                </a>
-              </div>
-            </div>
-          </div>
 
-          <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center justify-between gap-4 rounded-[20px] border border-amber-200 bg-amber-50 px-5 py-4 sm:flex-row">
-            <div>
-              <p className="text-sm font-bold text-amber-900">
-                Kurulumda takıldın mı? Birlikte bakalım.
-              </p>
-              <p className="mt-0.5 text-[12px] text-amber-900/80">
-                15 dakikalık kısa bir görüşme ayarlayabiliriz; robot değil, kurucu
-                yanıtlıyor.
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <a
-                href="mailto:destek@zihnora.com.tr?subject=Vardiya%20-%2015%20dk%20g%C3%B6r%C3%BC%C5%9Fme"
-                className="btn-cta h-10 px-4 text-[13px]"
-              >
-                Görüşme iste
-              </a>
-              <Link href="/iletisim" className="btn-ghost h-10 px-4 text-[13px]">
-                İletişim formu
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Fiyatlandırma */}
-      <section className="kap py-16 sm:py-24" data-reveal>
-        <BolumBasligi
-          etiket="Fiyatlandırma"
-          baslik="Tek plan: tamamen ücretsiz."
-          aciklama="Bugünkü temel özellikler kalıcı ücretsiz. İleride şube/otomasyon gibi ileri özellikler Pro olabilir; temel plan ücretsiz kalır."
-          ortala
-        />
-        <div className="mx-auto mt-10 max-w-2xl rounded-[24px] border-2 border-amber-500 bg-white p-7 shadow-[0_24px_60px_-30px_rgba(245,158,11,0.45)]">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">
-                Vardiya
-              </div>
-              <div className="mt-1 text-4xl font-extrabold tracking-tight text-zinc-900">
-                ₺0
-                <span className="text-base font-medium text-zinc-500"> / ay</span>
-              </div>
-            </div>
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-800">
-              Sınırsız
-            </span>
-          </div>
-
-          <ul className="mt-5 grid gap-2 text-sm text-zinc-700 sm:grid-cols-2">
-            {[
-              "Sınırsız personel",
-              "Sınırsız vardiya şablonu",
-              "WhatsApp'a hazır mesaj",
-              "Personele özel link",
-              "Aylık rapor & CSV",
-              "Veri indirme & hesap silme",
-              "Telefona ekle (PWA)",
-            ].map((m) => (
-              <li key={m} className="flex items-center gap-2">
-                <span className="text-emerald-600">✓</span> {m}
-              </li>
-            ))}
-          </ul>
-
-          <Link href="/kayit" className="btn-cta mt-6 h-12 w-full">
-            Ücretsiz başla <span aria-hidden>→</span>
-          </Link>
-          <p className="mt-3 text-center text-xs text-zinc-500">
-            Kredi kartı yok · abonelik yok · deneme süresi yok
-          </p>
-          <p className="mt-2 text-center text-[11px] leading-relaxed text-zinc-500">
-            <strong>Fiyat taahhüdü:</strong> Bugünkü temel özellikler kalıcı
-            ücretsiz. İleride şube/otomasyon gibi ileri özellikler Pro olabilir;
-            temel plan ücretsiz kalır. Ücretli bir özellik gelirse 30 gün önce
-            haber verilir, kart bilgisi istenmez.
-          </p>
-        </div>
-      </section>
-
-      {/* SSS */}
-      <section id="sss" className="bolum-gri scroll-mt-20">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:py-24" data-reveal>
-          <BolumBasligi etiket="SSS" baslik="Sık sorulan sorular" ortala />
-          <div className="mt-8 space-y-3">
+          <div className="border-t border-[#1c1c20]">
             {sss.map((s) => (
-              <details
-                key={s.soru}
-                className="kart group px-5 py-4"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-bold text-zinc-900 [&::-webkit-details-marker]:hidden">
+              <details key={s.soru} className="group border-b border-[#1c1c20]">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-[14px] font-medium text-[#e4e4e8] [&::-webkit-details-marker]:hidden">
                   {s.soru}
                   <span
-                    className="text-lg font-medium text-amber-700 transition-transform group-open:rotate-45"
+                    className="mt-0.5 shrink-0 font-mono text-base leading-none text-[#7d7d86] transition-transform duration-200 group-open:rotate-45"
                     aria-hidden
                   >
                     +
                   </span>
                 </summary>
-                <p className="mt-3 text-[13px] leading-relaxed text-zinc-600">{s.cevap}</p>
+                <p className="pb-5 pr-10 text-[13px] leading-relaxed text-[#8f8f98]">
+                  {s.cevap}
+                </p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Son çağrı */}
-      <section className="kap py-16 sm:py-24" data-reveal>
-        <div className="relative overflow-hidden rounded-[28px] bg-zinc-950 px-6 py-10 sm:px-10 sm:py-14">
-          <div
-            className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-amber-500/30 blur-3xl"
-            aria-hidden="true"
-          />
-          <div className="relative flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-            <div>
-              <h2 className="max-w-xl text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
-                Bu haftanın planı 5 dakika sonra hazır.
-              </h2>
-              <p className="mt-2 text-sm text-zinc-300">
-                Kredi kartı, abonelik veya kurulum yok. Sadece e-posta ve şifre.
-                Önce <Link href="/demo" className="underline underline-offset-2">demoya</Link> bakabilirsin.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {kullanici ? (
-                <Link href="/panel" className="btn-cta h-12 px-6">
-                  Panele git <span aria-hidden>→</span>
+      {/* -------------------------------------------------------------- CTA */}
+      <section className="border-t border-[#1c1c20]">
+        <div className="v-kap py-24 text-center sm:py-32">
+          <Marka nokta={false} boyut={26} className="justify-center text-[#3f3f46]" />
+          <h2 className="v-h1 mx-auto mt-8 max-w-[18ch] !text-[clamp(2.2rem,5vw,3.8rem)]">
+            Hazırsanız başlayalım.
+          </h2>
+          <p className="v-p mx-auto mt-5 max-w-[46ch]">
+            Kurulum yok. E-posta ve şifreyle hesabını aç; ilk planını birkaç
+            dakikada hazırla.
+          </p>
+
+          <div className="mt-9 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
+            {kullanici ? (
+              <Link href="/panel" className="v-btn">
+                Panele git <span aria-hidden>→</span>
+              </Link>
+            ) : (
+              <>
+                <Link href="/kayit" className="v-btn">
+                  Ücretsiz başla <span aria-hidden>→</span>
                 </Link>
-              ) : (
-                <>
-                  <Link href="/kayit" className="btn-cta h-12 px-6">
-                    Ücretsiz başla <span aria-hidden>→</span>
-                  </Link>
-                  <Link
-                    href="/giris"
-                    className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-                  >
-                    Giriş
-                  </Link>
-                </>
-              )}
-            </div>
+                <Link href="/giris" className="v-btn v-btn-ghost">
+                  Giriş yap
+                </Link>
+              </>
+            )}
           </div>
+
+          <p className="mt-10 text-[12px] text-[#85858e]">
+            Kurulumda takılırsan{" "}
+            <a
+              href="mailto:destek@zihnora.com.tr"
+              className="text-[#9a9aa2] underline underline-offset-4 hover:text-[#ededf0]"
+            >
+              destek@zihnora.com.tr
+            </a>{" "}
+            ·{" "}
+            <a
+              href="mailto:hmum117413@gmail.com"
+              className="text-[#9a9aa2] underline underline-offset-4 hover:text-[#ededf0]"
+            >
+              hmum117413@gmail.com
+            </a>
+          </p>
+          <p className="mt-3 text-[11.5px] text-[#7d7d86]">
+            Vardiya 18 Ekim 2026&apos;da yayına girdi. Uydurma yorum veya logo
+            yayınlamıyoruz; ilk pilotların izinli geri bildirimleri burada yer
+            alacak.{" "}
+            <Link href="/hakkimizda" className="underline underline-offset-4">
+              Hakkımızda
+            </Link>
+          </p>
         </div>
       </section>
     </main>

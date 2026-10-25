@@ -156,3 +156,19 @@ export function resetData(mode: "demo" | "empty") {
     body: JSON.stringify({ mode }),
   });
 }
+
+/** Haftayı yayınla — personel bağlantısı ve .ics bu haftayı görür. */
+export function publishWeek(weekStart: string) {
+  return jsonRequest<{ ok: boolean; weekStart: string; publishedAt: string }>(
+    "/api/plan/yayin",
+    { method: "POST", body: JSON.stringify({ weekStart }) }
+  );
+}
+
+/** Yayını geri al — hafta yeniden taslak olur, ekibe görünmez. */
+export function unpublishWeek(weekStart: string) {
+  return jsonRequest<{ ok: boolean; weekStart: string }>("/api/plan/yayin", {
+    method: "DELETE",
+    body: JSON.stringify({ weekStart }),
+  });
+}

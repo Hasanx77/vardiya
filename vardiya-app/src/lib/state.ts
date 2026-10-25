@@ -13,7 +13,7 @@ import type { ColorKey, StatePayload } from "./types";
 export async function getStatePayload(): Promise<StatePayload> {
   const business = await ensureBusiness();
 
-  const [employees, shiftTemplates, assignments, announcements, dayNotes] =
+  const [employees, shiftTemplates, assignments, announcements, dayNotes, weekPlans] =
     await Promise.all([
       prisma.employee.findMany({
         where: { businessId: business.id, active: true },
@@ -27,6 +27,10 @@ export async function getStatePayload(): Promise<StatePayload> {
         take: 20,
       }),
       prisma.dayNote.findMany({ where: { businessId: business.id } }),
+      prisma.weekPlan.findMany({
+        where: { businessId: business.id },
+        orderBy: { weekStart: "asc" },
+      }),
     ]);
 
   return {
@@ -65,5 +69,6 @@ export async function getStatePayload(): Promise<StatePayload> {
       createdAt: a.createdAt.toISOString(),
     })),
     dayNotes: dayNotes.map((d) => ({ date: d.date, note: d.note })),
+    publishedWeeks: weekPlans.map((w) => w.weekStart),
   };
 }

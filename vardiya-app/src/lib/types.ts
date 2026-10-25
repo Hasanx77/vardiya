@@ -76,6 +76,12 @@ export type StatePayload = {
   assignments: AssignmentRow[];
   announcements: Announcement[];
   dayNotes: DayNote[];
+  /**
+   * Yayınlanmış haftaların pazartesi günleri ("YYYY-MM-DD").
+   * Burada olmayan haftalar **taslaktır**: personel linki ve `.ics`
+   * takvimi yalnızca bu listedeki haftaları gösterir.
+   */
+  publishedWeeks: string[];
 };
 
 /** Atama anahtarı üretir */

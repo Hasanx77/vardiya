@@ -1,0 +1,11 @@
+Contact: mailto:destek@zihnora.com.tr
+Contact: mailto:hmum117413@gmail.com
+Expires: 2027-10-18T00:00:00.000Z
+Preferred-Languages: tr, en
+Canonical: https://zihnora.com.tr/.well-known/security.txt
+Policy: https://zihnora.com.tr/gizlilik
+
+# Bir güvenlik açığı bulduysan lütfen yukarıdaki adreslere yaz.
+# Siteyi test ederken: kişisel verilere erişme, hizmeti yavaşlatma (DDoS),
+# otomatik tarama ile sunucuyu yorma. İyi niyetli bildirimler memnuniyetle
+# karşılanır; konu satırına "guvenlik" yazman yeterli.
