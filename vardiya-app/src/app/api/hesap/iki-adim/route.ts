@@ -56,7 +56,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ hata: "Kod hatalı veya süresi geçmiş." }, { status: 400 });
   };
 
+  /**
+   * 🔐 Şifre doğrulaması: çalınmış bir oturum çerezi tek başına 2FA kurulumunu
+   * başlatamaz. Aksi halde saldırgan kendi authenticator'ını bağlar ve hesabın
+   * sahibi dışarıda kalır.
+   */
+  const sifreGerekli = async () => {
+    await girisBasarisiz(anahtarlar);
+    return NextResponse.json(
+      {
+        hata:
+          "Şifren hatalı. Güvenlik için iki adımlı doğrulamayı açmak şifre doğrulaması ister.",
+      },
+      { status: 400 },
+    );
+  };
+
   if (islem === "baslat") {
+    if (!sifre || !(await sifreDogruMu(sifre, kullanici.passwordHash))) {
+      return sifreGerekli();
+    }
     const durum = await ikiAdimDurumu(kullanici.id);
     if (durum.aktif) {
       return NextResponse.json({ hata: "İki adımlı doğrulama zaten açık." }, { status: 409 });
@@ -66,6 +85,9 @@ export async function POST(req: Request) {
   }
 
   if (islem === "etkinlestir") {
+    if (!sifre || !(await sifreDogruMu(sifre, kullanici.passwordHash))) {
+      return sifreGerekli();
+    }
     if (!/^\d{6}$/.test(kod.replace(/\s/g, ""))) {
       return NextResponse.json({ hata: "6 haneli kodu gir." }, { status: 400 });
     }
