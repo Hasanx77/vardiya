@@ -28,13 +28,13 @@ export async function POST(req: Request) {
   if (yeni !== yeniTekrar) return hata("Yeni şifreler birbiriyle uyuşmuyor.");
 
   const kullanici = await prisma.user.findUnique({ where: { id: kullaniciId } });
-  if (!kullanici || !sifreDogruMu(mevcut, kullanici.passwordHash)) {
+  if (!kullanici || !(await sifreDogruMu(mevcut, kullanici.passwordHash))) {
     return hata("Mevcut şifre hatalı.");
   }
 
   const guncellenen = await prisma.user.update({
     where: { id: kullaniciId },
-    data: { passwordHash: sifreOzetle(yeni), sessionVersion: { increment: 1 } },
+    data: { passwordHash: await sifreOzetle(yeni), sessionVersion: { increment: 1 } },
     select: { sessionVersion: true },
   });
 

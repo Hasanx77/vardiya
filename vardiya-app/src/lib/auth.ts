@@ -8,7 +8,8 @@
  * Gizlilik notu: şifre özeti ve e-posta dışında kişisel veri toplanmaz.
  * Veriler yalnızca bu sunucudaki veritabanında tutulur; üçüncü tarafa gönderilmez.
  */
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import { COOKIE_NAME, COOKIE_MAX_AGE, tokenBilgi } from "./session";
@@ -18,18 +19,31 @@ export { COOKIE_NAME, COOKIE_MAX_AGE };
 const TUZ_UZUNLUK = 16;
 const OZET_UZUNLUK = 64;
 
+/**
+ * `scrypt` callback tabanlı; promisify ile asenkron sürüme çevriliyor.
+ *
+ * Neden senkron değil: senkron scrypt her çağrıda event loop'u ~50-100 ms bloke
+ * eder. Paylaşımlı sunucuda tek CPU (`cpus: 1`) olduğundan birkaç eşzamanlı
+ * giriş isteği tüm siteyi yavaşlatıp durdurabiliyordu.
+ */
+const scryptAsync = promisify(scrypt) as (
+  sifre: string,
+  tuz: string,
+  uzunluk: number,
+) => Promise<Buffer>;
+
 /** Şifreyi `scrypt$tuz$özet` biçiminde saklar. */
-export function sifreOzetle(sifre: string): string {
+export async function sifreOzetle(sifre: string): Promise<string> {
   const tuz = randomBytes(TUZ_UZUNLUK).toString("hex");
-  const ozet = scryptSync(sifre, tuz, OZET_UZUNLUK).toString("hex");
-  return `scrypt$${tuz}$${ozet}`;
+  const ozet = await scryptAsync(sifre, tuz, OZET_UZUNLUK);
+  return `scrypt$${tuz}$${ozet.toString("hex")}`;
 }
 
 /** Girilen şifre, kayıtlı özetle uyuşuyor mu? (sabit zamanlı karşılaştırma) */
-export function sifreDogruMu(sifre: string, kayit: string): boolean {
+export async function sifreDogruMu(sifre: string, kayit: string): Promise<boolean> {
   const [algo, tuz, ozet] = (kayit || "").split("$");
   if (algo !== "scrypt" || !tuz || !ozet) return false;
-  const hesaplanan = scryptSync(sifre, tuz, OZET_UZUNLUK);
+  const hesaplanan = await scryptAsync(sifre, tuz, OZET_UZUNLUK);
   const beklenen = Buffer.from(ozet, "hex");
   if (hesaplanan.length !== beklenen.length) return false;
   return timingSafeEqual(hesaplanan, beklenen);
@@ -66,13 +80,14 @@ export async function aktifKullanici() {
   return prisma.user.findUnique({ where: { id } });
 }
 
-/** Çerez ayarlarını tek yerde tutar (giriş/kayıt uçları kullanır). */
-export function cerezAyarlari(https: boolean) {
+/** Çerez ayarlarını tek yerde tutar (giriş/kayıt uçları kullanır).
+ *  `hatirla=false` → oturum çerezi (tarayıcı kapanınca silinir). */
+export function cerezAyarlari(https: boolean, hatirla = true) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: https,
     path: "/",
-    maxAge: COOKIE_MAX_AGE,
+    ...(hatirla ? { maxAge: COOKIE_MAX_AGE } : {}),
   };
 }
