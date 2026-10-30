@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
-/* Tema: varsayılan açık; <html class="dark"> ile koyu tema */
+/* Tema: varsayılan açık; <html class="dark"> ile koyu tema.
+   TEK PALET (30 Eki 2026): tüm site — vitrin, giriş, uygulama — aynı
+   nötr "zinc" ailesinin açık/koyu tonlarını kullanır. Tek vurgu: amber.
+   Koyu tonlar vitrin/giriş kabuğuyla birebir aynıdır (#0a0a0b ailesi). */
 :root {
   color-scheme: light;
-  /* Premium "platinum" paleti — beyaz zemin, amber vurgu, açık gri bölümler */
-  --zemin: #ffffff;
+  /* Hümanist palet (30 Eki 2026): sıcak kâğıt zemin + taş (stone) nötrleri.
+     Saf beyaz yerine hafif sıcak zemin, "insan eliyle" hissi verir.
+     Tek vurgu değişmedi: amber. */
+  --zemin: #fbfaf8;
   --yuzey: #ffffff;
-  --cizgi: #d9e6ea;
-  --metin: #14181b;
-  --soluk: #5c6b73;
-  --vurgu: #f59e0b;
-  --gri: #f6f8f9;
+  --cizgi: #e7e2da; /* sıcak çizgi */
+  --metin: #1c1917; /* stone-900 */
+  --soluk: #57534e; /* stone-600 */
+  --vurgu: #f59e0b; /* amber-500 — her yerde tek vurgu */
+  --vurgu-acik: #fbbf24; /* amber-400 — hover */
+  --gri: #f4f1ec; /* sıcak bölüm bandı */
 }
 html.dark {
   color-scheme: dark;
-  --zemin: #0b0f11;
-  --yuzey: #12181b;
-  --cizgi: #223038;
-  --metin: #f4f7f8;
-  --soluk: #9fb0b8;
-  --vurgu: #fbbf24;
-  --gri: #0f1417;
+  --zemin: #0a0a0b;
+  --yuzey: #111113;
+  --cizgi: #232327;
+  --metin: #f4f4f5;
+  --soluk: #a1a1aa;
+  --vurgu: #f59e0b;
+  --vurgu-acik: #fbbf24;
+  --gri: #0f0f11;
+}
+
+/* Metin seçimi de aynı amber aileden */
+::selection {
+  background: rgba(245, 158, 11, 0.24);
 }
 
 @theme inline {
@@ -76,19 +88,19 @@ h4 {
 .bolum-gri {
   background: linear-gradient(
     180deg,
-    rgba(246, 248, 249, 0) 0%,
-    #f6f8f9 5%,
-    #f6f8f9 95%,
-    rgba(246, 248, 249, 0) 100%
+    rgba(251, 250, 248, 0) 0%,
+    var(--gri) 5%,
+    var(--gri) 95%,
+    rgba(251, 250, 248, 0) 100%
   );
 }
 html.dark .bolum-gri {
   background: linear-gradient(
     180deg,
-    rgba(11, 15, 17, 0) 0%,
-    #0f1417 5%,
-    #0f1417 95%,
-    rgba(11, 15, 17, 0) 100%
+    rgba(10, 10, 11, 0) 0%,
+    var(--gri) 5%,
+    var(--gri) 95%,
+    rgba(10, 10, 11, 0) 100%
   );
 }
 
@@ -236,42 +248,43 @@ html.dark .bolum-gri {
    KOYU TEMA KATMANI
    Uygulamada kullanılan açık-renk yardımcı sınıflarının üzerine
    yazar; böylece tek bayrakla tüm sayfalar koyulaşır.
+   Tonlar vitrin/giriş koyusuyla aynı aile (#0a0a0b → #232327).
    ============================================================ */
 html.dark body {
-  background-color: #0b0f11;
-  color: #f4f7f8;
+  background-color: var(--zemin);
+  color: var(--metin);
 }
 
 /* --- Yüzeyler --- */
 html.dark .bg-white {
-  background-color: #12181b;
+  background-color: #111113;
 }
 html.dark .bg-white\/80 {
-  background-color: rgba(18, 24, 27, 0.85);
+  background-color: rgba(17, 17, 19, 0.85);
 }
 html.dark .bg-white\/90 {
-  background-color: rgba(18, 24, 27, 0.9);
+  background-color: rgba(17, 17, 19, 0.9);
 }
 html.dark .bg-white\/95 {
-  background-color: rgba(18, 24, 27, 0.95);
+  background-color: rgba(17, 17, 19, 0.95);
 }
 html.dark .bg-zinc-50\/50 {
-  background-color: rgba(15, 20, 23, 0.5);
+  background-color: rgba(15, 15, 17, 0.5);
 }
 html.dark .bg-zinc-50\/60 {
-  background-color: rgba(15, 20, 23, 0.6);
+  background-color: rgba(15, 15, 17, 0.6);
 }
 html.dark .bg-zinc-50\/95 {
-  background-color: rgba(15, 20, 23, 0.95);
+  background-color: rgba(15, 15, 17, 0.95);
 }
 html.dark .bg-zinc-50 {
-  background-color: #0f1417;
+  background-color: #0f0f11;
 }
 html.dark .bg-zinc-100 {
-  background-color: #1c2529;
+  background-color: #1c1c20;
 }
 html.dark .bg-zinc-200 {
-  background-color: #2a383f;
+  background-color: #26262c;
 }
 
 /* --- Ana butonlar (bg-zinc-900) koyu zeminde görünür kalsın --- */
@@ -279,7 +292,7 @@ html.dark .bg-zinc-900 {
   background-color: #3f3f46; /* zinc-700 */
 }
 html.dark .bg-zinc-900\/80 {
-  background-color: rgba(212, 212, 216, 0.8);
+  background-color: rgba(63, 63, 70, 0.8);
 }
 
 /* --- Metin --- */
@@ -304,16 +317,16 @@ html.dark .text-zinc-400 {
 
 /* --- Kenarlıklar --- */
 html.dark .border-zinc-100 {
-  border-color: #27272a;
+  border-color: #232327;
 }
 html.dark .border-zinc-200 {
-  border-color: #27272a;
+  border-color: #232327;
 }
 html.dark .border-zinc-300 {
-  border-color: #3f3f46;
+  border-color: #303036;
 }
 html.dark .divide-zinc-100 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #27272a;
+  border-color: #232327;
 }
 
 /* --- Vurgu kutuları --- */
@@ -389,19 +402,19 @@ html.dark .border-amber-300 {
 
 /* --- Hover durumları --- */
 html.dark .hover\:bg-zinc-50:hover {
-  background-color: #27272a;
+  background-color: #1c1c20;
 }
 html.dark .hover\:bg-zinc-100:hover {
-  background-color: #27272a;
+  background-color: #1c1c20;
 }
 html.dark .hover\:bg-zinc-700:hover {
-  background-color: #52525b;
+  background-color: #3f3f46;
 }
 html.dark .hover\:bg-red-50:hover {
   background-color: rgba(127, 29, 29, 0.3);
 }
 html.dark .hover\:bg-zinc-900:hover {
-  background-color: #52525b;
+  background-color: #3f3f46;
 }
 
 /* --- Renkli vardiya etiketleri (çipler): koyu zemin + açık yazı --- */
@@ -509,7 +522,7 @@ html.dark .text-teal-800 {
 
 /* --- Aç/kapa (select) seçenek listesi koyu temada okunur olsun --- */
 html.dark select option {
-  background-color: #18181b;
+  background-color: #16161a;
   color: #f4f4f5;
 }
 
@@ -546,14 +559,11 @@ body {
   color: #52525b; /* zinc-600 */
 }
 
-/* 4) Klavye odağı her zaman görünür olsun */
+/* 4) Klavye odağı her zaman görünür olsun — tek aile: amber halka */
 :focus-visible {
-  outline: 2px solid #18181b;
+  outline: 2px solid var(--vurgu);
   outline-offset: 2px;
   border-radius: 6px;
-}
-html.dark :focus-visible {
-  outline-color: #fafafa;
 }
 
 /* 5) Form öğeleri okunaklı punto */
@@ -610,9 +620,10 @@ body {
 }
 
 /* ============================================================
-   TASARIM DİLİ (19 Eki 2026 — sadeleştirme)
+   TASARIM DİLİ (19 Eki 2026 — sadeleştirme; 30 Eki 2026 — tek ritim)
    Tek yerde toplanmış buton/kart/form kuralları: sayfalar
    birbirinden kopuk görünmesin, her ekran aynı dili konuşsun.
+   Yarıçap ritmi: buton 10px · form 10px · kart 16px.
    ============================================================ */
 @layer components {
   /* Sayfa iskeleti */
@@ -628,7 +639,7 @@ body {
 
   /* Yüzey */
   .kart {
-    @apply rounded-[20px] border border-zinc-200 bg-white;
+    @apply rounded-2xl border border-zinc-200 bg-white;
   }
   .kart-baslik {
     @apply flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3.5;
@@ -639,19 +650,19 @@ body {
 
   /* Butonlar */
   .btn {
-    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] px-4 text-[13px] font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-birincil {
-    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-amber-500 px-5 text-[13px] font-bold text-zinc-950 transition-colors hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-amber-500 px-5 text-[13px] font-bold text-zinc-950 transition-colors hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-ikincil {
-    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white px-5 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-zinc-300 bg-white px-5 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-sessiz {
-    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] px-4 text-[13px] font-semibold text-zinc-600 transition-colors hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-tehlike {
-    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-red-200 bg-white px-5 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-red-200 bg-white px-5 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-kucuk {
     @apply h-8 px-3 text-xs;
@@ -659,15 +670,15 @@ body {
 
   /* Tanıtım sayfası CTA'ları */
   .btn-cta {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-6 text-sm font-bold text-zinc-950 transition-colors hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] bg-amber-500 px-6 text-sm font-bold text-zinc-950 transition-colors hover:bg-amber-400 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50;
   }
 
   /* Form */
   .giris {
-    @apply w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20;
+    @apply w-full rounded-[10px] border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20;
   }
   .etiket {
     @apply block text-xs font-semibold text-zinc-600;
@@ -689,18 +700,18 @@ html.dark .kart {
   border-color: var(--cizgi);
 }
 html.dark .kart-baslik {
-  border-color: #223038;
+  border-color: #1c1c20;
 }
 html.dark .giris {
-  background-color: #12181b;
-  border-color: #2a383f;
-  color: #f4f7f8;
+  background-color: #0d0d0f;
+  border-color: #26262c;
+  color: #f4f4f5;
 }
 html.dark .btn-ikincil,
 html.dark .btn-tehlike {
-  background-color: #12181b;
-  border-color: #2a383f;
-  color: #e7e5e4;
+  background-color: #111113;
+  border-color: #26262c;
+  color: #e4e4e7;
 }
 html.dark .btn-tehlike {
   border-color: #7f1d1d;
@@ -708,27 +719,27 @@ html.dark .btn-tehlike {
 }
 html.dark .btn-birincil,
 html.dark .btn-cta {
-  background-color: #fbbf24;
-  color: #14181b;
+  background-color: var(--vurgu);
+  color: #0a0a0b;
 }
 html.dark .btn-birincil:hover,
 html.dark .btn-cta:hover {
-  background-color: #fcd34d;
+  background-color: var(--vurgu-acik);
 }
 html.dark .cip {
-  background-color: #12181b;
-  border-color: #223038;
+  background-color: #111113;
+  border-color: #232327;
 }
 html.dark .btn-ikincil:hover {
-  background-color: #1c2529;
+  background-color: #1c1c20;
 }
 html.dark .btn-ghost {
-  background-color: #12181b;
-  border-color: #2a383f;
-  color: #f4f7f8;
+  background-color: #111113;
+  border-color: #303036;
+  color: #f4f4f5;
 }
 html.dark .btn-ghost:hover {
-  background-color: #1c2529;
+  background-color: #1c1c20;
 }
 
 /* ============================================================
@@ -743,7 +754,7 @@ html.dark .btn-ghost:hover {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border-radius: 9999px;
+  border-radius: 10px;
   border: 1px solid var(--cizgi);
   background-color: var(--yuzey);
   padding-inline: 0.6rem;
@@ -780,7 +791,7 @@ html.dark .btn-ghost:hover {
 }
 
 .tema-tus-koyu:hover {
-  background-color: #1c2529;
+  background-color: #1c1c20;
 }
 
 /* Yazı mobilde gizli (yer dar), sm ve üstünde görünür */
@@ -843,8 +854,8 @@ html.dark .hero-glow {
 
 /* Platin esintili arka plan: ince ızgara + amber ışık */
 .hero-grid {
-  background-image: linear-gradient(to right, rgba(20, 24, 27, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(20, 24, 27, 0.06) 1px, transparent 1px);
+  background-image: linear-gradient(to right, rgba(24, 24, 27, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(24, 24, 27, 0.06) 1px, transparent 1px);
   background-size: 56px 56px;
   -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 25%, transparent 72%);
   mask-image: radial-gradient(ellipse at 50% 0%, #000 25%, transparent 72%);
@@ -1108,7 +1119,7 @@ body:has(.vitrin) {
 }
 
 .vitrin ::selection {
-  background: rgba(232, 174, 85, 0.28);
+  background: rgba(245, 158, 11, 0.3);
   color: #fff;
 }
 
@@ -1171,16 +1182,16 @@ body:has(.vitrin) {
   text-decoration-color: #6f6f78;
 }
 
-/* Düğmeler: kareye yakın, tek renkli. */
+/* Düğmeler: uygulamayla aynı ritim — 10px yarıçap, tek amber vurgu. */
 .v-btn {
   display: inline-flex;
   height: 44px;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #ffffff;
-  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid var(--vurgu);
+  background: var(--vurgu);
   padding-inline: 1.25rem;
   font-size: 13.5px;
   font-weight: 600;
@@ -1189,8 +1200,8 @@ body:has(.vitrin) {
   transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 .v-btn:hover {
-  background: #e6e6ea;
-  border-color: #e6e6ea;
+  background: var(--vurgu-acik);
+  border-color: var(--vurgu-acik);
 }
 
 .v-btn-ghost {
@@ -1202,14 +1213,6 @@ body:has(.vitrin) {
   border-color: #46464e;
   background: #16161a;
   color: #ffffff;
-}
-
-.vitrin :focus-visible,
-body:has(.vitrin) header.site-header :focus-visible,
-body:has(.vitrin) footer.site-footer :focus-visible {
-  outline: 2px solid #fafafa;
-  outline-offset: 3px;
-  border-radius: 4px;
 }
 
 /* --- Başlık: vitrin açıkken koyu --- */
@@ -1249,13 +1252,13 @@ body:has(.vitrin) header.site-header .btn-sessiz:hover {
 }
 body:has(.vitrin) header.site-header .btn-birincil {
   height: 36px;
-  border-radius: 6px;
-  background-color: #ffffff;
+  border-radius: 10px;
+  background-color: var(--vurgu);
   padding-inline: 1rem;
   color: #0a0a0b;
 }
 body:has(.vitrin) header.site-header .btn-birincil:hover {
-  background-color: #e6e6ea;
+  background-color: var(--vurgu-acik);
 }
 body:has(.vitrin) header.site-header .tema-tus {
   display: none;
@@ -1276,10 +1279,6 @@ body:has(.vitrin) header.site-header #site-menusu a {
 body:has(.vitrin) header.site-header #site-menusu a:hover {
   background-color: rgba(255, 255, 255, 0.05);
   color: #ffffff;
-}
-body:has(.vitrin) header.site-header #site-menusu .bg-amber-500 {
-  background-color: #ffffff;
-  color: #0a0a0b;
 }
 
 /* --- Altbilgi: vitrin açıkken koyu --- */
@@ -1443,9 +1442,9 @@ body:has(.giris-sayfa) footer.site-footer {
 
 /* Form kartı */
 .auth-kart {
-  border: 1px solid #24242a;
-  border-radius: 14px;
-  background-color: #101012;
+  border: 1px solid #232327;
+  border-radius: 16px;
+  background-color: #111113;
   padding: 1.35rem;
   box-shadow: 0 40px 100px -70px rgba(0, 0, 0, 0.9);
 }
@@ -1558,9 +1557,9 @@ body:has(.giris-sayfa) footer.site-footer {
 
 .giris-sayfa .giris {
   min-height: 48px;
-  border-radius: 8px;
-  border-color: #2d2d34;
-  background-color: #0b0b0d;
+  border-radius: 10px;
+  border-color: #26262c;
+  background-color: #0d0d0f;
   padding: 0 0.9rem;
   font-size: 16px;
   color: #ededf0;
@@ -1569,24 +1568,24 @@ body:has(.giris-sayfa) footer.site-footer {
   color: #5f5f68;
 }
 .giris-sayfa .giris:focus {
-  border-color: #e8ae55;
-  box-shadow: 0 0 0 3px rgba(232, 174, 85, 0.16);
+  border-color: var(--vurgu);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
 }
 .giris-sayfa input[type="checkbox"] {
-  accent-color: #e8ae55;
+  accent-color: #f59e0b;
 }
 
 .giris-sayfa .btn-birincil {
   width: 100%;
   height: 46px;
-  border-radius: 8px;
-  background-color: #ffffff;
+  border-radius: 10px;
+  background-color: var(--vurgu);
   font-size: 14px;
   font-weight: 600;
   color: #0a0a0b;
 }
 .giris-sayfa .btn-birincil:hover {
-  background-color: #e6e6ea;
+  background-color: var(--vurgu-acik);
 }
 
 .giris-sayfa .sifre-goster {
@@ -1705,4 +1704,42 @@ html.dark .satir-secili {
 }
 html.dark .satir-uyari {
   background-color: #16140e;
+}
+
+/* ============================================================
+   HAKKIMIZDA — EDİTORYAL KATMAN (30 Eki 2026)
+   Dergi düzeni: dar ölçü, uzun satır aralığı, ilk paragrafta
+   büyük baş harf (drop cap). Vitrin (koyu) yüzeyde yaşar.
+   ============================================================ */
+.hk-makale {
+  max-width: 62ch;
+}
+.hk-makale > p {
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: #b6b6bd;
+}
+.hk-makale > p + p {
+  margin-top: 1.4rem;
+}
+.hk-makale > p:first-of-type::first-letter {
+  float: left;
+  margin: 0.06em 0.14em 0 0;
+  font-family: var(--font-heading), var(--font-body), system-ui, sans-serif;
+  font-size: 3.5em;
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  color: #f2f2f4;
+}
+
+/* İmza bloğundaki büyük alıntı */
+.hk-alinti {
+  font-family: var(--font-heading), var(--font-body), system-ui, sans-serif;
+  font-size: clamp(1.5rem, 3.2vw, 2.35rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+  color: #f2f2f4;
+  text-wrap: balance;
 }

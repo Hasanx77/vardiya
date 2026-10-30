@@ -1,6 +1,8 @@
 import { prisma } from "./prisma";
 import { tokenCoz } from "./employee-link";
 import { yayindakiKayitlar } from "./yayin";
+import { personelIzinTalepleri } from "./izin-db";
+import type { IzinDurumu, IzinTuru } from "./types";
 import type { ColorKey, ShiftTemplate } from "./types";
 
 /**
@@ -30,6 +32,20 @@ export type EkipPayload = {
    * taslağın *içeriği* asla gönderilmez.
    */
   taslakHaftaVar: boolean;
+  /**
+   * Personelin **kendi** izin/mazeret talepleri (son 10).
+   * Başka personelin talebi asla bu listede yer almaz.
+   */
+  izinTalepleri: {
+    id: string;
+    baslangic: string;
+    bitis: string;
+    tur: IzinTuru;
+    not: string;
+    durum: IzinDurumu;
+    createdAt: string;
+    kararNot: string;
+  }[];
 };
 
 /**
@@ -49,7 +65,7 @@ export async function getEkipPayload(token: string): Promise<EkipPayload | null>
   });
   if (!employee) return null;
 
-  const [shiftTemplates, assignments, announcements, weekPlans] = await Promise.all([
+  const [shiftTemplates, assignments, announcements, weekPlans, izinler] = await Promise.all([
     prisma.shiftTemplate.findMany({
       where: { businessId: employee.businessId },
     }),
@@ -66,6 +82,7 @@ export async function getEkipPayload(token: string): Promise<EkipPayload | null>
       where: { businessId: employee.businessId },
       select: { weekStart: true },
     }),
+    personelIzinTalepleri(employee.id, 10),
   ]);
 
   // 🔒 Yalnızca yayınlanmış haftalar ekibe görünür; taslak haftalar sızmaz.
@@ -102,5 +119,15 @@ export async function getEkipPayload(token: string): Promise<EkipPayload | null>
       createdAt: a.createdAt.toISOString(),
     })),
     taslakHaftaVar: assignments.length > yayindaki.length,
+    izinTalepleri: izinler.map((t) => ({
+      id: t.id,
+      baslangic: t.baslangic,
+      bitis: t.bitis,
+      tur: t.tur,
+      not: t.not,
+      durum: t.durum,
+      createdAt: t.createdAt,
+      kararNot: t.kararNot,
+    })),
   };
 }

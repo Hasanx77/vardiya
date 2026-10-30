@@ -5,6 +5,7 @@ import { oturumAltyapisiHazir, oturumTokeni } from "@/lib/session";
 import { disAdres, guvenliHedef, httpsMi, istemciIp } from "@/lib/url";
 import { beklemeMetni, girisBasarisiz, girisDenetle } from "@/lib/giris-korumasi";
 import { hesapOlustur } from "@/lib/hesap-olustur";
+import { aydinlatmaOnayiKaydet } from "@/lib/kvkk";
 
 /**
  * Kayıt ol — **en kısa yol**.
@@ -53,6 +54,14 @@ export async function POST(req: Request) {
   if (bicimHatasi) return hataYonlendir(bicimHatasi);
   if (sifre !== sifreTekrar) return hataYonlendir("Şifreler birbiriyle uyuşmuyor.");
 
+  // KVKK: aydınlatma metni onayı **zorunlu**. Onay kutusu işaretlenmeden
+  // hesap açılmaz; onay kaydı (sürüm + zaman + günlük tuzlu IP özeti) tutulur.
+  if (String(form.get("kvkkOnay") ?? "") !== "on") {
+    return hataYonlendir(
+      "Devam etmek için gizlilik ve KVKK aydınlatmasını onaylaman gerekiyor.",
+    );
+  }
+
   // Oturum anahtarı yoksa hesap açmak anlamsız: kullanıcı giriş yapamaz.
   if (!oturumAltyapisiHazir()) {
     return hataYonlendir("Sunucu yapılandırması eksik (oturum anahtarı). Lütfen yöneticiye bildir.");
@@ -73,6 +82,10 @@ export async function POST(req: Request) {
     console.error("kayıt:", e);
     return hataYonlendir("Hesap oluşturulamadı. Lütfen tekrar dene.");
   }
+
+  // KVKK onay kanıtı — hesap açıldıktan sonra yazılır. Yazılamazsa kayıt
+  // akışı durmaz (fail-open); hata sunucu günlüğüne düşer.
+  await aydinlatmaOnayiKaydet({ userId: kullanici.id, ip });
 
   const res = NextResponse.redirect(disAdres(req, next), 303);
   res.cookies.set(

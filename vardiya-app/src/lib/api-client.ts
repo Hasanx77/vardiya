@@ -172,3 +172,29 @@ export function unpublishWeek(weekStart: string) {
     body: JSON.stringify({ weekStart }),
   });
 }
+
+/** İzin talebine karar ver: onayla / reddet / iptal et. */
+export function decideIzin(
+  id: string,
+  durum: "onaylandi" | "reddedildi" | "iptal",
+  kararNot = "",
+) {
+  return jsonRequest<{ ok: boolean; id: string; durum: string }>(`/api/izin/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ durum, kararNot }),
+  });
+}
+
+/** Patron elle izin ekler (doğrudan onaylı). */
+export function addIzin(input: {
+  employeeId: string;
+  baslangic: string;
+  bitis: string;
+  tur: string;
+  not?: string;
+}) {
+  return jsonRequest<{ ok: boolean; talep: { id: string } }>("/api/izin", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}

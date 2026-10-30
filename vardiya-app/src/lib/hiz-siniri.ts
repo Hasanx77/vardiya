@@ -12,7 +12,6 @@
  */
 import { prisma } from "./prisma";
 
-const TABLO = "HizSiniri";
 const TEMIZLIK_ARALIGI_MS = 24 * 60 * 60 * 1000;
 
 let tabloHazir = false;

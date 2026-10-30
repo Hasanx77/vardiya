@@ -130,7 +130,7 @@ const sss = [
    ------------------------------------------------------------------ */
 
 const hucreRengi: Record<string, string> = {
-  sabah: "border-[#e8ae55]/25 bg-[#e8ae55]/10 text-[#ecc383]",
+  sabah: "border-[#f59e0b]/25 bg-[#f59e0b]/10 text-[#fbbf24]",
   aksam: "border-[#8f7fe0]/25 bg-[#8f7fe0]/10 text-[#c8bef5]",
   tamgun: "border-[#d97a7a]/25 bg-[#d97a7a]/10 text-[#efb4b4]",
   ara: "border-[#6fb3c9]/25 bg-[#6fb3c9]/10 text-[#a9d8e4]",
@@ -685,13 +685,7 @@ export default async function Home({
             >
               destek@zihnora.com.tr
             </a>{" "}
-            ·{" "}
-            <a
-              href="mailto:hmum117413@gmail.com"
-              className="text-[#9a9aa2] underline underline-offset-4 hover:text-[#ededf0]"
-            >
-              hmum117413@gmail.com
-            </a>
+            adresinden bana ulaşabilirsin.
           </p>
           <p className="mt-3 text-[11.5px] text-[#7d7d86]">
             Vardiya 18 Ekim 2026&apos;da yayına girdi. Uydurma yorum veya logo

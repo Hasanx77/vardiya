@@ -37,7 +37,7 @@ export default function Marka({
       {nokta ? (
         <span
           aria-hidden="true"
-          className="h-[5px] w-[5px] shrink-0 rounded-full bg-[#e8ae55]"
+          className="h-[5px] w-[5px] shrink-0 rounded-full bg-[#f59e0b]"
         />
       ) : null}
     </span>

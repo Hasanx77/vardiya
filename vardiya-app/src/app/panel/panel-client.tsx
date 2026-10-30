@@ -1,14 +1,17 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
-import type { Employee, StatePayload } from "@/lib/types";
+import type { Employee, IzinTalebi, IzinTuru, StatePayload } from "@/lib/types";
 import {
   addEmployee as apiAddEmployee,
   addEmployeesBulk as apiAddEmployeesBulk,
+  addIzin as apiAddIzin,
   clearWeek as apiClearWeek,
   copyWeek as apiCopyWeek,
   createAnnouncement as apiCreateAnnouncement,
+  decideIzin as apiDecideIzin,
   deleteAnnouncement as apiDeleteAnnouncement,
   deleteEmployee as apiDeleteEmployee,
   fetchState,
@@ -24,6 +27,14 @@ import {
 import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
 import { shiftHours, shiftSaatMetni, WEEKLY_LIMIT_HOURS, standartSablonlar } from "@/lib/shifts";
 import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
+import {
+  IZIN_DURUM_ETIKETI,
+  IZIN_TUR_ETIKETI,
+  IZIN_TURLERI,
+  izinTarihMetni,
+  onayliIzinVarMi,
+  tarihAraligiKapsar,
+} from "@/lib/izin";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 import TemplateManager from "@/components/TemplateManager";
@@ -60,6 +71,14 @@ function OkIkon({ yon = "sag" }: { yon?: "sag" | "sol" }) {
     </svg>
   );
 }
+
+/** İzin talebi durumunun rozet sınıfı. */
+const DURUM_SINIFI: Record<string, string> = {
+  bekliyor: "border-amber-200 bg-amber-50 text-amber-900",
+  onaylandi: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  reddedildi: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  iptal: "border-zinc-200 bg-zinc-50 text-zinc-500",
+};
 
 export default function PanelClient({
   initialData,
@@ -117,6 +136,17 @@ export default function PanelClient({
   const [yayinBusy, setYayinBusy] = useState(false);
   /** "E-postaya gönder" işlemi sürüyor mu? */
   const [postaBusy, setPostaBusy] = useState(false);
+  /** İzin talepleri: modal, karar ve patronun elle ekleme formu. */
+  const [showIzin, setShowIzin] = useState(false);
+  const [izinBusyId, setIzinBusyId] = useState<string | null>(null);
+  const [izinEkleBusy, setIzinEkleBusy] = useState(false);
+  const [izinEkle, setIzinEkle] = useState({
+    employeeId: "",
+    tur: "izin" as IzinTuru,
+    baslangic: toISODate(new Date()),
+    bitis: toISODate(new Date()),
+    not: "",
+  });
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
@@ -135,6 +165,57 @@ export default function PanelClient({
       setError("Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.");
     }
   }, []);
+
+  /** Sunucudan gelen JSON hatasını okunur metne çevirir. */
+  function hataMetni(err: unknown, varsayilan: string): string {
+    const ham = err instanceof Error ? err.message : "";
+    try {
+      const j = JSON.parse(ham) as { hata?: string };
+      if (j?.hata) return String(j.hata);
+    } catch {
+      /* düz metin hata */
+    }
+    return varsayilan;
+  }
+
+  /**
+   * İzin talebine karar ver. Onaylanan günler planda "İzinli" işaretiyle
+   * görünür; izinli güne vardiya atanmışsa kart uyarı gösterir.
+   */
+  async function izinKararVer(talep: IzinTalebi, durum: "onaylandi" | "reddedildi") {
+    if (izinBusyId) return;
+    setIzinBusyId(talep.id);
+    try {
+      await apiDecideIzin(talep.id, durum);
+      await load();
+      flash(durum === "onaylandi" ? "İzin onaylandı." : "Talep reddedildi.");
+    } catch (err) {
+      flash(hataMetni(err, "İşlem tamamlanamadı. Lütfen tekrar dene."));
+    } finally {
+      setIzinBusyId(null);
+    }
+  }
+
+  /** Patron elle izin ekler (telefonla gelen izin → doğrudan onaylı). */
+  async function izinElleEkle(e: FormEvent) {
+    e.preventDefault();
+    if (izinEkleBusy) return;
+    if (!izinEkle.employeeId) {
+      flash("Önce personel seç.");
+      return;
+    }
+    setIzinEkleBusy(true);
+    try {
+      await apiAddIzin(izinEkle);
+      await load();
+      setIzinEkle((f) => ({ ...f, not: "" }));
+      flash("İzin eklendi.");
+    } catch (err) {
+      flash(hataMetni(err, "İzin eklenemedi."));
+    } finally {
+      setIzinEkleBusy(false);
+    }
+  }
 
   // Modallar ESC ile kapansın
   useEffect(() => {
@@ -216,6 +297,42 @@ export default function PanelClient({
   }, [data, weekDates]);
 
   const todayISO = toISODate(new Date());
+
+  /** İzin talepleri — onay bekleyenler ve onaylılar ayrı ayrı. */
+  const izinler = useMemo(() => data?.izinTalepleri ?? [], [data]);
+  const bekleyenIzinler = useMemo(
+    () => izinler.filter((t) => t.durum === "bekliyor"),
+    [izinler],
+  );
+  const onayliIzinler = useMemo(
+    () => izinler.filter((t) => t.durum === "onaylandi"),
+    [izinler],
+  );
+
+  /**
+   * Onaylı izin gününe vardiya atanmış mı? (Gösterilen hafta için.)
+   * Planla izin çakışması en sık yapılan hatadır; sessizce geçmesin.
+   */
+  const izinliGunAtamalari = useMemo(() => {
+    const gunler = new Set(weekISOList);
+    return (data?.assignments ?? []).filter(
+      (a) => gunler.has(a.date) && onayliIzinVarMi(onayliIzinler, a.employeeId, a.date),
+    );
+  }, [data, weekISOList, onayliIzinler]);
+
+  /** Gösterilen hafta içinde onaylı izin günlerinin sayısı (personel-başına benzersiz). */
+  const buHaftaIzinliGun = useMemo(() => {
+    const kume = new Set<string>();
+    for (const t of onayliIzinler) {
+      for (const iso of weekISOList) {
+        if (tarihAraligiKapsar(t.baslangic, t.bitis, iso)) {
+          kume.add(`${t.employeeId}__${iso}`);
+        }
+      }
+    }
+    return kume.size;
+  }, [onayliIzinler, weekISOList]);
+
   const todayByShift = useMemo(() => {
     const m = new Map<string, Employee[]>();
     if (!data) return m;
@@ -812,6 +929,15 @@ export default function PanelClient({
         calistir: haftaYayinla,
       };
     }
+    if (bekleyenIzinler.length > 0) {
+      return {
+        baslik: `${bekleyenIzinler.length} izin talebi onay bekliyor`,
+        aciklama:
+          "Talepleri görüp onayla ya da reddet. Onaylanan günler planda “İzinli” olarak işaretlenir.",
+        etiket: "Talepleri göster",
+        calistir: () => setShowIzin(true),
+      };
+    }
     if (uyariSayisi > 0) {
       return {
         baslik: `${uyariSayisi} uyarı var`,
@@ -1301,6 +1427,100 @@ export default function PanelClient({
         </div>
       </div>
 
+      {/* İzin talepleri — personelden gelen talepler ve onaylı izin günleri */}
+      <div id="izin-talepleri" className="kart mt-4 scroll-mt-20 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="bolum-baslik">İzin talepleri</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Personel kendi bağlantısından gönderir ·{" "}
+              {bekleyenIzinler.length > 0
+                ? `${bekleyenIzinler.length} onay bekliyor`
+                : "onay bekleyen talep yok"}
+              {buHaftaIzinliGun > 0 ? ` · bu hafta ${buHaftaIzinliGun} izinli gün` : ""}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowIzin(true)}
+            className="btn-ikincil btn-kucuk"
+          >
+            Tümünü gör
+          </button>
+        </div>
+
+        {izinler.length === 0 ? (
+          <p className="mt-3 rounded-xl border border-dashed border-zinc-200 px-3 py-4 text-sm text-zinc-500">
+            Henüz talep yok. Personel, paylaştığın bağlantıdan izin/mazeret talebi
+            gönderebilir; buradan da elle ekleyebilirsin.
+          </p>
+        ) : (
+          <>
+            {bekleyenIzinler.length > 0 && (
+              <ul className="mt-3 divide-y divide-zinc-100">
+                {bekleyenIzinler.slice(0, 4).map((t) => {
+                  const emp = empById.get(t.employeeId);
+                  return (
+                    <li
+                      key={t.id}
+                      className="flex flex-wrap items-center justify-between gap-2 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-zinc-800">
+                          {emp?.name ?? "Bilinmeyen personel"}{" "}
+                          <span className="font-normal text-zinc-500">
+                            · {IZIN_TUR_ETIKETI[t.tur]}
+                          </span>
+                        </p>
+                        <p className="truncate text-xs text-zinc-500">
+                          {izinTarihMetni(t.baslangic, t.bitis)}
+                          {t.not ? ` · ${t.not}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => izinKararVer(t, "onaylandi")}
+                          disabled={izinBusyId === t.id}
+                          className="btn-birincil btn-kucuk disabled:opacity-50"
+                        >
+                          Onayla
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => izinKararVer(t, "reddedildi")}
+                          disabled={izinBusyId === t.id}
+                          className="btn-ikincil btn-kucuk disabled:opacity-50"
+                        >
+                          Reddet
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {bekleyenIzinler.length > 4 && (
+              <button
+                type="button"
+                onClick={() => setShowIzin(true)}
+                className="mt-1 text-xs text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
+              >
+                +{bekleyenIzinler.length - 4} talep daha
+              </button>
+            )}
+
+            {izinliGunAtamalari.length > 0 && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                <strong>{izinliGunAtamalari.length} vardiya</strong> onaylı izin gününe
+                atanmış. Planda “İzinli” işaretli hücreleri gözden geçir.
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Plan */}
       {weekEmpty ? (
         <div className="kart mt-4 border-dashed p-10 text-center">
@@ -1626,6 +1846,14 @@ export default function PanelClient({
                                     </option>
                                   ))}
                                 </select>
+                              )}
+                              {template && onayliIzinVarMi(onayliIzinler, emp.id, iso) && (
+                                <span
+                                  className="mt-1 block text-center text-[10px] font-medium text-emerald-700"
+                                  title="Onaylı izin — vardiya atanmış olsa bile bu gün izinli sayılır"
+                                >
+                                  İzinli
+                                </span>
                               )}
                             </td>
                           );
@@ -2410,6 +2638,150 @@ export default function PanelClient({
             );
           })}
         </ul>
+      </Modal>
+
+      {/* İzin talepleri modalı — karar ver + patron elle ekleme */}
+      <Modal
+        acik={showIzin}
+        kapat={() => setShowIzin(false)}
+        baslik="İzin talepleri"
+        genislik="max-w-2xl"
+      >
+        {/* Patronun elle eklemesi (doğrudan onaylı) */}
+        <form onSubmit={izinElleEkle} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+          <p className="text-xs font-semibold text-zinc-600">
+            İzin ekle (patron / yöneticinin elle kararıyla)
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="text-xs text-zinc-600">
+              <span className="etiket">Personel</span>
+              <select
+                value={izinEkle.employeeId}
+                onChange={(e) => setIzinEkle({ ...izinEkle, employeeId: e.target.value })}
+                className="giris mt-1"
+                required
+              >
+                <option value="">Seç…</option>
+                {data.employees.map((e2) => (
+                  <option key={e2.id} value={e2.id}>
+                    {e2.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-zinc-600">
+              <span className="etiket">Tür</span>
+              <select
+                value={izinEkle.tur}
+                onChange={(e) => setIzinEkle({ ...izinEkle, tur: e.target.value as IzinTuru })}
+                className="giris mt-1"
+              >
+                {IZIN_TURLERI.map((t) => (
+                  <option key={t} value={t}>
+                    {IZIN_TUR_ETIKETI[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-xs text-zinc-600">
+                <span className="etiket">Başlangıç</span>
+                <input
+                  type="date"
+                  value={izinEkle.baslangic}
+                  onChange={(e) => setIzinEkle({ ...izinEkle, baslangic: e.target.value })}
+                  className="giris mt-1"
+                  required
+                />
+              </label>
+              <label className="text-xs text-zinc-600">
+                <span className="etiket">Bitiş</span>
+                <input
+                  type="date"
+                  value={izinEkle.bitis}
+                  min={izinEkle.baslangic}
+                  onChange={(e) => setIzinEkle({ ...izinEkle, bitis: e.target.value })}
+                  className="giris mt-1"
+                  required
+                />
+              </label>
+            </div>
+            <label className="text-xs text-zinc-600 sm:col-span-2">
+              <span className="etiket">Not (isteğe bağlı)</span>
+              <textarea
+                value={izinEkle.not}
+                onChange={(e) => setIzinEkle({ ...izinEkle, not: e.target.value })}
+                maxLength={500}
+                rows={2}
+                className="giris mt-1"
+              />
+            </label>
+            <div className="sm:col-span-2">
+              <button type="submit" disabled={izinEkleBusy} className="btn-birincil btn-kucuk disabled:opacity-60">
+                {izinEkleBusy ? "Ekleniyor…" : "Ekle"}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          Talepler
+        </h3>
+        {izinler.length === 0 ? (
+          <p className="mt-2 text-sm text-zinc-500">Henüz talep yok.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-zinc-100">
+            {izinler.map((t) => {
+              const emp = empById.get(t.employeeId);
+              const busy = izinBusyId === t.id;
+              return (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-zinc-800">
+                      {emp?.name ?? "Bilinmeyen"} · {IZIN_TUR_ETIKETI[t.tur]} ·{" "}
+                      {izinTarihMetni(t.baslangic, t.bitis)}
+                    </p>
+                    <p className="text-[11px] text-zinc-500">
+                      {new Date(t.createdAt).toLocaleDateString("tr-TR")} —{" "}
+                      {IZIN_DURUM_ETIKETI[t.durum]}
+                    </p>
+                  </div>
+                  {t.durum === "bekliyor" ? (
+                    <div className="flex shrink-0 gap-1.5">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => izinKararVer(t, "onaylandi")}
+                        className="btn-birincil btn-kucuk disabled:opacity-50"
+                      >
+                        {busy ? "…" : "Onayla"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => izinKararVer(t, "reddedildi")}
+                        className="btn-ikincil btn-kucuk disabled:opacity-50"
+                      >
+                        Reddet
+                      </button>
+                    </div>
+                  ) : (
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                        DURUM_SINIFI[t.durum] ?? "border-zinc-200 bg-white text-zinc-600"
+                      }`}
+                    >
+                      {IZIN_DURUM_ETIKETI[t.durum]}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </Modal>
 
       {toast && (

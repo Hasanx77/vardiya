@@ -2,6 +2,7 @@ import Link from "next/link";
 import { aktifKullanici } from "@/lib/auth";
 import HesapSilButonu from "@/components/HesapSilButonu";
 import { kaydetZiyaret } from "@/lib/visits";
+import { AYDINLATMA_SURUMU, aydinlatmaOnayi } from "@/lib/kvkk";
 
 export const metadata = {
   title: "Gizlilik ve KVKK Aydınlatması — Vardiya",
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function GizlilikPage() {
   const kullanici = await aktifKullanici();
   await kaydetZiyaret();
+  const onay = kullanici ? await aydinlatmaOnayi(kullanici.id) : null;
 
   return (
     <main className="flex-1">
@@ -27,7 +29,9 @@ export default async function GizlilikPage() {
           Gizlilik
         </p>
         <h1 className="sayfa-baslik mt-1">Gizlilik ve KVKK Aydınlatması</h1>
-        <p className="sayfa-alt">Son güncelleme: 20 Ekim 2026</p>
+        <p className="sayfa-alt">
+          Sürüm 2026-10-30 · Son güncelleme: 30 Ekim 2026
+        </p>
 
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
           <strong>Özet:</strong> Vardiya yalnızca işini yapmak için gereken veriyi toplar. Reklam
@@ -122,17 +126,128 @@ export default async function GizlilikPage() {
             <li><strong>Hesap izolasyonu:</strong> her hesap yalnızca kendi işletmesinin verisini okuyabilir.</li>
           </ul>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Saklama süresi</h2>
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">6) Saklama süreleri</h2>
           <p>
-            Veriler, sen silene kadar saklanır. Hesabını sildiğinde işletme ve ona bağlı tüm kayıtlar
-            (personel, vardiyalar, duyurular, notlar) veritabanından <strong>kalıcı olarak</strong> silinir.
-            Ziyaret sayacı kayıtları <strong>120 gün</strong> sonra otomatik olarak silinir.
-            İletişim formundan gönderilen mesajlar, kişisel veri içerdiği için e-posta eşleşmesiyle
-            silinmez; talep yanıtlandıktan sonra en geç <strong>12 ay</strong> içinde otomatik silinir.
-            Daha erken silinmesini istersen destek adresimize yazman yeterli.
+            Her veri türü yalnızca işi için gereken süre kadar durur; süre
+            dolunca silinir. Hesabını sildiğinde işletme ve ona bağlı tüm
+            kayıtlar (personel, vardiyalar, duyurular, notlar) veritabanından
+            <strong> kalıcı olarak</strong> silinir.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="mt-2 w-full border-collapse text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-zinc-200 text-zinc-500">
+                  <th className="py-2 pr-4 font-semibold">Veri</th>
+                  <th className="py-2 pr-4 font-semibold">Saklama</th>
+                  <th className="py-2 font-semibold">Sonrası</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Hesap, işletme, personel, plan</td>
+                  <td className="py-2 pr-4">Sen silene kadar</td>
+                  <td className="py-2">Kalıcı silinir</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Aydınlatma onay kaydı</td>
+                  <td className="py-2 pr-4">12 ay</td>
+                  <td className="py-2">Otomatik silinir</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Ziyaret sayacı (tuzlu özet)</td>
+                  <td className="py-2 pr-4">120 gün</td>
+                  <td className="py-2">Otomatik silinir</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">İletişim formu mesajları</td>
+                  <td className="py-2 pr-4">En çok 12 ay</td>
+                  <td className="py-2">Otomatik silinir</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Sunucu yedeği (şifreli arşiv)</td>
+                  <td className="py-2 pr-4">14 gün, döner</td>
+                  <td className="py-2">Yeni yedek eskisini iter</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Erişim/hata günlükleri</td>
+                  <td className="py-2 pr-4">En çok 30 gün</td>
+                  <td className="py-2">Silinir; içerik toplanmaz</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">7) Kimlerle paylaşılır?</h2>
+          <p>
+            Veri satılmaz, reklam amacıyla paylaşılmaz. Yalnızca hizmeti
+            ayakta tutan <strong>alt işleyenler</strong> veriye erişebilir ve
+            hepsi sözleşmeyle sınırlıdır:
+          </p>
+          <div className="overflow-x-auto">
+            <table className="mt-2 w-full border-collapse text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-zinc-200 text-zinc-500">
+                  <th className="py-2 pr-4 font-semibold">Alt işleyen</th>
+                  <th className="py-2 pr-4 font-semibold">Amaç</th>
+                  <th className="py-2 font-semibold">Konum</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Hosting Dünyam (barındırma)</td>
+                  <td className="py-2 pr-4">Sunucu, disk, yedek</td>
+                  <td className="py-2">Türkiye</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">E-posta sunucusu (kendi SMTP)</td>
+                  <td className="py-2 pr-4">Şifre sıfırlama, doğrulama, plan PDF</td>
+                  <td className="py-2">Türkiye</td>
+                </tr>
+                <tr className="border-b border-zinc-100">
+                  <td className="py-2 pr-4">Google (yalnızca istersen)</td>
+                  <td className="py-2 pr-4">&quot;Google ile giriş&quot; kullanırsan kimlik doğrulama</td>
+                  <td className="py-2">ABD — yurt dışı aktarım</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="pt-1 text-zinc-600">
+            Google ile giriş <strong>isteğe bağlıdır</strong>; kullanmazsan
+            verin yurt dışına çıkmaz. Google ile girişte yalnızca e-posta ve
+            doğrulanmış kimlik bilgisi alınır; kişiler, takvim veya dosyalarına
+            erişilmez. Veri işleyen sözleşmesinin bir kopyasını destek
+            adresinden isteyebilirsin.
           </p>
 
-          <h2 className="pt-3 text-lg font-semibold text-zinc-900">7) Haklarınız (KVKK m.11)</h2>
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">8) Veri ihlali olursa</h2>
+          <p>
+            Veriye yetkisiz erişim, sızıntı veya kayıp tespit edilirse süreç
+            yazılı bir plana göre yürür: olay <strong>derhal</strong> kayda
+            alınır, etki alanı ve etkilenen kişiler belirlenir, sızıntı
+            kapatılır. Kişisel Verileri Koruma Kurulu&apos;na{" "}
+            <strong>72 saat içinde</strong>, etkilenen kişilere ise{" "}
+            <strong>makul en kısa sürede</strong> bildirim yapılır. Etkilenen
+            hesapların tüm oturumları kapatılır ve şifre değişikliği istenir.
+          </p>
+          <p className="text-zinc-600">
+            Şüpheli bir durum görürsen{" "}
+            <a href="mailto:destek@zihnora.com.tr" className="underline">
+              destek@zihnora.com.tr
+            </a>{" "}
+            adresine yaz; bildirimin 24 saat içinde yanıtlanır.
+          </p>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">9) VERBİS ve kayıt yükümlülüğü</h2>
+          <p>
+            Veri Sorumluları Sicili (VERBİS) kayıt yükümlülüğü, Kurul&apos;un
+            belirlediği yıllık çalışan sayısı ve mali bilanço eşiklerine
+            bağlıdır; eşik altında kalındığı sürece kayıt gerekmez. Eşik
+            aşılırsa kayıt yapılır ve bu sayfada duyurulur. Eşik kapsamı dışında
+            kalsak da bu aydınlatma metni, saklama politikası ve veri işleme
+            envanteri güncel tutulur.
+          </p>
+
+          <h2 className="pt-3 text-lg font-semibold text-zinc-900">10) Haklarınız (KVKK m.11)</h2>
           <p>
             Verilerinin işlenip işlenmediğini öğrenme, düzeltilmesini isteme, silinmesini (unutulma)
             ve taşınabilirliğini talep etme hakkın var. Verini JSON olarak indirme ve hesabını
@@ -149,6 +264,14 @@ export default async function GizlilikPage() {
           <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-zinc-600">
               Giriş yapmış hesap: <strong>{kullanici.email}</strong>
+            </p>
+            <p className="mt-1 text-[12px] text-zinc-500">
+              {onay
+                ? `Aydınlatma onayın kayıtlı: ${new Date(onay.zaman).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} · sürüm ${onay.surum}`
+                : "Bu hesap için kayıtlı onay bulunamadı (Google ile giriş yapılmış olabilir)."}
+              {onay && onay.surum !== AYDINLATMA_SURUMU
+                ? " — metin güncellendi, yeni sürümü okuman önerilir."
+                : ""}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <a
@@ -171,7 +294,7 @@ export default async function GizlilikPage() {
         )}
 
         <section className="mt-8 space-y-3 text-sm leading-relaxed text-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-900">8) İletişim</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">11) İletişim</h2>
           <p>
             Soru, talep veya şikâyet için:{" "}
             <a href="mailto:destek@zihnora.com.tr" className="underline">

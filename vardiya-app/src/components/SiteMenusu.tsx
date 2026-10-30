@@ -66,8 +66,11 @@ export default function SiteMenusu() {
 
   return (
     <>
-      {/* Masaüstü: tek tek bağlantılar */}
-      <nav className="hidden items-center gap-0.5 md:flex" aria-label="Site menüsü">
+      {/* Masaüstü: tek tek bağlantılar — satır kırılmaz (nowrap) */}
+      <nav
+        className="hidden items-center gap-0.5 whitespace-nowrap md:flex"
+        aria-label="Site menüsü"
+      >
         {tumOgeler.filter((o) => !o.sadeceMobil).map((o) => {
           const aktif = aktifMi(pathname, o.href);
           return (

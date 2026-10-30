@@ -37,6 +37,7 @@ export async function GET() {
     vardiyalar: durum.assignments,
     duyurular: durum.announcements,
     gunNotlari: durum.dayNotes,
+    izinTalepleri: durum.izinTalepleri,
   };
 
   const tarih = new Date().toISOString().slice(0, 10);

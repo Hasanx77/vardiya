@@ -22,7 +22,7 @@ function kabuk(opts: { onBaslik: string; icerik: string; altNot?: string }): str
 <body style="margin:0;padding:24px 12px;background:${ZEMIN};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${METIN};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e7e5e4;">
     <tr>
-      <td style="padding:20px 28px;background:#14181b;color:#ffffff;">
+      <td style="padding:20px 28px;background:#18181b;color:#ffffff;">
         <span style="font-size:15px;font-weight:700;letter-spacing:.02em;">Vardiya</span>
         <span style="float:right;font-size:12px;color:#a1a1aa;">${opts.onBaslik}</span>
       </td>
@@ -69,7 +69,7 @@ Bu isteği sen yapmadıysan bu e-postayı yok say; şifren değişmez.
   const html = kabuk({
     onBaslik: "Şifre sıfırlama",
     icerik: `
-      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#14181b;">Şifreni sıfırla</h1>
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#18181b;">Şifreni sıfırla</h1>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${METIN};">
         Merhaba ${opts.kullaniciAdi}, hesabın için şifre sıfırlama isteği aldık.
       </p>
@@ -107,7 +107,7 @@ Ek: ${opts.pdfAdi}
   const html = kabuk({
     onBaslik: "Haftalık plan",
     icerik: `
-      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#14181b;">${opts.hafta} planı hazır</h1>
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#18181b;">${opts.hafta} planı hazır</h1>
       <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
         <strong>${opts.isletme}</strong> için haftalık vardiya planı PDF olarak ekte.
       </p>
@@ -139,7 +139,7 @@ Bağlantı 24 saat geçerlidir. Bu hesabı sen açmadıysan yok say.
   const html = kabuk({
     onBaslik: "E-posta doğrulama",
     icerik: `
-      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#14181b;">E-postanı doğrula</h1>
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#18181b;">E-postanı doğrula</h1>
       <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
         Merhaba ${opts.kullaniciAdi}, hesabını tamamlamak için e-posta adresini doğrula.
       </p>

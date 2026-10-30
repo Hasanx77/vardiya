@@ -16,6 +16,8 @@ export async function POST(request: Request) {
   await prisma.dayNote.deleteMany({ where: { businessId: business.id } });
   // Yayın durumu da sıfırlanır: yeni plan taslak olarak başlar.
   await prisma.weekPlan.deleteMany({ where: { businessId: business.id } });
+  // İzin/mazeret talepleri (ham SQL tablo) da sıfırlanır.
+  await prisma.$executeRawUnsafe(`DELETE FROM "IzinTalebi" WHERE "businessId" = ?`, business.id);
 
   if (mode === "demo") {
     await seedDemoData(business.id);

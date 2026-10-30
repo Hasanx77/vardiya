@@ -184,9 +184,9 @@ export default function LogoV({
         <svg viewBox="0 0 24 24" className="h-full w-full p-[12%]" role="img" aria-label={etiket}>
           <defs>
             <linearGradient id={gradyanKimlik} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f6cd7e" />
-              <stop offset="55%" stopColor="#e8ae55" />
-              <stop offset="100%" stopColor="#c98a2e" />
+              <stop offset="0%" stopColor="#fcd34d" />
+              <stop offset="55%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#b45309" />
             </linearGradient>
           </defs>
           <path

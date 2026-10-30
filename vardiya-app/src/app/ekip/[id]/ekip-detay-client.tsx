@@ -1,12 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import type { EkipPayload } from "@/lib/ekip";
 import { DAY_NAMES_TR, formatShort, formatWeekRange, getWeekDates, toISODate } from "@/lib/dates";
 import { shiftHours, shiftSaatMetni, WEEKLY_LIMIT_HOURS } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
 import { getHoliday } from "@/lib/holidays";
+import {
+  IZIN_DURUM_ETIKETI,
+  IZIN_TUR_ETIKETI,
+  IZIN_TURLERI,
+  izinTarihMetni,
+} from "@/lib/izin";
+import type { IzinTuru } from "@/lib/types";
+
+/** Durum rozetlerinin renkleri (amber = bekliyor, yeşil = onaylı). */
+const DURUM_SINIFI: Record<string, string> = {
+  bekliyor: "border-amber-200 bg-amber-50 text-amber-900",
+  onaylandi: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  reddedildi: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  iptal: "border-zinc-200 bg-zinc-50 text-zinc-500",
+};
 
 /**
  * Personelin kendi programı — yalnızca görüntüleme.
@@ -27,6 +43,54 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
   );
 
   const todayISO = toISODate(new Date());
+
+  /**
+   * İzin/mazeret talebi — personel imzalı bağlantısından gönderir.
+   * Liste sunucudan hazır gelir; yeni talep gönderilince yerinde güncellenir.
+   */
+  const [izinListe, setIzinListe] = useState(veri.izinTalepleri);
+  const [izinForm, setIzinForm] = useState({
+    tur: "izin" as IzinTuru,
+    baslangic: todayISO,
+    bitis: todayISO,
+    not: "",
+  });
+  const [izinBusy, setIzinBusy] = useState(false);
+  const [izinHata, setIzinHata] = useState("");
+  const [izinBasari, setIzinBasari] = useState("");
+
+  async function izinGonder(e: FormEvent) {
+    e.preventDefault();
+    if (izinBusy) return;
+    setIzinBusy(true);
+    setIzinHata("");
+    setIzinBasari("");
+    try {
+      const res = await fetch(`/api/ekip/${veri.token}/izin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(izinForm),
+      });
+      const sonuc = (await res.json().catch(() => ({}))) as {
+        hata?: string;
+        talep?: (typeof izinListe)[number];
+        talepler?: typeof izinListe;
+      };
+      if (!res.ok) {
+        setIzinHata(sonuc.hata || "Talep gönderilemedi. Lütfen tekrar dene.");
+        return;
+      }
+      setIzinListe(
+        sonuc.talepler ?? (sonuc.talep ? [sonuc.talep, ...izinListe] : izinListe),
+      );
+      setIzinBasari("Talebin işletmeye iletildi. Onaylandığında burada görünecek.");
+      setIzinForm((f) => ({ ...f, not: "" }));
+    } catch {
+      setIzinHata("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.");
+    } finally {
+      setIzinBusy(false);
+    }
+  }
 
   const total = weekDates.reduce((sum, d) => {
     const sid = assignByDate.get(toISODate(d));
@@ -173,10 +237,129 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
         Telefon takvimine ekle (.ics)
       </a>
 
+      {/* İzin / mazeret talebi */}
+      <section className="kart mt-5 p-4" aria-labelledby="izin-baslik">
+        <h2 id="izin-baslik" className="text-base font-semibold">
+          İzin / mazeret talebi
+        </h2>
+        <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+          Talebin işletme yöneticisine gider; onaylandığında burada görünür. Rapor
+          için belge istenmez — kısa bir not yeterli.
+        </p>
+
+        <form onSubmit={izinGonder} className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="text-xs text-zinc-600">
+            <span className="etiket">Tür</span>
+            <select
+              value={izinForm.tur}
+              onChange={(e) =>
+                setIzinForm({ ...izinForm, tur: e.target.value as IzinTuru })
+              }
+              className="giris mt-1"
+              aria-label="Talep türü"
+            >
+              {IZIN_TURLERI.map((t) => (
+                <option key={t} value={t}>
+                  {IZIN_TUR_ETIKETI[t]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs text-zinc-600">
+              <span className="etiket">Başlangıç</span>
+              <input
+                type="date"
+                value={izinForm.baslangic}
+                onChange={(e) =>
+                  setIzinForm({ ...izinForm, baslangic: e.target.value })
+                }
+                className="giris mt-1"
+                required
+              />
+            </label>
+            <label className="text-xs text-zinc-600">
+              <span className="etiket">Bitiş</span>
+              <input
+                type="date"
+                value={izinForm.bitis}
+                min={izinForm.baslangic}
+                onChange={(e) => setIzinForm({ ...izinForm, bitis: e.target.value })}
+                className="giris mt-1"
+                required
+              />
+            </label>
+          </div>
+
+          <label className="text-xs text-zinc-600 sm:col-span-2">
+            <span className="etiket">Not (isteğe bağlı)</span>
+            <textarea
+              value={izinForm.not}
+              onChange={(e) => setIzinForm({ ...izinForm, not: e.target.value })}
+              maxLength={500}
+              rows={2}
+              placeholder="Ör. Cumartesi günü ailemle ilgili bir durum var."
+              className="giris mt-1"
+            />
+          </label>
+
+          {izinHata && (
+            <p role="alert" className="text-xs text-red-600 sm:col-span-2">
+              {izinHata}
+            </p>
+          )}
+          {izinBasari && (
+            <p role="status" className="text-xs text-emerald-700 sm:col-span-2">
+              {izinBasari}
+            </p>
+          )}
+
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={izinBusy} className="btn-birincil disabled:opacity-60">
+              {izinBusy ? "Gönderiliyor…" : "Talep gönder"}
+            </button>
+          </div>
+        </form>
+
+        {izinListe.length > 0 && (
+          <div className="mt-4 border-t border-zinc-100 pt-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              Taleplerim
+            </h3>
+            <ul className="mt-2 space-y-1.5">
+              {izinListe.map((t) => (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm"
+                >
+                  <span className="min-w-0">
+                    <span className="font-medium text-zinc-800">
+                      {izinTarihMetni(t.baslangic, t.bitis)}
+                    </span>
+                    <span className="text-zinc-500"> · {IZIN_TUR_ETIKETI[t.tur]}</span>
+                    {t.not ? (
+                      <span className="block truncate text-[11px] text-zinc-500">{t.not}</span>
+                    ) : null}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                      DURUM_SINIFI[t.durum] ?? "border-zinc-200 bg-white text-zinc-600"
+                    }`}
+                  >
+                    {IZIN_DURUM_ETIKETI[t.durum]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
       <p className="mt-6 text-xs leading-relaxed text-zinc-400">
-        Bu ekran yalnızca görüntüleme içindir; değişiklik yapılamaz. Programla ilgili
-        düzeltme için işletme yöneticisine başvur. Bu bağlantıyı bilen herkes programı
-        görebilir — kişisel bir bağlantıdır, herkese açık yerde paylaşma.
+        Program yalnızca görüntülenir; değişiklik ve izin onayı işletme yöneticisinde.
+        Bu bağlantıyı bilen herkes programı görebilir — kişisel bir bağlantıdır,
+        herkese açık yerde paylaşma.
       </p>
     </main>
   );

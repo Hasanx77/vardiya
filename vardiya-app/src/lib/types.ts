@@ -68,6 +68,37 @@ export type DayNote = {
   note: string;
 };
 
+/** İzin / mazeret talebinin türü */
+export type IzinTuru = "izin" | "mazeret" | "rapor" | "degisim";
+
+/** İzin talebinin durumu — patron onaylar. */
+export type IzinDurumu = "bekliyor" | "onaylandi" | "reddedildi" | "iptal";
+
+/**
+ * Personelden gelen izin / mazeret talebi.
+ *
+ * `IzinTalebi` tablosu şemada değil; canlıya migration gerektirmeden ham SQL
+ * ile kurulur (`src/lib/izin-db.ts`). Bu yüzden alanlar düz metindir.
+ */
+export type IzinTalebi = {
+  id: string;
+  employeeId: string;
+  /** "YYYY-MM-DD" (dahil) */
+  baslangic: string;
+  /** "YYYY-MM-DD" (dahil) */
+  bitis: string;
+  tur: IzinTuru;
+  /** Personelin isteğe bağlı açıklaması — sağlık detayı istenmez. */
+  not: string;
+  durum: IzinDurumu;
+  /** ISO zaman damgası */
+  createdAt: string;
+  /** Karar verildiyse ISO zaman damgası, yoksa null */
+  kararAt: string | null;
+  /** Patronun kısa notu (opsiyonel) */
+  kararNot: string;
+};
+
 /** /api/state yanıtı */
 export type StatePayload = {
   business: { id: string; name: string; openTime: string; closeTime: string };
@@ -82,6 +113,12 @@ export type StatePayload = {
    * takvimi yalnızca bu listedeki haftaları gösterir.
    */
   publishedWeeks: string[];
+  /**
+   * İşletmenin izin/mazeret talepleri (son 200).
+   * Personel bağlantısı yalnızca **kendi** taleplerini görür; bu alan panel
+   * içindir ve oturum gerektirir.
+   */
+  izinTalepleri: IzinTalebi[];
 };
 
 /** Atama anahtarı üretir */

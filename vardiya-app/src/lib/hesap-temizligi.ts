@@ -22,6 +22,8 @@ export type TemizlikSonucu = {
   employeeLink: number;
   ikiAdim: number;
   girisDenemesi: number;
+  /** İzin / mazeret talepleri (ham SQL tablo). */
+  izin: number;
 };
 
 /**
@@ -53,7 +55,7 @@ async function dene(etiket: string, is: () => Promise<unknown>): Promise<number>
 export async function kullaniciArtiKayitlariSil(
   kullanici: SilinecekKullanici,
 ): Promise<TemizlikSonucu> {
-  const sonuc: TemizlikSonucu = { employeeLink: 0, ikiAdim: 0, girisDenemesi: 0 };
+  const sonuc: TemizlikSonucu = { employeeLink: 0, ikiAdim: 0, girisDenemesi: 0, izin: 0 };
 
   // 1) Personel id'leri — hesap silinmeden önce toplanmalı.
   let personelIdleri: string[] = [];
@@ -82,12 +84,23 @@ export async function kullaniciArtiKayitlariSil(
     );
   }
 
-  // 3) TOTP sırrı
+  // 3) İzin / mazeret talepleri (ham SQL tablo; hesap silinince kişinin talepleri de gider)
+  if (personelIdleri.length > 0) {
+    const yerTutucular = personelIdleri.map(() => "?").join(", ");
+    sonuc.izin = await dene("IzinTalebi", () =>
+      prisma.$executeRawUnsafe(
+        `DELETE FROM "IzinTalebi" WHERE "employeeId" IN (${yerTutucular})`,
+        ...personelIdleri,
+      ),
+    );
+  }
+
+  // 4) TOTP sırrı
   sonuc.ikiAdim = await dene("IkiAdim", () =>
     prisma.$executeRawUnsafe(`DELETE FROM "IkiAdim" WHERE "userId" = ?`, kullanici.id),
   );
 
-  // 4) Giriş/kayıt/sıfırlama sayaçları (e-posta ve kullanıcı id'si ile kurulur)
+  // 5) Giriş/kayıt/sıfırlama sayaçları (e-posta ve kullanıcı id'si ile kurulur)
   const eposta = likeKacir(kullanici.email.trim().toLowerCase());
   sonuc.girisDenemesi = await dene("GirisDenemesi", () =>
     prisma.$executeRawUnsafe(

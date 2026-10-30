@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { ensureBusiness } from "./server-data";
+import { izinTalepleri } from "./izin-db";
 import type { ColorKey, StatePayload } from "./types";
 
 /**
@@ -13,7 +14,7 @@ import type { ColorKey, StatePayload } from "./types";
 export async function getStatePayload(): Promise<StatePayload> {
   const business = await ensureBusiness();
 
-  const [employees, shiftTemplates, assignments, announcements, dayNotes, weekPlans] =
+  const [employees, shiftTemplates, assignments, announcements, dayNotes, weekPlans, izinler] =
     await Promise.all([
       prisma.employee.findMany({
         where: { businessId: business.id, active: true },
@@ -31,6 +32,8 @@ export async function getStatePayload(): Promise<StatePayload> {
         where: { businessId: business.id },
         orderBy: { weekStart: "asc" },
       }),
+      // İzin talepleri ham SQL tablosunda (migration gerekmez).
+      izinTalepleri(business.id),
     ]);
 
   return {
@@ -70,5 +73,6 @@ export async function getStatePayload(): Promise<StatePayload> {
     })),
     dayNotes: dayNotes.map((d) => ({ date: d.date, note: d.note })),
     publishedWeeks: weekPlans.map((w) => w.weekStart),
+    izinTalepleri: izinler,
   };
 }

@@ -109,6 +109,30 @@ export default async function KayitPage({
           minLength={8}
         />
 
+        {/* KVKK — aydınlatma metni onayı. Zorunlu; onay kaydı sunucuda tutulur. */}
+        <div className="rounded-[10px] border border-zinc-800/80 bg-[#0d0d0f] p-3">
+          <label className="flex cursor-pointer items-start gap-2.5 text-[12px] leading-relaxed text-zinc-400">
+            <input
+              type="checkbox"
+              name="kvkkOnay"
+              value="on"
+              required
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-zinc-600 bg-transparent"
+            />
+            <span>
+              <Link
+                href="/gizlilik"
+                target="_blank"
+                className="text-zinc-200 underline underline-offset-2 hover:text-white"
+              >
+                Gizlilik ve KVKK aydınlatmasını
+              </Link>{" "}
+              okudum. Hangi verilerin işlendiğini, nerede saklandığını ve
+              haklarımı biliyorum.
+            </span>
+          </label>
+        </div>
+
         <button type="submit" className="btn-birincil !mt-5 h-11 w-full text-sm">
           Hesabımı oluştur <span aria-hidden>→</span>
         </button>
@@ -120,11 +144,11 @@ export default async function KayitPage({
       </p>
 
       <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
-        Kayıt olarak verilerinin yalnızca sana ait olduğunu ve dilediğin an{" "}
-        <Link href="/gizlilik" className="underline hover:text-zinc-800">
-          indirip silebileceğini
-        </Link>{" "}
-        kabul etmiş olursun.
+        Personel verisi işliyorsan, ekibine vermen gereken örnek metin{" "}
+        <Link href="/personel-aydinlatma" target="_blank" className="underline hover:text-zinc-300">
+          personel aydınlatma metninde
+        </Link>
+        .
       </p>
 
       <p className="auth-form-baglanti mt-5 border-t border-zinc-100 pt-4">

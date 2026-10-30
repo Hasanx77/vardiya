@@ -76,7 +76,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f11" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
   ],
 };
 
@@ -126,7 +126,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <span className="text-[15px] tracking-tight">Vardiya</span>
                 <span
                   aria-hidden="true"
-                  className="h-[5px] w-[5px] rounded-full bg-[#e8ae55]"
+                  className="h-[5px] w-[5px] rounded-full bg-[#f59e0b]"
                 />
               </Link>
               {kullanici ? <UstMenu /> : null}
