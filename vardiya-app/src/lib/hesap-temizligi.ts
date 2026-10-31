@@ -24,6 +24,8 @@ export type TemizlikSonucu = {
   girisDenemesi: number;
   /** İzin / mazeret talepleri (ham SQL tablo). */
   izin: number;
+  /** Okundu (plan/duyuru görüldü) kayıtları — ham SQL tablo. */
+  okundu: number;
 };
 
 /**
@@ -55,7 +57,7 @@ async function dene(etiket: string, is: () => Promise<unknown>): Promise<number>
 export async function kullaniciArtiKayitlariSil(
   kullanici: SilinecekKullanici,
 ): Promise<TemizlikSonucu> {
-  const sonuc: TemizlikSonucu = { employeeLink: 0, ikiAdim: 0, girisDenemesi: 0, izin: 0 };
+  const sonuc: TemizlikSonucu = { employeeLink: 0, ikiAdim: 0, girisDenemesi: 0, izin: 0, okundu: 0 };
 
   // 1) Personel id'leri — hesap silinmeden önce toplanmalı.
   let personelIdleri: string[] = [];
@@ -90,6 +92,17 @@ export async function kullaniciArtiKayitlariSil(
     sonuc.izin = await dene("IzinTalebi", () =>
       prisma.$executeRawUnsafe(
         `DELETE FROM "IzinTalebi" WHERE "employeeId" IN (${yerTutucular})`,
+        ...personelIdleri,
+      ),
+    );
+  }
+
+  // 3b) Okundu kayıtları (ham SQL tablo; "kim gördü" bilgisi de gider)
+  if (personelIdleri.length > 0) {
+    const yerTutucular = personelIdleri.map(() => "?").join(", ");
+    sonuc.okundu = await dene("Okundu", () =>
+      prisma.$executeRawUnsafe(
+        `DELETE FROM "Okundu" WHERE "employeeId" IN (${yerTutucular})`,
         ...personelIdleri,
       ),
     );

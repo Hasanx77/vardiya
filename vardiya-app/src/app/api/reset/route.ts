@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness, seedDemoData } from "@/lib/server-data";
+import { okunduSil } from "@/lib/okundu-db";
 
 // Tüm personel/vardiya/talepleri siler.
 // mode: "demo" -> örnek veriyi yeniden yükler, "empty" -> boş bırakır
@@ -18,6 +19,8 @@ export async function POST(request: Request) {
   await prisma.weekPlan.deleteMany({ where: { businessId: business.id } });
   // İzin/mazeret talepleri (ham SQL tablo) da sıfırlanır.
   await prisma.$executeRawUnsafe(`DELETE FROM "IzinTalebi" WHERE "businessId" = ?`, business.id);
+  // Okundu kayıtları (ham SQL tablo) da sıfırlanır — yeni plan temiz başlar.
+  await okunduSil(business.id);
 
   if (mode === "demo") {
     await seedDemoData(business.id);

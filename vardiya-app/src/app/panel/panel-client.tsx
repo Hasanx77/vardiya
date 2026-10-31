@@ -15,6 +15,7 @@ import {
   deleteAnnouncement as apiDeleteAnnouncement,
   deleteEmployee as apiDeleteEmployee,
   fetchState,
+  okunduOzeti as apiOkunduOzeti,
   publishWeek as apiPublishWeek,
   resetData as apiResetData,
   setAssignment as apiSetAssignment,
@@ -36,6 +37,7 @@ import {
   tarihAraligiKapsar,
 } from "@/lib/izin";
 import { COLOR_CLASSES } from "@/lib/colors";
+import type { OkunduYaniti } from "@/lib/okundu";
 import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 import TemplateManager from "@/components/TemplateManager";
 import Modal from "@/components/Modal";
@@ -134,6 +136,10 @@ export default function PanelClient({
   const [degisenHafta, setDegisenHafta] = useState<string | null>(null);
   /** Yayınla / geri al işlemi sürüyor mu? */
   const [yayinBusy, setYayinBusy] = useState(false);
+  /** "Kim gördü?" kartı — planı/duyuruyu kaç kişi gördü (yayınlanan hafta). */
+  const [okundu, setOkundu] = useState<OkunduYaniti | null>(null);
+  const [okunduBusy, setOkunduBusy] = useState(false);
+  const [okunduHata, setOkunduHata] = useState(false);
   /** "E-postaya gönder" işlemi sürüyor mu? */
   const [postaBusy, setPostaBusy] = useState(false);
   /** İzin talepleri: modal, karar ve patronun elle ekleme formu. */
@@ -245,6 +251,44 @@ export default function PanelClient({
   const buHaftaYayinda = yayinliHaftalar.includes(weekISO);
   /** Yayınlanmış haftada son yayından sonra değişiklik yapıldı mı? */
   const yayinlanmamisDegisiklik = degisenHafta === weekISO;
+
+  /** "Kim gördü?" kartını tazele — hafta veya yayın durumu değişince. */
+  const okunduYukle = useCallback(async (hafta: string) => {
+    setOkunduBusy(true);
+    setOkunduHata(false);
+    try {
+      setOkundu(await apiOkunduOzeti(hafta));
+    } catch {
+      // Yardımcı veri: yüklenemezse kart sessizce boş kalır, panel çalışır.
+      setOkundu(null);
+      setOkunduHata(true);
+    } finally {
+      setOkunduBusy(false);
+    }
+  }, []);
+
+  // Hafta/yayın durumu değişince otomatik tazele. `await` sonrası yazıldığı
+  // için effect içinde senkron setState olmaz (lint kuralı: set-state-in-effect).
+  useEffect(() => {
+    let iptal = false;
+    void (async () => {
+      try {
+        const yanit = await apiOkunduOzeti(weekISO);
+        if (!iptal) {
+          setOkundu(yanit);
+          setOkunduHata(false);
+        }
+      } catch {
+        if (!iptal) {
+          setOkundu(null);
+          setOkunduHata(true);
+        }
+      }
+    })();
+    return () => {
+      iptal = true;
+    };
+  }, [weekISO, buHaftaYayinda]);
 
   const assignMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -1425,6 +1469,86 @@ export default function PanelClient({
             </p>
           )}
         </div>
+      </div>
+
+      {/* Kim gördü? — planı/duyuruyu kaç kişi gördü (yalnız "gördü/görmedi") */}
+      <div className="kart mt-4 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="bolum-baslik">Kim gördü?</h2>
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+              Personel bağlantısını açınca işaretlenir · konum, cihaz ve IP
+              tutulmaz
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void okunduYukle(weekISO)}
+            disabled={okunduBusy || !buHaftaYayinda}
+            className="btn-sessiz btn-kucuk disabled:opacity-60"
+            title={
+              buHaftaYayinda
+                ? "Okundu bilgisini yenile"
+                : "Hafta yayınlanınca okundu bilgisi oluşur"
+            }
+          >
+            {okunduBusy ? "Yenileniyor…" : "Yenile"}
+          </button>
+        </div>
+
+        {!buHaftaYayinda ? (
+          <p className="mt-3 rounded-xl border border-dashed border-zinc-200 px-3 py-3 text-sm text-zinc-500">
+            Plan yayınlanınca okundu bilgisi burada görünür. Taslak hafta ekibe
+            gösterilmediği için kimse görmüş sayılmaz.
+          </p>
+        ) : !okundu ? (
+          <p className="mt-3 text-sm text-zinc-500">
+            {okunduHata ? "Okundu bilgisi alınamadı." : "Okundu bilgisi yükleniyor…"}
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 flex items-center gap-3">
+              <div
+                className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-100"
+                role="img"
+                aria-label={`Planı ${okundu.plan.toplam} personelden ${okundu.plan.goren} kişi gördü`}
+              >
+                <div
+                  className="h-full rounded-full bg-emerald-500"
+                  style={{ width: `${okundu.plan.oran}%` }}
+                />
+              </div>
+              <span className="shrink-0 text-sm font-semibold text-zinc-800">
+                {okundu.plan.goren}/{okundu.plan.toplam}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
+              {okundu.plan.toplam === 0
+                ? "Henüz personel yok."
+                : okundu.plan.gormeyenAdlar.length === 0
+                  ? "Ekibin tamamı planı gördü."
+                  : `Henüz görmeyenler: ${okundu.plan.gormeyenAdlar.join(", ")}`}
+            </p>
+
+            {okundu.duyurular.length > 0 && (
+              <ul className="mt-3 space-y-1.5 border-t border-zinc-100 pt-2.5">
+                {okundu.duyurular.map((d) => (
+                  <li
+                    key={d.id}
+                    className="flex items-center justify-between gap-3 text-xs"
+                  >
+                    <span className="min-w-0 truncate text-zinc-600">
+                      Duyuru: {d.message}
+                    </span>
+                    <span className="shrink-0 font-medium text-zinc-700">
+                      {d.ozet.goren}/{d.ozet.toplam}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </div>
 
       {/* İzin talepleri — personelden gelen talepler ve onaylı izin günleri */}

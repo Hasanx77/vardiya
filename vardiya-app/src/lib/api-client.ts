@@ -1,4 +1,5 @@
 import type { StatePayload } from "./types";
+import type { OkunduYaniti } from "./okundu";
 
 async function jsonRequest<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -197,4 +198,11 @@ export function addIzin(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+/** Panel — haftanın "kim gördü?" özeti (plan + son duyurular). */
+export function okunduOzeti(hafta: string) {
+  return jsonRequest<OkunduYaniti>(
+    `/api/okundu?hafta=${encodeURIComponent(hafta)}`,
+  );
 }

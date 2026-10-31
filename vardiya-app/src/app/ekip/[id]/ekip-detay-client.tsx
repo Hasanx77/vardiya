@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import type { EkipPayload } from "@/lib/ekip";
@@ -15,6 +15,7 @@ import {
   izinTarihMetni,
 } from "@/lib/izin";
 import type { IzinTuru } from "@/lib/types";
+import type { OkunduTuru } from "@/lib/okundu";
 
 /** Durum rozetlerinin renkleri (amber = bekliyor, yeşil = onaylı). */
 const DURUM_SINIFI: Record<string, string> = {
@@ -41,6 +42,41 @@ export default function EkipDetayClient({ veri }: { veri: EkipPayload }) {
     () => new Map(veri.assignments.map((a) => [a.date, a.shiftTemplateId])),
     [veri.assignments]
   );
+
+  /**
+   * Okundu bilgisi — plan/duyuru ekranda göründüğünde sunucuya tek satır yazılır.
+   *
+   * Yalnızca "gördü" kaydı tutulur: konum, cihaz, IP yok. Sessiz çalışır;
+   * hata kullanıcıya gösterilmez ve plan görüntülemeyi engellemez.
+   * Aynı hedef oturum içinde iki kez gönderilmez (`isaretlenen`).
+   */
+  const isaretlenen = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const haftaBasi = toISODate(weekDates[0]);
+    const kayitlar: { tur: OkunduTuru; hedefId: string }[] = [];
+
+    // Yalnızca yayınlanmış hafta işaretlenir: sunucu taslak haftayı reddeder,
+    // burada da boş haftayı göndermenin anlamı yok.
+    if (weekDates.some((d) => assignByDate.has(toISODate(d)))) {
+      kayitlar.push({ tur: "plan", hedefId: haftaBasi });
+    }
+    for (const a of veri.announcements.slice(0, 3)) {
+      kayitlar.push({ tur: "duyuru", hedefId: a.id });
+    }
+
+    const yeni = kayitlar.filter(
+      (k) => !isaretlenen.current.has(`${k.tur}:${k.hedefId}`),
+    );
+    if (yeni.length === 0) return;
+    for (const k of yeni) isaretlenen.current.add(`${k.tur}:${k.hedefId}`);
+
+    void fetch(`/api/ekip/${veri.token}/okundu`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kayitlar: yeni }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [weekDates, assignByDate, veri.announcements, veri.token]);
 
   const todayISO = toISODate(new Date());
 
