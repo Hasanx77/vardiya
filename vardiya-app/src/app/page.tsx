@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { aktifKullanici } from "@/lib/auth";
 import { demoOzet } from "@/lib/demo-data";
+import { ILKELER } from "@/lib/site-content";
 import { kaydetZiyaret } from "@/lib/visits";
 import Marka from "@/components/Marka";
 import LogoV from "@/components/LogoV";
@@ -456,6 +457,38 @@ export default async function Home({
                 <p className="mt-2 text-[13.5px] leading-relaxed text-[#8f8f98]">
                   {a.metin}
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------ STANDART */}
+      <section className="border-t border-[#1c1c20]">
+        <div className="v-kap scroll-mt-20 py-20 sm:py-24">
+          <BolumBasligi
+            etiket="Standart"
+            baslik="Vardiya Standardı"
+            aciklama="Her karar bu ilkelerden geçiyor; hepsi gerçek ve maliyetli değil."
+          />
+
+          <div className="mt-12">
+            {ILKELER.map((ilke, i) => (
+              <div
+                key={ilke.baslik}
+                className="grid gap-1 border-b border-[#1c1c20] py-6 sm:grid-cols-[170px_1fr] sm:gap-8"
+              >
+                <p className="font-mono text-[10.5px] uppercase leading-relaxed tracking-[0.16em] text-[#85858e]">
+                  0{i + 1}
+                </p>
+                <div>
+                  <h3 className="text-[15px] font-semibold tracking-tight text-[#ededf0]">
+                    {ilke.baslik}
+                  </h3>
+                  <p className="mt-1.5 max-w-[64ch] text-[13.5px] leading-relaxed text-[#8f8f98]">
+                    {ilke.metin}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

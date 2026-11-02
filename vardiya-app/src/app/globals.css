@@ -991,6 +991,12 @@ html.dark .hero-grid {
   animation: sayfaGecis 0.45s var(--ease-out) both;
 }
 
+/* Panel — "oda" hissi: ana ekran açılışında yumuşak geçiş.
+   (tasarım dili: cam/kolonyum hissi veren yumuşak aşağıdan gelen fade) */
+.panel-ekran {
+  animation: sayfaGecis 0.45s var(--ease-out) both;
+}
+
 /* Kaydırma animasyonu kaldırıldı: içerik ilk boyamada görünür.
    Eski sayfalardaki data-reveal işaretleri zararsız kalır. */
 [data-reveal] {

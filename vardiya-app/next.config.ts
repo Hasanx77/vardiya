@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   // Tek işçiye düşürüyoruz (yerelde de zararsız, sadece biraz yavaş).
   experimental: {
     cpus: 1,
+    // Güvenlik yaması sonrası işaret: bu uygulama `next upgrade --agent=security`
+    // ile yükseltildi (16.4.0 → 16.4.3). Next'in kendi kaydı için duruyor.
+    agentUpgrade: "security",
   },
   // Sürüm bilgisini dışarı sızdırma.
   poweredByHeader: false,

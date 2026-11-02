@@ -1017,7 +1017,7 @@ export default function PanelClient({
   const weekEmpty = data.employees.length === 0;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
+    <main className="panel-ekran mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
       {/* Başlık */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

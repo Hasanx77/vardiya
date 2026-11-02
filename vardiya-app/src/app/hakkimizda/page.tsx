@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ILKELER } from "@/lib/site-content";
 import { aktifKullanici } from "@/lib/auth";
 import { kaydetZiyaret } from "@/lib/visits";
 
@@ -44,28 +45,7 @@ const zamanCizgisi = [
   },
 ];
 
-const ilkeler = [
-  {
-    baslik: "Sadelik",
-    metin:
-      "Kullanılmayacak hiçbir özelliği eklemem. Vardiya PDKS değil, bordro değil, muhasebe programı değil; haftalık vardiyayı planlar ve ekibe ulaştırır.",
-  },
-  {
-    baslik: "Gizlilik",
-    metin:
-      "Ücret bilgisi sormam, reklam pikseli koymam, verini kimseye satmam. Veriler Türkiye'deki sunucuda, yalnızca senin hesabına kilitli durur.",
-  },
-  {
-    baslik: "Dürüstlük",
-    metin:
-      "Neyi kontrol edip neyi etmediğimi açıkça yazarım. Olmayan özelliği varmış gibi göstermem; uydurma yorum ve logo yayınlamam.",
-  },
-  {
-    baslik: "Erişilebilirlik",
-    metin:
-      "Bu araç küçük işletmeler için var; o yüzden ücretsiz. Ücretli bir plan gelirse bir ay önceden haber veririm, kart bilgini hiç istemem.",
-  },
-];
+const ilkeler: { baslik: string; metin: string }[] = ILKELER;
 
 export default async function HakkimizdaPage() {
   const kullanici = await aktifKullanici();
@@ -74,7 +54,7 @@ export default async function HakkimizdaPage() {
   return (
     <main className="vitrin flex-1">
       {/* ------------------------------------------------------- HERO */}
-      <section className="v-kap pb-16 pt-14 sm:pb-20 sm:pt-20">
+      <section className="v-kap pb-20 pt-16 sm:pb-24 sm:pt-20">
         <p className="v-etiket">Hakkımızda</p>
         <h1 className="v-h1 mt-6 max-w-[17ch]">
           Vardiya&apos;yı, kendi gördüğüm dağınıklığı bitirmek için yazdım.
@@ -89,7 +69,7 @@ export default async function HakkimizdaPage() {
 
       {/* ---------------------------------------------------- 01 HİKÂYE */}
       <section className="border-t border-[#1c1c20]">
-        <div className="v-kap grid gap-10 py-16 sm:py-20 lg:grid-cols-[220px_1fr] lg:gap-16">
+        <div className="v-kap grid gap-10 py-20 sm:py-24 lg:grid-cols-[220px_1fr] lg:gap-16">
           <p className="v-etiket">01 — Hikâye</p>
           <div className="hk-makale">
             <p>
@@ -119,7 +99,7 @@ export default async function HakkimizdaPage() {
 
       {/* ------------------------------------------- 02 ZAMAN ÇİZLGİSİ */}
       <section className="border-t border-[#1c1c20]">
-        <div className="v-kap grid gap-10 py-16 sm:py-20 lg:grid-cols-[220px_1fr] lg:gap-16">
+        <div className="v-kap grid gap-10 py-20 sm:py-24 lg:grid-cols-[220px_1fr] lg:gap-16">
           <p className="v-etiket">02 — Zaman çizgisi</p>
           <div className="border-t border-[#1c1c20]">
             {zamanCizgisi.map((z) => (
@@ -146,7 +126,7 @@ export default async function HakkimizdaPage() {
 
       {/* --------------------------------------------------- 03 İLKELER */}
       <section className="border-t border-[#1c1c20]">
-        <div className="v-kap grid gap-10 py-16 sm:py-20 lg:grid-cols-[220px_1fr] lg:gap-16">
+        <div className="v-kap grid gap-10 py-20 sm:py-24 lg:grid-cols-[220px_1fr] lg:gap-16">
           <div>
             <p className="v-etiket">03 — İlkeler</p>
             <p className="mt-4 max-w-[24ch] text-[13px] leading-relaxed text-[#8f8f98]">
@@ -212,10 +192,10 @@ export default async function HakkimizdaPage() {
 
       {/* ----------------------------------------- 04 MİSYON & VİZYON */}
       <section className="border-t border-[#1c1c20]">
-        <div className="v-kap grid gap-10 py-16 sm:py-20 lg:grid-cols-[220px_1fr] lg:gap-16">
+        <div className="v-kap grid gap-10 py-20 sm:py-24 lg:grid-cols-[220px_1fr] lg:gap-16">
           <p className="v-etiket">04 — Misyon &amp; vizyon</p>
-          <div className="grid gap-px border-t border-[#1c1c20] sm:grid-cols-2">
-            <div className="border-b border-[#1c1c20] py-8 sm:border-b-0 sm:pr-10">
+          <div className="grid gap-10 sm:grid-cols-2">
+            <div className="py-8 sm:pr-10">
               <h3 className="text-[15px] font-semibold tracking-tight text-[#ededf0]">
                 Misyonum
               </h3>
@@ -225,7 +205,7 @@ export default async function HakkimizdaPage() {
                 araç.
               </p>
             </div>
-            <div className="border-b border-[#1c1c20] py-8 sm:border-b-0 sm:border-l sm:border-[#1c1c20] sm:pl-10">
+            <div className="py-8 sm:pl-10">
               <h3 className="text-[15px] font-semibold tracking-tight text-[#ededf0]">
                 Vizyonum
               </h3>
