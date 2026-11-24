@@ -4,7 +4,7 @@
  */
 export default function Iskelet({ satir = 4 }: { satir?: number }) {
   return (
-    <main className="flex-1">
+    <div className="flex-1" aria-busy="true" aria-live="polite">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex items-center justify-between gap-3">
           <div className="h-7 w-40 animate-pulse rounded-lg bg-zinc-200" />
@@ -32,6 +32,6 @@ export default function Iskelet({ satir = 4 }: { satir?: number }) {
 
         <p className="mt-6 text-center text-sm text-zinc-400">Yükleniyor…</p>
       </div>
-    </main>
+    </div>
   );
 }

@@ -13,5 +13,12 @@ export default async function PanelPage() {
   const initialData: StatePayload = await getStatePayload();
   const ziyaret = sahipMi(kullanici.email) ? await ziyaretOzeti() : undefined;
 
-  return <PanelClient initialData={initialData} ziyaret={ziyaret} />;
+  return (
+    <PanelClient
+      initialData={initialData}
+      eposta={kullanici.email}
+      epostaDogrulanmis={Boolean(kullanici.emailVerifiedAt)}
+      ziyaret={ziyaret}
+    />
+  );
 }

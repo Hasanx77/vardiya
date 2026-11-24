@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { COOKIE_NAME, cerezAyarlari, girdilerGecerliMi, sifreOzetle } from "@/lib/auth";
 import { oturumAltyapisiHazir, oturumTokeni } from "@/lib/session";
@@ -6,6 +6,7 @@ import { disAdres, guvenliHedef, httpsMi, istemciIp } from "@/lib/url";
 import { beklemeMetni, girisBasarisiz, girisDenetle } from "@/lib/giris-korumasi";
 import { hesapOlustur } from "@/lib/hesap-olustur";
 import { aydinlatmaOnayiKaydet } from "@/lib/kvkk";
+import { kodGonder } from "@/lib/kod-gonderim";
 
 /**
  * Kayıt ol — **en kısa yol**.
@@ -86,6 +87,21 @@ export async function POST(req: Request) {
   // KVKK onay kanıtı — hesap açıldıktan sonra yazılır. Yazılamazsa kayıt
   // akışı durmaz (fail-open); hata sunucu günlüğüne düşer.
   await aydinlatmaOnayiKaydet({ userId: kullanici.id, ip });
+
+  // E-posta doğrulama kodu — yanıtı bekletmeden, yanıttan sonra gönderilir.
+  after(async () => {
+    try {
+      await kodGonder({
+        email,
+        amac: "dogrulama",
+        userId: kullanici.id,
+        ip,
+        kullaniciAdi: kullanici.username ?? undefined,
+      });
+    } catch (e) {
+      console.error("kayit: doğrulama kodu gönderilemedi:", e);
+    }
+  });
 
   const res = NextResponse.redirect(disAdres(req, next), 303);
   res.cookies.set(

@@ -47,6 +47,22 @@ vi.mock("@/lib/giris-korumasi", () => ({
 
 vi.mock("@/lib/hesap-olustur", () => ({ hesapOlustur: takip.hesapOlustur }));
 
+// `after()` yalnız gerçek istek bağlamında çalışır; testte hemen çalıştırıyoruz.
+vi.mock("next/server", async (importOriginal) => {
+  const gercek = await importOriginal<typeof import("next/server")>();
+  return {
+    ...gercek,
+    after: (is: () => unknown) => {
+      void is();
+    },
+  };
+});
+
+// Doğrulama e-postası bu testin konusu değil.
+vi.mock("@/lib/kod-gonderim", () => ({
+  kodGonder: async () => ({ ok: true, kalanDk: 10, tekrarSn: 60 }),
+}));
+
 vi.mock("@/lib/kvkk", () => ({
   AYDINLATMA_SURUMU: "2026-10-30",
   aydinlatmaOnayiKaydet: takip.onayKaydet,

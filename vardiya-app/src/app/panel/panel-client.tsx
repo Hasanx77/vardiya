@@ -1,2922 +1,1499 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
 import Link from "next/link";
-import type { Employee, IzinTalebi, IzinTuru, StatePayload } from "@/lib/types";
-import {
-  addEmployee as apiAddEmployee,
-  addEmployeesBulk as apiAddEmployeesBulk,
-  addIzin as apiAddIzin,
-  clearWeek as apiClearWeek,
-  copyWeek as apiCopyWeek,
-  createAnnouncement as apiCreateAnnouncement,
-  decideIzin as apiDecideIzin,
-  deleteAnnouncement as apiDeleteAnnouncement,
-  deleteEmployee as apiDeleteEmployee,
-  fetchState,
-  okunduOzeti as apiOkunduOzeti,
-  publishWeek as apiPublishWeek,
-  resetData as apiResetData,
-  setAssignment as apiSetAssignment,
-  setDayNote as apiSetDayNote,
-  unpublishWeek as apiUnpublishWeek,
-  updateBusiness as apiUpdateBusiness,
-  updateEmployee as apiUpdateEmployee,
-  updateTemplate as apiUpdateTemplate,
-} from "@/lib/api-client";
-import { addDays, formatShort, formatWeekRange, getWeekDates, toISODate, DAY_SHORT_TR } from "@/lib/dates";
-import { shiftHours, shiftSaatMetni, WEEKLY_LIMIT_HOURS, standartSablonlar } from "@/lib/shifts";
-import { analyzeWeek, MIN_DAILY_REST_HOURS } from "@/lib/compliance";
-import {
-  IZIN_DURUM_ETIKETI,
-  IZIN_TUR_ETIKETI,
-  IZIN_TURLERI,
-  izinTarihMetni,
-  onayliIzinVarMi,
-  tarihAraligiKapsar,
-} from "@/lib/izin";
-import { COLOR_CLASSES } from "@/lib/colors";
-import type { OkunduYaniti } from "@/lib/okundu";
-import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
-import TemplateManager from "@/components/TemplateManager";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "@/components/Modal";
-import { csvIndir } from "@/lib/csv";
-import { getHoliday } from "@/lib/holidays";
-import { dosyaKabulEdilir, parseEmployeeText } from "@/lib/personel-aktarim";
+import TemplateManager from "@/components/TemplateManager";
+import {
+  addEmployee,
+  addIzin,
+  clearWeek,
+  copyWeek,
+  createAnnouncement,
+  decideIzin,
+  deleteAnnouncement,
+  deleteEmployee,
+  fetchState,
+  okunduOzeti,
+  publishWeek,
+  resetData,
+  setAssignment,
+  unpublishWeek,
+  updateBusiness,
+  updateEmployee,
+} from "@/lib/api-client";
+import { COLOR_CLASSES } from "@/lib/colors";
+import { analyzeWeek } from "@/lib/compliance";
+import {
+  DAY_SHORT_TR,
+  formatDayDate,
+  formatWeekRange,
+  getWeekDates,
+  haftaBasiISO,
+  istanbulGunu,
+  toISODate,
+} from "@/lib/dates";
+import { onayliIzinVarMi } from "@/lib/izin";
+import { shiftHours, shiftSaatMetni } from "@/lib/shifts";
+import type { Employee, IzinTalebi, ShiftTemplate, StatePayload } from "@/lib/types";
+import type { OkunduYaniti } from "@/lib/okundu";
+import { isoHaftaBasi } from "@/lib/yayin";
+import { buildScheduleText, buildWhatsAppLink } from "@/lib/whatsapp";
 
-function keyOf(employeeId: string, iso: string) {
-  return `${employeeId}__${iso}`;
-}
+/**
+ * Panel — **sade sürüm**.
+ *
+ * Tasarım kararı (24 Kas 2026): ekranın tek işi var: bu hafta **kim, hangi gün,
+ * hangi vardiyada**. Bu yüzden üstte hafta çubuğu, ortada tek ızgara, altta tek
+ * satır özet. Ekip, izin, duyuru, şablon, paylaşım gibi ikincil işler "Araçlar"
+ * penceresinde toplanır; ana ekranı kalabalıklaştırmaz.
+ *
+ * İleri tarihli plan: hafta okları + **tarih seçici** ile 1 yıl ileriye kadar
+ * gidilebilir. Her hafta ayrı yayınlanır (taslak → yayınla).
+ */
+type Secim = { employeeId: string; iso: string };
+type ModalTuru =
+  | null
+  | "ekip"
+  | "izin"
+  | "duyuru"
+  | "sablon"
+  | "paylas"
+  | "okundu"
+  | "araclar"
+  | "saatler"
+  | "rapor"
+  | "uyarilar";
+type Duzenlenen = { id: string; name: string; role: string; phone: string } | null;
 
-/** Küçük satır içi simgeler (emoji yerine — daha sakin bir arayüz). */
-function KalemIkon({ className = "h-3.5 w-3.5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden>
-      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" strokeLinejoin="round" />
-      <path d="m14.5 5.5 3 3" />
-    </svg>
-  );
-}
-
-function OkIkon({ yon = "sag" }: { yon?: "sag" | "sol" }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={`h-4 w-4 ${yon === "sol" ? "rotate-180" : ""}`}
-      aria-hidden
-    >
-      <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-/** İzin talebi durumunun rozet sınıfı. */
-const DURUM_SINIFI: Record<string, string> = {
-  bekliyor: "border-amber-200 bg-amber-50 text-amber-900",
-  onaylandi: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  reddedildi: "border-zinc-200 bg-zinc-50 text-zinc-600",
-  iptal: "border-zinc-200 bg-zinc-50 text-zinc-500",
-};
+const BUGUN = istanbulGunu();
 
 export default function PanelClient({
   initialData,
+  eposta,
+  epostaDogrulanmis = true,
   ziyaret,
 }: {
   initialData: StatePayload;
-  /** Yalnızca site sahibine gönderilir (panel/page.tsx). */
+  eposta?: string;
+  epostaDogrulanmis?: boolean;
   ziyaret?: { bugun: number; hafta: number; ay: number };
 }) {
-  const [data, setData] = useState<StatePayload | null>(initialData);
-  const [error, setError] = useState("");
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [showForm, setShowForm] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
-  const [empDraft, setEmpDraft] = useState({
-    name: "",
-    phone: "",
-    role: "",
-    annualLeaveDays: "",
-  });
-  const [announcementDraft, setAnnouncementDraft] = useState("");
-  const [showBulk, setShowBulk] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [importText, setImportText] = useState("");
-  const [importBusy, setImportBusy] = useState(false);
-  const [importDosyaAdi, setImportDosyaAdi] = useState("");
-  const importDosya = useRef<HTMLInputElement>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showPersonel, setShowPersonel] = useState(false);
-  const [showStandart, setShowStandart] = useState(false);
-  const [acilisDraft, setAcilisDraft] = useState(initialData.business.openTime);
-  const [kapanisDraft, setKapanisDraft] = useState(initialData.business.closeTime);
-  const [search, setSearch] = useState("");
-  const [expandedEmpId, setExpandedEmpId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", role: "" });
-  const [nameDraft, setNameDraft] = useState(initialData.business.name);
-  const [nameEdit, setNameEdit] = useState(false);
-  const [toast, setToast] = useState("");
-  /** Hızlı doldurma fırçası: seçili şablon kimliği veya "sil". */
-  const [firca, setFirca] = useState<string | "sil" | null>(null);
-  /** Yalnızca süre uyarısı olan personeli göster. */
-  const [sadeceUyarili, setSadeceUyarili] = useState(false);
-  /** Kaydetme durumu: hücre değişikliklerinde küçük geri bildirim. */
-  const [kayitDurumu, setKayitDurumu] = useState<"bos" | "yaziyor" | "tamam">("bos");
-  /** Uyarıdan satıra atlarken kısa süreli vurgu. */
-  const [vurgu, setVurgu] = useState<string | null>(null);
-  const kayitZaman = useRef<number | null>(null);
-  /**
-   * Yayınlanmış bir haftada değişiklik yapıldıysa o haftanın başlangıcı.
-   * "Yayınlanmamış değişiklik var" uyarısını göstermek için kullanılır.
-   */
+  const [data, setData] = useState<StatePayload>(initialData);
+  const [offset, setOffset] = useState(0);
+  const [secim, setSecim] = useState<Secim | null>(null);
+  const [modal, setModal] = useState<ModalTuru>(null);
+  const [duzenlenen, setDuzenlenen] = useState<Duzenlenen>(null);
+  const [kayit, setKayit] = useState<"bos" | "yaziyor" | "tamam">("bos");
+  const [mesaj, setMesaj] = useState<string | null>(null);
   const [degisenHafta, setDegisenHafta] = useState<string | null>(null);
-  /** Yayınla / geri al işlemi sürüyor mu? */
   const [yayinBusy, setYayinBusy] = useState(false);
-  /** "Kim gördü?" kartı — planı/duyuruyu kaç kişi gördü (yayınlanan hafta). */
+  const [mobilGun, setMobilGun] = useState<number | null>(null);
   const [okundu, setOkundu] = useState<OkunduYaniti | null>(null);
-  const [okunduBusy, setOkunduBusy] = useState(false);
-  const [okunduHata, setOkunduHata] = useState(false);
-  /** "E-postaya gönder" işlemi sürüyor mu? */
-  const [postaBusy, setPostaBusy] = useState(false);
-  /** İzin talepleri: modal, karar ve patronun elle ekleme formu. */
-  const [showIzin, setShowIzin] = useState(false);
-  const [izinBusyId, setIzinBusyId] = useState<string | null>(null);
-  const [izinEkleBusy, setIzinEkleBusy] = useState(false);
-  const [izinEkle, setIzinEkle] = useState({
-    employeeId: "",
-    tur: "izin" as IzinTuru,
-    baslangic: toISODate(new Date()),
-    bitis: toISODate(new Date()),
-    not: "",
-  });
+  const [tarihGirdi, setTarihGirdi] = useState("");
+  const zaman = useRef<number | null>(null);
 
-  const flash = useCallback((msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(""), 2400);
-  }, []);
+  const haftalar = useMemo(() => getWeekDates(offset), [offset]);
+  const gunler = useMemo(() => haftalar.map((d) => toISODate(d)), [haftalar]);
+  const haftaISO = gunler[0];
+  const yayinda = (data.publishedWeeks ?? []).includes(haftaISO);
+  const degisti = degisenHafta === haftaISO;
 
-  const load = useCallback(async () => {
-    try {
-      const state = await fetchState();
-      setData(state);
-      setNameDraft(state.business.name);
-      setAcilisDraft(state.business.openTime);
-      setKapanisDraft(state.business.closeTime);
-      setError("");
-    } catch {
-      setError("Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.");
-    }
-  }, []);
-
-  /** Sunucudan gelen JSON hatasını okunur metne çevirir. */
-  function hataMetni(err: unknown, varsayilan: string): string {
-    const ham = err instanceof Error ? err.message : "";
-    try {
-      const j = JSON.parse(ham) as { hata?: string };
-      if (j?.hata) return String(j.hata);
-    } catch {
-      /* düz metin hata */
-    }
-    return varsayilan;
-  }
-
-  /**
-   * İzin talebine karar ver. Onaylanan günler planda "İzinli" işaretiyle
-   * görünür; izinli güne vardiya atanmışsa kart uyarı gösterir.
-   */
-  async function izinKararVer(talep: IzinTalebi, durum: "onaylandi" | "reddedildi") {
-    if (izinBusyId) return;
-    setIzinBusyId(talep.id);
-    try {
-      await apiDecideIzin(talep.id, durum);
-      await load();
-      flash(durum === "onaylandi" ? "İzin onaylandı." : "Talep reddedildi.");
-    } catch (err) {
-      flash(hataMetni(err, "İşlem tamamlanamadı. Lütfen tekrar dene."));
-    } finally {
-      setIzinBusyId(null);
-    }
-  }
-
-  /** Patron elle izin ekler (telefonla gelen izin → doğrudan onaylı). */
-  async function izinElleEkle(e: FormEvent) {
-    e.preventDefault();
-    if (izinEkleBusy) return;
-    if (!izinEkle.employeeId) {
-      flash("Önce personel seç.");
-      return;
-    }
-    setIzinEkleBusy(true);
-    try {
-      await apiAddIzin(izinEkle);
-      await load();
-      setIzinEkle((f) => ({ ...f, not: "" }));
-      flash("İzin eklendi.");
-    } catch (err) {
-      flash(hataMetni(err, "İzin eklenemedi."));
-    } finally {
-      setIzinEkleBusy(false);
-    }
-  }
-
-  // Modallar ESC ile kapansın
-  useEffect(() => {
-    function esc(e: KeyboardEvent) {
-      if (e.key !== "Escape") return;
-      setShowForm(false);
-      setNameEdit(false);
-      setFirca(null);
-    }
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, []);
-
-  // Hafta değişince fırça kapanmalı (yanlış haftaya boyamayı önler).
-  // Not: bunu effect ile yapmak yerine hafta gezinme eylemlerinde sıfırlıyoruz —
-  // böylece fazladan render tetiklenmez.
-  const haftaGit = useCallback((offset: number | "bu") => {
-    setFirca(null);
-    setWeekOffset(offset === "bu" ? 0 : (w) => w + offset);
-  }, []);
-
-  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
-  const weekISOList = useMemo(() => weekDates.map((d) => toISODate(d)), [weekDates]);
-  /** Gösterilen haftanın pazartesi günü — yayın durumu bununla tutulur. */
-  const weekISO = weekISOList[0];
-  const yayinliHaftalar = data?.publishedWeeks ?? [];
-  const buHaftaYayinda = yayinliHaftalar.includes(weekISO);
-  /** Yayınlanmış haftada son yayından sonra değişiklik yapıldı mı? */
-  const yayinlanmamisDegisiklik = degisenHafta === weekISO;
-
-  /** "Kim gördü?" kartını tazele — hafta veya yayın durumu değişince. */
-  const okunduYukle = useCallback(async (hafta: string) => {
-    setOkunduBusy(true);
-    setOkunduHata(false);
-    try {
-      setOkundu(await apiOkunduOzeti(hafta));
-    } catch {
-      // Yardımcı veri: yüklenemezse kart sessizce boş kalır, panel çalışır.
-      setOkundu(null);
-      setOkunduHata(true);
-    } finally {
-      setOkunduBusy(false);
-    }
-  }, []);
-
-  // Hafta/yayın durumu değişince otomatik tazele. `await` sonrası yazıldığı
-  // için effect içinde senkron setState olmaz (lint kuralı: set-state-in-effect).
-  useEffect(() => {
-    let iptal = false;
-    void (async () => {
-      try {
-        const yanit = await apiOkunduOzeti(weekISO);
-        if (!iptal) {
-          setOkundu(yanit);
-          setOkunduHata(false);
-        }
-      } catch {
-        if (!iptal) {
-          setOkundu(null);
-          setOkunduHata(true);
-        }
-      }
-    })();
-    return () => {
-      iptal = true;
-    };
-  }, [weekISO, buHaftaYayinda]);
-
-  const assignMap = useMemo(() => {
+  const sablonlar = data.shiftTemplates;
+  const personel = data.employees;
+  const sablonById = useMemo(() => new Map(sablonlar.map((s) => [s.id, s])), [sablonlar]);
+  const atamaMap = useMemo(() => {
     const m = new Map<string, string>();
-    data?.assignments.forEach((a) => m.set(keyOf(a.employeeId, a.date), a.shiftTemplateId));
+    for (const a of data.assignments) m.set(`${a.employeeId}__${a.date}`, a.shiftTemplateId);
     return m;
-  }, [data]);
+  }, [data.assignments]);
 
-  const empById = useMemo(() => {
-    const m = new Map<string, Employee>();
-    data?.employees.forEach((e) => m.set(e.id, e));
-    return m;
-  }, [data]);
-
-  const templateById = useMemo(() => {
-    const m = new Map<string, StatePayload["shiftTemplates"][number]>();
-    data?.shiftTemplates.forEach((t) => m.set(t.id, t));
-    return m;
-  }, [data]);
-
-  /** Gösterilen haftadaki toplam atama (vardiya) sayısı. */
-  const haftaAtamaSayisi = useMemo(() => {
-    const gunler = new Set(weekISOList);
-    return data?.assignments.filter((a) => gunler.has(a.date)).length ?? 0;
-  }, [data, weekISOList]);
-
-  // Mevzuat/çakışma analizi (saf fonksiyon) — her veri/hafta değişiminde yeniden hesaplanır
-  const analysis = useMemo(() => {
-    if (!data) return null;
-    const weekISO = weekDates.map((d) => toISODate(d));
-    return analyzeWeek({
-      employees: data.employees.map((e) => ({ id: e.id, name: e.name })),
-      shifts: data.shiftTemplates,
-      assignments: data.assignments,
-      weekDates: weekISO,
-      previousDate: toISODate(addDays(weekDates[0], -1)),
-    });
-  }, [data, weekDates]);
-
-  // Geçen haftanın toplamı: KPI kartında "geçen haftaya göre" farkı için.
-  const oncekiHafta = useMemo(() => {
-    if (!data) return null;
-    const gecen = weekDates.map((d) => toISODate(addDays(d, -7)));
-    return analyzeWeek({
-      employees: data.employees.map((e) => ({ id: e.id, name: e.name })),
-      shifts: data.shiftTemplates,
-      assignments: data.assignments,
-      weekDates: gecen,
-      previousDate: toISODate(addDays(weekDates[0], -8)),
-    });
-  }, [data, weekDates]);
-
-  const todayISO = toISODate(new Date());
-
-  /** İzin talepleri — onay bekleyenler ve onaylılar ayrı ayrı. */
-  const izinler = useMemo(() => data?.izinTalepleri ?? [], [data]);
-  const bekleyenIzinler = useMemo(
-    () => izinler.filter((t) => t.durum === "bekliyor"),
-    [izinler],
-  );
   const onayliIzinler = useMemo(
-    () => izinler.filter((t) => t.durum === "onaylandi"),
-    [izinler],
+    () => (data.izinTalepleri ?? []).filter((t) => t.durum === "onaylandi"),
+    [data.izinTalepleri],
+  );
+  const bekleyenIzinler = useMemo(
+    () => (data.izinTalepleri ?? []).filter((t) => t.durum === "bekliyor"),
+    [data.izinTalepleri],
+  );
+  const izinliMi = useCallback(
+    (empId: string, iso: string) => onayliIzinVarMi(onayliIzinler, empId, iso),
+    [onayliIzinler],
   );
 
-  /**
-   * Onaylı izin gününe vardiya atanmış mı? (Gösterilen hafta için.)
-   * Planla izin çakışması en sık yapılan hatadır; sessizce geçmesin.
-   */
-  const izinliGunAtamalari = useMemo(() => {
-    const gunler = new Set(weekISOList);
-    return (data?.assignments ?? []).filter(
-      (a) => gunler.has(a.date) && onayliIzinVarMi(onayliIzinler, a.employeeId, a.date),
-    );
-  }, [data, weekISOList, onayliIzinler]);
+  /** Mevzuat uyarıları (45 saat, 11 saat dinlenme, günlük 11 saat, gece...) */
+  const analiz = useMemo(
+    () =>
+      analyzeWeek({
+        employees: personel.map((e) => ({ id: e.id, name: e.name })),
+        shifts: sablonlar,
+        assignments: data.assignments,
+        weekDates: gunler,
+        previousDate: toISODate(new Date(new Date(`${gunler[0]}T12:00:00`).getTime() - 86_400_000)),
+      }),
+    [personel, sablonlar, data.assignments, gunler],
+  );
 
-  /** Gösterilen hafta içinde onaylı izin günlerinin sayısı (personel-başına benzersiz). */
-  const buHaftaIzinliGun = useMemo(() => {
-    const kume = new Set<string>();
-    for (const t of onayliIzinler) {
-      for (const iso of weekISOList) {
-        if (tarihAraligiKapsar(t.baslangic, t.bitis, iso)) {
-          kume.add(`${t.employeeId}__${iso}`);
-        }
-      }
-    }
-    return kume.size;
-  }, [onayliIzinler, weekISOList]);
+  const haftaAtama = useMemo(
+    () => data.assignments.filter((a) => gunler.includes(a.date)).length,
+    [data.assignments, gunler],
+  );
+  const haftaSaat = useMemo(
+    () =>
+      data.assignments
+        .filter((a) => gunler.includes(a.date))
+        .reduce((toplam, a) => toplam + (sablonById.get(a.shiftTemplateId) ? shiftHours(sablonById.get(a.shiftTemplateId)!) : 0), 0),
+    [data.assignments, gunler, sablonById],
+  );
+  const calisanKisi = useMemo(
+    () => new Set(data.assignments.filter((a) => gunler.includes(a.date)).map((a) => a.employeeId)).size,
+    [data.assignments, gunler],
+  );
 
-  const todayByShift = useMemo(() => {
-    const m = new Map<string, Employee[]>();
-    if (!data) return m;
-    data.employees.forEach((e) => {
-      const sid = assignMap.get(keyOf(e.id, todayISO));
-      if (!sid) return;
-      const arr = m.get(sid) ?? [];
-      arr.push(e);
-      m.set(sid, arr);
-    });
-    return m;
-  }, [data, assignMap, todayISO]);
+  const uyariVar = analiz.issues.length > 0;
 
-  const empMonthStats = useMemo(() => {
-    const m = new Map<string, { hours: number; days: number }>();
-    if (!data) return m;
-    data.employees.forEach((e) => m.set(e.id, { hours: 0, days: 0 }));
-    const now = new Date();
-    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    for (const a of data.assignments) {
-      if (!a.date.startsWith(prefix)) continue;
-      const t = templateById.get(a.shiftTemplateId);
-      const cur = m.get(a.employeeId);
-      if (!t || !cur) continue;
-      cur.hours += shiftHours(t);
-      cur.days += 1;
-    }
-    return m;
-  }, [data, templateById]);
+  function bildir(metin: string) {
+    setMesaj(metin);
+    if (zaman.current) window.clearTimeout(zaman.current);
+    zaman.current = window.setTimeout(() => setMesaj(null), 3200);
+  }
 
-  const dayNoteMap = useMemo(() => {
-    const m = new Map<string, string>();
-    data?.dayNotes.forEach((d) => m.set(d.date, d.note));
-    return m;
-  }, [data]);
-
-  const coverageIssues = useMemo(() => {
-    const list: { date: string; templateId: string; have: number; need: number }[] = [];
-    if (!data) return list;
-    for (const d of weekDates) {
-      const iso = toISODate(d);
-      for (const t of data.shiftTemplates) {
-        if (t.minStaff <= 0) continue;
-        let have = 0;
-        for (const e of data.employees) {
-          if (assignMap.get(`${e.id}__${iso}`) === t.id) have++;
-        }
-        if (have < t.minStaff) list.push({ date: iso, templateId: t.id, have, need: t.minStaff });
-      }
-    }
-    return list;
-  }, [data, weekDates, assignMap]);
-
-  async function changeAssignment(employeeId: string, iso: string, shiftTemplateId: string) {
-    // Önce ekranda güncelle (hızlı), sonra sunucuya yaz
-    setData((prev) => {
-      if (!prev) return prev;
-      const others = prev.assignments.filter(
-        (a) => !(a.employeeId === employeeId && a.date === iso)
-      );
-      const next = shiftTemplateId
-        ? [...others, { employeeId, date: iso, shiftTemplateId }]
-        : others;
-      return { ...prev, assignments: next };
-    });
-    setKayitDurumu("yaziyor");
+  const yukle = useCallback(async () => {
     try {
-      await apiSetAssignment(employeeId, iso, shiftTemplateId);
-      setKayitDurumu("tamam");
-      // Yayınlanmış haftada değişiklik yapıldıysa hatırlat: yeniden yayınlanmalı.
-      if (buHaftaYayinda) setDegisenHafta(weekISO);
-      if (kayitZaman.current) window.clearTimeout(kayitZaman.current);
-      kayitZaman.current = window.setTimeout(() => setKayitDurumu("bos"), 2000);
+      setData(await fetchState());
     } catch {
-      flash("Kaydedilemedi, yeniden deneniyor…");
-      setKayitDurumu("bos");
-      load();
+      bildir("Veriler yenilenemedi. Sayfayı yenile.");
+    }
+  }, []);
+
+  async function atamaYaz(employeeId: string, iso: string, sablonId: string) {
+    setData((onceki) => {
+      const digerleri = onceki.assignments.filter((a) => !(a.employeeId === employeeId && a.date === iso));
+      return {
+        ...onceki,
+        assignments: sablonId
+          ? [...digerleri, { employeeId, date: iso, shiftTemplateId: sablonId }]
+          : digerleri,
+      };
+    });
+    setKayit("yaziyor");
+    try {
+      await setAssignment(employeeId, iso, sablonId);
+      setKayit("tamam");
+      if (yayinda) setDegisenHafta(haftaISO);
+      window.setTimeout(() => setKayit("bos"), 1600);
+    } catch {
+      setKayit("bos");
+      bildir("Kaydedilemedi. Tekrar dene.");
+      await yukle();
     }
   }
 
-  /** Gösterilen haftayı ekibe açar (personel linki + .ics görür). */
-  async function haftaYayinla() {
-    if (yayinBusy) return;
-    if (haftaAtamaSayisi === 0) {
-      flash("Bu haftada vardiya yok — önce planı doldur.");
+  async function yayinla() {
+    if (haftaAtama === 0) {
+      bildir("Bu haftada vardiya yok — önce planı doldur.");
       return;
     }
     setYayinBusy(true);
     try {
-      await apiPublishWeek(weekISO);
+      await publishWeek(haftaISO);
       setDegisenHafta(null);
-      await load();
-      flash("Plan yayınlandı — ekip artık görebilir.");
+      await yukle();
+      bildir("Plan yayınlandı — ekip görebilir.");
     } catch {
-      flash("Yayınlanamadı, tekrar dene.");
+      bildir("Yayınlanamadı. Tekrar dene.");
     } finally {
       setYayinBusy(false);
     }
   }
 
-  /** Yayını geri alır: hafta yeniden taslak olur, ekibe görünmez. */
-  async function haftaYayininiGeriAl() {
-    if (yayinBusy) return;
+  async function yayiniGeriAl() {
     setYayinBusy(true);
     try {
-      await apiUnpublishWeek(weekISO);
-      await load();
-      flash("Yayın geri alındı — bu hafta taslak.");
+      await unpublishWeek(haftaISO);
+      await yukle();
+      bildir("Yayın geri alındı — hafta yeniden taslak.");
     } catch {
-      flash("Geri alınamadı, tekrar dene.");
+      bildir("Yayın geri alınamadı.");
     } finally {
       setYayinBusy(false);
     }
   }
 
-  /** Planı PDF olarak hesabın kendi e-postasına gönderir. */
-  async function planPdfGonder() {
-    if (postaBusy) return;
-    setPostaBusy(true);
-    try {
-      const res = await fetch(`/api/plan/pdf?hafta=${weekISO}`, { method: "POST" });
-      const json = (await res.json().catch(() => ({}))) as { kime?: string; hata?: string };
-      if (!res.ok) throw new Error(json.hata ?? "Gönderilemedi.");
-      flash(`PDF gönderildi: ${json.kime ?? "e-posta adresin"}`);
-    } catch (e) {
-      flash(e instanceof Error ? e.message : "Gönderilemedi.");
-    } finally {
-      setPostaBusy(false);
-    }
-  }
-
-  /** Uyarıdan ilgili personelin satırına atla ve kısa süre vurgula. */
-  function uyariyaGit(employeeId: string, date: string) {    setExpandedEmpId(employeeId);
-    setVurgu(`${employeeId}__${date}`);
-    document
-      .getElementById(`satir-${employeeId}`)
-      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    window.setTimeout(() => setVurgu(null), 2400);
-  }
-
-  async function handleAddEmployee() {
-    const name = form.name.trim();
-    if (!name) return flash("Personel adı gerekli.");
-    try {
-      await apiAddEmployee({
-        name,
-        phone: form.phone.trim(),
-        role: form.role.trim(),
-      });
-      setForm({ name: "", phone: "", role: "" });
-      setShowForm(false);
-      await load();
-      flash("Personel eklendi.");
-    } catch {
-      flash("Personel eklenemedi.");
-    }
-  }
-
-  async function handleImportDosya(e: React.ChangeEvent<HTMLInputElement>) {
-    const dosya = e.target.files?.[0];
-    if (!dosya) return;
-    if (!dosyaKabulEdilir(dosya.name)) {
-      flash("Yalnızca .csv, .tsv veya .txt yükleyebilirsin.");
-      return;
-    }
-    try {
-      setImportText(await dosya.text());
-      setImportDosyaAdi(dosya.name);
-    } catch {
-      flash("Dosya okunamadı.");
-    } finally {
-      if (importDosya.current) importDosya.current.value = "";
-    }
-  }
-
-  async function handleImport() {
-    const list = parseEmployeeText(importText);
-    if (list.length === 0) return flash("İçe aktarılacak personel bulunamadı.");
-    setImportBusy(true);
-    try {
-      const res = await apiAddEmployeesBulk(list);
-      await load();
-      setShowImport(false);
-      setImportText("");
-      setImportDosyaAdi("");
-      flash(`${res.created} personel içe aktarıldı.`);
-    } catch {
-      flash("İçe aktarma başarısız.");
-    } finally {
-      setImportBusy(false);
-    }
-  }
-
-  async function handleRemoveEmployee(emp: Employee) {
-    if (!window.confirm(`${emp.name} çıkarılsın mı? Vardiyaları da silinir.`)) return;
-    if (editingEmpId === emp.id) setEditingEmpId(null);
-    if (expandedEmpId === emp.id) setExpandedEmpId(null);
-    try {
-      await apiDeleteEmployee(emp.id);
-      await load();
-      flash("Personel silindi.");
-    } catch {
-      flash("Silinemedi.");
-    }
-  }
-
-  /** Standart mesai saatlerini kaydet */
-  async function standartKaydet() {
-    if (!data) return;
-    if (acilisDraft === kapanisDraft) return flash("Açılış ve kapanış aynı olamaz.");
-    try {
-      await apiUpdateBusiness({ openTime: acilisDraft, closeTime: kapanisDraft });
-      await load();
-      flash("Standart mesai saatleri kaydedildi.");
-    } catch {
-      flash("Kaydedilemedi.");
-    }
-  }
-
-  /** Mevcut şablonları standart saatlere uydur (atamalar silinmez) */
-  async function sablonlariStandartaUydur() {
-    if (!data) return;
-    const hedef = standartSablonlar(acilisDraft, kapanisDraft);
-    let sayi = 0;
-    try {
-      for (const s of hedef) {
-        const mevcut = data.shiftTemplates.find((t) => t.name === s.name);
-        if (!mevcut) continue;
-        await apiUpdateTemplate(mevcut.id, { start: s.start, end: s.end });
-        sayi++;
-      }
-      await load();
-      flash(sayi > 0 ? `${sayi} şablon standart saatlere uyduruldu.` : "Eşleşen şablon yok.");
-    } catch {
-      flash("Şablonlar güncellenemedi.");
-    }
-  }
-
-  async function saveBusinessName() {
-    if (!data) return;
-    const name = nameDraft.trim();
-    setNameEdit(false);
-    if (!name || name === data.business.name) {
-      setNameDraft(data.business.name);
-      return;
-    }
-    try {
-      await apiUpdateBusiness({ name });
-      await load();
-      flash("İşletme adı kaydedildi.");
-    } catch {
-      flash("Kaydedilemedi.");
-    }
-  }
-
-  async function handleCopyPrev() {
-    const monday = weekDates[0];
-    const fromISO = toISODate(addDays(monday, -7));
-    const toISO = toISODate(monday);
-    if (
-      !window.confirm(
-        "Geçen haftanın vardiyaları bu haftaya kopyalanacak. Bu haftanın mevcut planı silinecek. Devam?"
-      )
-    )
-      return;
-    try {
-      await apiCopyWeek(fromISO, toISO);
-      // Yayınlanmış haftaya kopyalandıysa yeniden yayınlanmalı.
-      if (buHaftaYayinda) setDegisenHafta(toISO);
-      await load();
-      flash("Geçen hafta kopyalandı.");
-    } catch {
-      flash("Kopyalanamadı.");
-    }
-  }
-
-  async function handleClearWeek() {
-    const toISO = toISODate(weekDates[0]);
-    if (!window.confirm("Bu haftanın TÜM vardiyaları silinsin mi?")) return;
-    try {
-      await apiClearWeek(toISO);
-      if (buHaftaYayinda) setDegisenHafta(toISO);
-      await load();
-      flash("Hafta temizlendi.");
-    } catch {
-      flash("Temizlenemedi.");
-    }
-  }
-
-  async function handleReset(mode: "demo" | "empty") {
-    const msg =
-      mode === "demo"
-        ? "Tüm veriler silinip örnek veri yüklenecek. Devam?"
-        : "TÜM personel, vardiya ve talepler silinecek (boş başlangıç). Devam?";
-    if (!window.confirm(msg)) return;
-    try {
-      await apiResetData(mode);
-      setShowSettings(false);
-      await load();
-      flash(mode === "demo" ? "Örnek veri yüklendi." : "Sıfırlandı, boş başlayabilirsin.");
-    } catch {
-      flash("İşlem başarısız.");
-    }
-  }
-
-  function exportCsv() {
-    if (!data) return;
-    const satirlar: (string | number)[][] = [
-      [
-        "Personel",
-        "Görev",
-        ...weekDates.map((d) => formatShort(d)),
-        "Toplam Saat",
-        "45 saat üstü (sa)",
-      ],
-    ];
-    for (const emp of data.employees) {
-      const cells = weekDates.map((d) => {
-        const sid = assignMap.get(keyOf(emp.id, toISODate(d)));
-        const t = sid ? templateById.get(sid) : undefined;
-        return t ? `${t.name} ${shiftSaatMetni(t)}` : "";
-      });
-      satirlar.push([emp.name, emp.role, ...cells, weekTotal(emp), empOvertime(emp)]);
-    }
-    csvIndir(`vardiya-${toISODate(weekDates[0])}.csv`, satirlar);
-    flash("CSV indirildi.");
-  }
-
-  async function postAnnouncement() {
-    const message = announcementDraft.trim();
-    if (!message) return flash("Mesaj boş.");
-    try {
-      await apiCreateAnnouncement(message);
-      setAnnouncementDraft("");
-      await load();
-      flash("Duyuru yayınlandı.");
-    } catch {
-      flash("Yayınlanamadı.");
-    }
-  }
-
-  async function removeAnnouncement(id: string) {
-    if (!window.confirm("Duyuru silinsin mi?")) return;
-    try {
-      await apiDeleteAnnouncement(id);
-      await load();
-      flash("Duyuru silindi.");
-    } catch {
-      flash("Silinemedi.");
-    }
-  }
-
-  async function editDayNote(iso: string) {
-    const current = dayNoteMap.get(iso) ?? "";
-    const val = window.prompt("Gün notu (boş bırak = sil):", current);
-    if (val === null) return;
-    try {
-      await apiSetDayNote(iso, val);
-      await load();
-      flash("Not kaydedildi.");
-    } catch {
-      flash("Not kaydedilemedi.");
-    }
-  }
-
-  function startEditEmp(emp: Employee) {
-    setEditingEmpId(emp.id);
-    setExpandedEmpId(emp.id);
-    setEmpDraft({
-      name: emp.name,
-      phone: emp.phone,
-      role: emp.role,
-      annualLeaveDays: emp.annualLeaveDays != null ? String(emp.annualLeaveDays) : "14",
-    });
-  }
-
-  async function saveEmp() {
-    if (!editingEmpId) return;
-    const name = empDraft.name.trim();
-    if (!name) return flash("Ad gerekli.");
-    try {
-      await apiUpdateEmployee(editingEmpId, {
-        name,
-        phone: empDraft.phone.trim(),
-        role: empDraft.role.trim(),
-        annualLeaveDays:
-          empDraft.annualLeaveDays.trim() === ""
-            ? 14
-            : Math.max(0, Math.round(Number(empDraft.annualLeaveDays) || 0)),
-      });
-      setEditingEmpId(null);
-      await load();
-      flash("Personel güncellendi.");
-    } catch {
-      flash("Güncellenemedi.");
-    }
-  }
-
-  function weekTotal(emp: Employee): number {
-    let total = 0;
-    for (const d of weekDates) {
-      const shiftId = assignMap.get(keyOf(emp.id, toISODate(d)));
-      if (!shiftId) continue;
-      const t = templateById.get(shiftId);
-      if (t) total += shiftHours(t);
-    }
-    return total;
-  }
-
-  /** Personelin haftalık fazla mesai saati (45 sa üstü) */
-  function empOvertime(emp: Employee): number {
-    return analysis?.perEmployee.get(emp.id)?.overtimeHours ?? 0;
-  }
-
-  /** Personelin bu hafta çalıştığı günlerin kısa adları (ör. "Pzt, Çar, Cum") */
-  function calistigiGunler(emp: Employee): string[] {
-    return weekDates
-      .filter((d) => assignMap.has(keyOf(emp.id, toISODate(d))))
-      .map((d) => DAY_SHORT_TR[(d.getDay() + 6) % 7]);
-  }
-
-  function sendWhatsApp(emp: Employee) {
-    if (!data) return;
-    if (!emp.phone.trim()) return flash("Bu personelin telefonu yok.");
-    const text = buildScheduleText(
-      emp,
-      weekDates,
-      Object.fromEntries(
-        [...assignMap.entries()].map(([k, v]) => [k, v])
-      ),
-      data.shiftTemplates,
-      data.business.name
+  function tariheGit(iso: string) {
+    const pzt = isoHaftaBasi(iso);
+    if (!pzt) return;
+    const buPzt = haftaBasiISO();
+    const fark = Math.round(
+      (Date.parse(`${pzt}T00:00:00Z`) - Date.parse(`${buPzt}T00:00:00Z`)) / 604_800_000,
     );
-    window.open(buildWhatsAppLink(emp.phone, text), "_blank");
+    if (!Number.isFinite(fark)) return;
+    setOffset(Math.max(-104, Math.min(104, fark)));
+    setTarihGirdi("");
   }
 
-  async function copySchedule(emp: Employee) {
-    if (!data) return;
-    const text = buildScheduleText(
-      emp,
-      weekDates,
-      Object.fromEntries([...assignMap.entries()]),
-      data.shiftTemplates,
-      data.business.name
-    );
-    try {
-      await navigator.clipboard.writeText(text);
-      flash("Program kopyalandı.");
-    } catch {
-      flash("Kopyalanamadı.");
+  // Sekme/başlık açıklaması: bugün hangi gün hangi vardiyalar var.
+  const bugunVardiyalar = useMemo(() => {
+    const gruplar = new Map<string, string[]>();
+    for (const a of data.assignments) {
+      if (a.date !== BUGUN) continue;
+      const s = sablonById.get(a.shiftTemplateId);
+      const e = personel.find((p) => p.id === a.employeeId);
+      if (!s || !e) continue;
+      const dizi = gruplar.get(s.id) ?? [];
+      dizi.push(e.name);
+      gruplar.set(s.id, dizi);
     }
-  }
+    return gruplar;
+  }, [data.assignments, sablonById, personel]);
 
-  async function copyStaffLink(emp: Employee) {
-    try {
-      const r = await fetch(`/api/baglanti/${emp.id}`, { cache: "no-store" });
-      const j = (await r.json().catch(() => ({}))) as { yol?: string | null; aktif?: boolean };
-      if (!r.ok) return flash("Bağlantı alınamadı.");
-      if (!j.aktif || !j.yol) {
-        return flash("Bu personelin bağlantısı kapalı. 'Yenile' ile yeni link oluştur.");
-      }
-      await navigator.clipboard.writeText(`${window.location.origin}${j.yol}`);
-      flash("Personel linki kopyalandı.");
-    } catch {
-      flash("Kopyalanamadı.");
-    }
-  }
+  const buHaftaMi = offset === 0;
+  const bugunIndex = gunler.indexOf(BUGUN);
+  const seciliGun = mobilGun ?? (bugunIndex >= 0 ? bugunIndex : 0);
 
-  /** Personel linkini yenile / kapat / yeniden aç. */
-  async function linkIslem(emp: Employee, islem: "yenile" | "kapat" | "ac") {
-    if (islem === "kapat" && !window.confirm(`${emp.name} için link kapatılsın mı? Elindeki bağlantı çalışmayacak.`)) {
-      return;
-    }
-    try {
-      const r = await fetch(`/api/baglanti/${emp.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ islem }),
-      });
-      const j = (await r.json().catch(() => ({}))) as {
-        yol?: string | null;
-        hata?: string;
-      };
-      if (!r.ok) return flash(j.hata ?? "İşlem yapılamadı.");
-
-      if (islem === "kapat") {
-        flash("Link kapatıldı. Personel artık açamaz.");
-        return;
-      }
-      if (j.yol) {
-        await navigator.clipboard.writeText(`${window.location.origin}${j.yol}`).catch(() => {});
-      }
-      flash(
-        islem === "yenile"
-          ? "Yeni link kopyalandı; eski link geçersiz."
-          : "Link yeniden açıldı ve kopyalandı."
-      );
-    } catch {
-      flash("İşlem yapılamadı.");
-    }
-  }
-
-  /** ⋯ menüsünde bir işlem seçilince menüyü kapat. */
-  function kapatMenu(e: React.MouseEvent<HTMLElement>) {
-    (e.currentTarget as HTMLElement).closest("details")?.removeAttribute("open");
-  }
-
-  if (error) {
-    return (
-      <main className="flex-1 grid place-items-center px-4">
-        <div className="kart max-w-sm p-6 text-center">
-          <p className="text-sm font-medium text-zinc-800">{error}</p>
-          <button onClick={load} className="btn-birincil mt-4">
-            Tekrar dene
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  if (!data) {
-    return (
-      <main className="flex-1 grid place-items-center">
-        <p className="text-sm text-zinc-500">Yükleniyor…</p>
-      </main>
-    );
-  }
-
-  const summaryHours = data.employees.reduce((s, e) => s + weekTotal(e), 0);
-  const issues = analysis?.issues ?? [];
-  const uyariSayisi = issues.length + coverageIssues.length;
-  const calisanSayisi = data.employees.filter((e) => calistigiGunler(e).length > 0).length;
-  const hataSayisi = issues.filter((i) => i.severity === "error").length;
-  const oncekiSaat = oncekiHafta
-    ? Math.round(
-        [...oncekiHafta.perEmployee.values()].reduce((s, e) => s + e.weeklyHours, 0)
-      )
-    : 0;
-  const saatFarki = summaryHours - oncekiSaat;
-  const bugunKisi = [...todayByShift.values()].reduce((n, list) => n + list.length, 0);
-  const bugunEtiket = new Date(`${todayISO}T00:00:00`).toLocaleDateString("tr-TR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  const uyariliIdler = new Set(issues.map((i) => i.employeeId));
-
-  /**
-   * "Şimdi ne yapmalıyım?" — panelin her durumda tek bir sonraki adım
-   * önermesi için hesaplanır (patron isteği: teknik terim yok, tek cevap).
-   */
-  const sonrakiAdim: {
-    baslik: string;
-    aciklama: string;
-    etiket: string;
-    calistir: () => void;
-    ikincil?: boolean;
-  } = (() => {
-    if (data.employees.length === 0) {
-      return {
-        baslik: "İlk adım: personelini ekle",
-        aciklama: "Plan yapmak için en az bir çalışan gerekiyor. Sadece isim yeterli.",
-        etiket: "+ Personel ekle",
-        calistir: () => setShowForm(true),
-      };
-    }
-    if (haftaAtamaSayisi === 0) {
-      return {
-        baslik: "Bu hafta henüz plan yok",
-        aciklama:
-          "Aşağıdaki ızgarada gün hücrelerine vardiya seç ya da “Hızlı doldur” fırçasını kullan.",
-        etiket: "Planı doldur",
-        calistir: () => {
-          document
-            .getElementById("hafta-plani")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        },
-      };
-    }
-    if (!buHaftaYayinda) {
-      return {
-        baslik: "Plan hazır — yayınla",
-        aciklama:
-          "Yayınlayana kadar bu planı yalnızca sen görürsün; personel linki ve takvim göstermez.",
-        etiket: "Planı yayınla",
-        calistir: haftaYayinla,
-      };
-    }
-    if (yayinlanmamisDegisiklik) {
-      return {
-        baslik: "Yayınlanmamış değişiklik var",
-        aciklama: "Haftayı yayınladıktan sonra düzenleme yaptın. Ekip yeni hâlini görsün mü?",
-        etiket: "Değişiklikleri yayınla",
-        calistir: haftaYayinla,
-      };
-    }
-    if (bekleyenIzinler.length > 0) {
-      return {
-        baslik: `${bekleyenIzinler.length} izin talebi onay bekliyor`,
-        aciklama:
-          "Talepleri görüp onayla ya da reddet. Onaylanan günler planda “İzinli” olarak işaretlenir.",
-        etiket: "Talepleri göster",
-        calistir: () => setShowIzin(true),
-      };
-    }
-    if (uyariSayisi > 0) {
-      return {
-        baslik: `${uyariSayisi} uyarı var`,
-        aciklama: "Süre veya kapsam uyarılarını gözden geçir; tek tıkla ilgili satıra gidersin.",
-        etiket: "Uyarıları göster",
-        calistir: () => setSadeceUyarili(true),
-      };
-    }
-    return {
-      baslik: "Her şey hazır",
-      aciklama: "Plan yayında ve uyarı yok. Şimdi ekibe gönderebilir ya da PDF alabilirsin.",
-      etiket: "Ekibe mesaj gönder",
-      calistir: () => setShowBulk(true),
-    };
-  })();
-
-  const visibleEmployees = data.employees.filter((e) => {
-    const q = search.trim().toLowerCase();
-    if (q && !(e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q))) {
-      return false;
-    }
-    if (sadeceUyarili && !uyariliIdler.has(e.id)) return false;
-    return true;
-  });
-
-  const dayCounts = weekDates.map((d) => {
-    const iso = toISODate(d);
-    return data.employees.reduce(
-      (n, e) => n + (assignMap.get(keyOf(e.id, iso)) ? 1 : 0),
-      0
-    );
-  });
-  const weekEmpty = data.employees.length === 0;
+  const OFSET_SINIRI = 104; // 2 yıl ileri/geri — yanlış tıklamada kaybolmayı önler
+  const ofsetDegistir = (fark: number) =>
+    setOffset((o) => Math.max(-OFSET_SINIRI, Math.min(OFSET_SINIRI, o + fark)));
 
   return (
-    <main className="panel-ekran mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
-      {/* Başlık */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-            İşletme
-          </p>
-          {nameEdit ? (
-            <input
-              autoFocus
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onBlur={saveBusinessName}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveBusinessName();
-              }}
-              aria-label="İşletme adı"
-              className="mt-1 w-full max-w-sm rounded-lg border border-zinc-300 bg-white px-2 py-1 text-2xl font-semibold outline-none focus:border-zinc-900 sm:text-3xl"
-            />
-          ) : (
+    <main className="kap py-5 sm:py-7">
+      {/* Bildirim */}
+      {mesaj ? (
+        <div
+          role="status"
+          className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-md rounded-xl border border-zinc-200 bg-white px-4 py-3 text-[13px] text-zinc-800 shadow-lg sm:bottom-5 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        >
+          {mesaj}
+        </div>
+      ) : null}
+
+      {!epostaDogrulanmis ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+          <span>
+            E-posta adresin doğrulanmadı
+            {eposta ? ` (${eposta})` : ""}. Şifre sıfırlama ve şifresiz giriş için gerekli.
+          </span>
+          <Link href="/eposta-dogrula" className="font-semibold underline underline-offset-2">
+            Doğrula →
+          </Link>
+        </div>
+      ) : null}
+
+      {/* Hafta çubuğu */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => ofsetDegistir(-1)}
+            className="btn-sessiz h-9 w-9 !px-0 text-base"
+            aria-label="Önceki hafta"
+          >
+            ‹
+          </button>
+          <div className="min-w-[168px] text-center">
+            <div className="text-[15px] font-semibold tracking-tight">{formatWeekRange(haftalar)}</div>
+            <div className="text-[11px] text-zinc-500">
+              {offset === 0 ? "Bu hafta" : offset > 0 ? `${offset} hafta sonra` : `${-offset} hafta önce`}
+              {kayit === "yaziyor" ? " · kaydediliyor…" : kayit === "tamam" ? " · kaydedildi" : ""}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => ofsetDegistir(1)}
+            className="btn-sessiz h-9 w-9 !px-0 text-base"
+            aria-label="Sonraki hafta"
+          >
+            ›
+          </button>
+          {offset !== 0 ? (
             <button
               type="button"
-              onClick={() => setNameEdit(true)}
-              className="group mt-1 flex max-w-full items-center gap-2 text-left"
-              title="İşletme adını düzenle"
+              onClick={() => setOffset(0)}
+              className="btn-sessiz h-9 text-[12px]"
             >
-              <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
-                {data.business.name}
-              </h1>
-              <span className="text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
-                <KalemIkon />
-              </span>
+              Bu hafta
             </button>
-          )}
-          <p className="mt-1 text-sm text-zinc-500">
-            Haftalık vardiya planı · {data.employees.length} personel
-          </p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={handleCopyPrev} className="btn-ikincil">
-            Geçen haftayı kopyala
-          </button>
-          <button onClick={() => setShowImport(true)} className="btn-ikincil">
-            Excel&apos;den aktar
-          </button>
-          <button onClick={() => setShowForm((s) => !s)} className="btn-birincil">
-            + Personel
-          </button>
-        </div>
-      </div>
-
-      {/* Hafta özeti — panelin ilk bakışta okunan dört sayısı */}
-      <div className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-        <div className="kart p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-zinc-400">
-              Planlanan saat
-            </p>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 text-zinc-300" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-zinc-900">
-            {summaryHours}
-            <span className="ml-1 text-sm font-normal text-zinc-400">sa</span>
-          </p>
-          <p className="mt-0.5 text-[11px] text-zinc-500">
-            {oncekiSaat > 0 ? (
-              saatFarki === 0 ? (
-                "Geçen haftayla aynı"
-              ) : (
-                <>
-                  <span
-                    className={
-                      saatFarki > 0 ? "font-medium text-amber-700" : "font-medium text-emerald-700"
-                    }
-                  >
-                    {saatFarki > 0 ? "+" : "−"}
-                    {Math.abs(saatFarki)} sa
-                  </span>{" "}
-                  geçen haftaya göre
-                </>
-              )
-            ) : (
-              "Geçen hafta planı yok"
-            )}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowPersonel(true)}
-          title="Personel listesini aç — düzenle veya çıkar"
-          className="kart p-4 text-left transition-colors hover:border-zinc-300"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-zinc-400">
-              Çalışan
-            </p>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 text-zinc-300" aria-hidden>
-              <circle cx="9" cy="8" r="3" />
-              <path d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6M18 20a6 6 0 0 0-3-5.2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-zinc-900">
-            {calisanSayisi}
-            <span className="ml-0.5 text-sm font-normal text-zinc-400">
-              /{data.employees.length}
-            </span>
-          </p>
-          <p className="mt-0.5 text-[11px] text-zinc-500">
-            {data.employees.length === 0
-              ? "Henüz personel yok"
-              : calisanSayisi === data.employees.length
-                ? "Bu hafta herkese vardiya var"
-                : `${data.employees.length - calisanSayisi} kişi boşta`}
-            <span className="text-zinc-400"> · Yönet</span>
-          </p>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSadeceUyarili((v) => !v)}
-          disabled={uyariSayisi === 0}
-          aria-pressed={sadeceUyarili}
-          title={
-            uyariSayisi > 0
-              ? "Yalnızca süre uyarısı olan personeli göster"
-              : "Bu hafta uyarı yok"
-          }
-          className={`kart p-4 text-left transition-colors disabled:cursor-default ${
-            uyariSayisi > 0 ? "border-amber-200 bg-amber-50/60 hover:border-amber-300" : ""
-          } ${sadeceUyarili ? "ring-2 ring-amber-400" : ""}`}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-zinc-400">
-              Uyarı
-            </p>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 text-zinc-300" aria-hidden>
-              <path d="M12 4 3 20h18L12 4Z" strokeLinejoin="round" />
-              <path d="M12 10v4M12 17.2v.1" strokeLinecap="round" />
-            </svg>
-          </div>
-          <p className={`mt-2 text-2xl font-semibold tabular-nums ${uyariSayisi > 0 ? "text-amber-900" : "text-zinc-900"}`}>
-            {uyariSayisi}
-          </p>
-          <p className="mt-0.5 text-[11px] text-zinc-500">
-            {uyariSayisi === 0
-              ? "Süre ve kapsam temiz"
-              : `${hataSayisi} hata · ${issues.length - hataSayisi} uyarı${
-                  coverageIssues.length > 0 ? ` · ${coverageIssues.length} kapsam` : ""
-                }`}
-          </p>
-        </button>
-
-        <div className="kart p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-zinc-400">
-              Bugün
-            </p>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 text-zinc-300" aria-hidden>
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" strokeLinecap="round" />
-            </svg>
-          </div>
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-zinc-900">
-            {bugunKisi}
-            <span className="ml-1 text-sm font-normal text-zinc-400">kişi</span>
-          </p>
-          <p className="mt-0.5 text-[11px] text-zinc-500">
-            {todayByShift.size} vardiya · {bugunEtiket}
-          </p>
-        </div>
-      </div>
-
-      {/* Sıradaki adım — panelin tek cevabı */}
-      <div className="kart mt-3 flex flex-col gap-3 border-amber-200 bg-amber-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-800">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden>
-              <path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5" strokeLinecap="round" />
-              <circle cx="12" cy="12" r="3.2" />
-            </svg>
+          <label className="sr-only" htmlFor="tarih-git">
+            Tarihe git
+          </label>
+          <input
+            id="tarih-git"
+            type="date"
+            value={tarihGirdi}
+            onChange={(e) => {
+              setTarihGirdi(e.target.value);
+              if (e.target.value) tariheGit(e.target.value);
+            }}
+            className="giris h-9 w-[150px] !py-0 text-[12.5px]"
+          />
+          <span
+            className={`inline-flex h-7 items-center rounded-full px-2.5 text-[11.5px] font-medium ${
+              yayinda
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-zinc-100 text-zinc-600"
+            }`}
+          >
+            {yayinda ? (degisti ? "Yayında · yeni değişiklik" : "Yayında") : "Taslak"}
           </span>
-          <div className="min-w-0">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-amber-800/80">
-              Şimdi ne yapmalıyım?
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-zinc-900">{sonrakiAdim.baslik}</p>
-            <p className="mt-0.5 text-[12.5px] leading-relaxed text-zinc-600">
-              {sonrakiAdim.aciklama}
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {buHaftaYayinda && haftaAtamaSayisi > 0 ? (
-            <>
-              <a
-                href={`/api/plan/pdf?hafta=${weekISO}`}
-                className="btn-ikincil btn-kucuk"
-                download
-              >
-                PDF indir
-              </a>
-              <button
-                type="button"
-                onClick={planPdfGonder}
-                disabled={postaBusy}
-                className="btn-ikincil btn-kucuk disabled:opacity-60"
-              >
-                {postaBusy ? "Gönderiliyor…" : "E-postaya gönder"}
-              </button>
-            </>
+          {yayinda ? (
+            <button
+              type="button"
+              onClick={() => void yayiniGeriAl()}
+              disabled={yayinBusy}
+              className="btn-sessiz h-9 text-[12px] disabled:opacity-50"
+            >
+              Geri al
+            </button>
           ) : null}
           <button
             type="button"
-            onClick={sonrakiAdim.calistir}
-            disabled={yayinBusy}
-            className="btn-birincil disabled:opacity-60"
+            onClick={() => void yayinla()}
+            disabled={yayinBusy || haftaAtama === 0}
+            title={haftaAtama === 0 ? "Önce bu haftaya vardiya ekle" : undefined}
+            className="btn-birincil h-9 text-[12.5px] disabled:opacity-50"
           >
-            {sonrakiAdim.etiket}
+            {yayinda && !degisti ? "Yeniden yayınla" : "Planı yayınla"}
           </button>
-        </div>
-      </div>
-
-      {/* Personel ekleme */}
-      {showForm && (
-        <div className="kart mt-4 p-4">
-          <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_1fr_auto]">
-            <div>
-              <label htmlFor="yeni-ad" className="etiket">
-                Ad Soyad <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="yeni-ad"
-                placeholder="Ayşe Yılmaz"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="giris mt-1"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label htmlFor="yeni-tel" className="etiket">
-                Telefon
-              </label>
-              <input
-                id="yeni-tel"
-                placeholder="0532 111 22 33"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="giris mt-1"
-                inputMode="tel"
-              />
-            </div>
-            <div>
-              <label htmlFor="yeni-gorev" className="etiket">
-                Görev
-              </label>
-              <input
-                id="yeni-gorev"
-                placeholder="Barista, garson…"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="giris mt-1"
-              />
-            </div>
-            <div className="flex items-end">
-              <button onClick={handleAddEmployee} className="btn-birincil w-full sm:w-auto">
-                Kaydet
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Hafta çubuğu */}
-      <div className="sticky top-14 z-20 -mx-4 mt-5 border-y border-zinc-200 bg-zinc-50/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => haftaGit(-1)}
-            className="btn-ikincil btn-kucuk"
-            aria-label="Önceki hafta"
-          >
-            <OkIkon yon="sol" />
-          </button>
-          <div className="min-w-0 flex-1 text-center sm:text-left">
-            <div className="text-sm font-semibold">{formatWeekRange(weekDates)}</div>
-            {weekOffset !== 0 ? (
-              <button
-                onClick={() => haftaGit("bu")}
-                className="text-[11px] text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
-              >
-                Bu haftaya dön
-              </button>
-            ) : (
-              <span className="text-[11px] text-zinc-500">Bu hafta</span>
-            )}
-          </div>
-
-          <div
-            className="mr-1 hidden min-w-[96px] items-center justify-end gap-1.5 border-r border-zinc-200 pr-3 text-[11px] text-zinc-500 sm:flex"
-            aria-live="polite"
-          >
-            {kayitDurumu === "yaziyor" ? (
-              <>
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-                Kaydediliyor…
-              </>
-            ) : kayitDurumu === "tamam" ? (
-              <>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Kaydedildi
-              </>
-            ) : (
-              <span className="text-zinc-400">Otomatik kayıt</span>
-            )}
-          </div>
-
-          <button
-            onClick={() => haftaGit(1)}
-            className="btn-ikincil btn-kucuk"
-            aria-label="Sonraki hafta"
-          >
-            <OkIkon />
-          </button>
-        </div>
-
-        {/* Taslak / yayında durumu — ekibe görünürlüğü belirler */}
-        <div className="mt-1.5 flex flex-wrap items-center gap-2 border-t border-zinc-200/70 pt-1.5">
-          {buHaftaYayinda ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Yayında · ekip görüyor
-              {yayinlanmamisDegisiklik ? " · yayınlanmamış değişiklik var" : ""}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-              Taslak · ekibe görünmüyor
-            </span>
-          )}
-
-          {!buHaftaYayinda || yayinlanmamisDegisiklik ? (
-            <button
-              onClick={haftaYayinla}
-              disabled={yayinBusy || haftaAtamaSayisi === 0}
-              className="btn-birincil btn-kucuk disabled:opacity-50"
-              title={
-                haftaAtamaSayisi === 0
-                  ? "Önce bu haftaya vardiya ekle"
-                  : "Bu haftayı personel linkinde ve takvimde görünür yap"
-              }
-            >
-              {yayinBusy ? "Yayınlanıyor…" : buHaftaYayinda ? "Değişiklikleri yayınla" : "Planı yayınla"}
-            </button>
-          ) : (
-            <button
-              onClick={haftaYayininiGeriAl}
-              disabled={yayinBusy}
-              className="btn-sessiz btn-kucuk disabled:opacity-60"
-              title="Haftayı yeniden taslağa al — ekibe görünmez"
-            >
-              Yayını geri al
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Mobil özet + filtre durumu */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500">
-        {sadeceUyarili ? (
-          <>
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-medium text-amber-900">
-              Yalnızca uyarısı olanlar
-            </span>
-            <button
-              onClick={() => setSadeceUyarili(false)}
-              className="underline underline-offset-2 hover:text-zinc-900"
-            >
-              Filtreyi kaldır
-            </button>
-          </>
-        ) : (
-          <span className="text-zinc-400 sm:hidden">
-            {summaryHours} sa · {calisanSayisi}/{data.employees.length} kişi
-            {uyariSayisi > 0 ? ` · ${uyariSayisi} uyarı` : ""}
-          </span>
-        )}
-      </div>
-
-      {/* Bugün */}
-      <div className="kart mt-4 p-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-zinc-400">
-              Bugün
-            </p>
-            <h2 className="mt-0.5 text-base font-semibold">{bugunEtiket}</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-            <span>
-              <strong className="font-semibold text-zinc-700">{bugunKisi}</strong> kişi
-            </span>
-            <span>
-              <strong className="font-semibold text-zinc-700">{todayByShift.size}</strong> vardiya
-            </span>
-            <Link
-              href="/bugun"
-              className="font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
-            >
-              Tablet görünümü →
-            </Link>
-            <a
-              href="#hafta-plani"
-              className="font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
-            >
-              Planı düzenle
-            </a>
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {data.shiftTemplates.map((t) => {
-            const list = todayByShift.get(t.id) ?? [];
-            if (list.length === 0) return null;
-            return (
-              <span
-                key={t.id}
-                className={`inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border px-2.5 py-1.5 text-xs ${
-                  COLOR_CLASSES[t.color]?.chip ?? ""
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                    COLOR_CLASSES[t.color]?.dot ?? ""
-                  }`}
-                />
-                <strong className="font-semibold">{t.name}</strong>
-                <span className="opacity-80">{shiftSaatMetni(t)}</span>
-                <span className="opacity-80">{list.map((e) => e.name).join(", ")}</span>
-              </span>
-            );
-          })}
-          {todayByShift.size === 0 && (
-            <p className="text-sm text-zinc-500">
-              Bugün için atanmış vardiya yok. Aşağıdaki haftalık plandan ekleyebilirsin.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Kim gördü? — planı/duyuruyu kaç kişi gördü (yalnız "gördü/görmedi") */}
-      <div className="kart mt-4 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 className="bolum-baslik">Kim gördü?</h2>
-            <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
-              Personel bağlantısını açınca işaretlenir · konum, cihaz ve IP
-              tutulmaz
-            </p>
-          </div>
           <button
             type="button"
-            onClick={() => void okunduYukle(weekISO)}
-            disabled={okunduBusy || !buHaftaYayinda}
-            className="btn-sessiz btn-kucuk disabled:opacity-60"
-            title={
-              buHaftaYayinda
-                ? "Okundu bilgisini yenile"
-                : "Hafta yayınlanınca okundu bilgisi oluşur"
-            }
+            onClick={() => setModal("araclar")}
+            className="btn-sessiz h-9 text-[12px]"
           >
-            {okunduBusy ? "Yenileniyor…" : "Yenile"}
+            ⋯ Araçlar
           </button>
         </div>
-
-        {!buHaftaYayinda ? (
-          <p className="mt-3 rounded-xl border border-dashed border-zinc-200 px-3 py-3 text-sm text-zinc-500">
-            Plan yayınlanınca okundu bilgisi burada görünür. Taslak hafta ekibe
-            gösterilmediği için kimse görmüş sayılmaz.
-          </p>
-        ) : !okundu ? (
-          <p className="mt-3 text-sm text-zinc-500">
-            {okunduHata ? "Okundu bilgisi alınamadı." : "Okundu bilgisi yükleniyor…"}
-          </p>
-        ) : (
-          <>
-            <div className="mt-3 flex items-center gap-3">
-              <div
-                className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-100"
-                role="img"
-                aria-label={`Planı ${okundu.plan.toplam} personelden ${okundu.plan.goren} kişi gördü`}
-              >
-                <div
-                  className="h-full rounded-full bg-emerald-500"
-                  style={{ width: `${okundu.plan.oran}%` }}
-                />
-              </div>
-              <span className="shrink-0 text-sm font-semibold text-zinc-800">
-                {okundu.plan.goren}/{okundu.plan.toplam}
-              </span>
-            </div>
-            <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
-              {okundu.plan.toplam === 0
-                ? "Henüz personel yok."
-                : okundu.plan.gormeyenAdlar.length === 0
-                  ? "Ekibin tamamı planı gördü."
-                  : `Henüz görmeyenler: ${okundu.plan.gormeyenAdlar.join(", ")}`}
-            </p>
-
-            {okundu.duyurular.length > 0 && (
-              <ul className="mt-3 space-y-1.5 border-t border-zinc-100 pt-2.5">
-                {okundu.duyurular.map((d) => (
-                  <li
-                    key={d.id}
-                    className="flex items-center justify-between gap-3 text-xs"
-                  >
-                    <span className="min-w-0 truncate text-zinc-600">
-                      Duyuru: {d.message}
-                    </span>
-                    <span className="shrink-0 font-medium text-zinc-700">
-                      {d.ozet.goren}/{d.ozet.toplam}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        )}
       </div>
 
-      {/* İzin talepleri — personelden gelen talepler ve onaylı izin günleri */}
-      <div id="izin-talepleri" className="kart mt-4 scroll-mt-20 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 className="bolum-baslik">İzin talepleri</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              Personel kendi bağlantısından gönderir ·{" "}
-              {bekleyenIzinler.length > 0
-                ? `${bekleyenIzinler.length} onay bekliyor`
-                : "onay bekleyen talep yok"}
-              {buHaftaIzinliGun > 0 ? ` · bu hafta ${buHaftaIzinliGun} izinli gün` : ""}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowIzin(true)}
-            className="btn-ikincil btn-kucuk"
-          >
-            Tümünü gör
-          </button>
-        </div>
-
-        {izinler.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-dashed border-zinc-200 px-3 py-4 text-sm text-zinc-500">
-            Henüz talep yok. Personel, paylaştığın bağlantıdan izin/mazeret talebi
-            gönderebilir; buradan da elle ekleyebilirsin.
-          </p>
-        ) : (
-          <>
-            {bekleyenIzinler.length > 0 && (
-              <ul className="mt-3 divide-y divide-zinc-100">
-                {bekleyenIzinler.slice(0, 4).map((t) => {
-                  const emp = empById.get(t.employeeId);
-                  return (
-                    <li
-                      key={t.id}
-                      className="flex flex-wrap items-center justify-between gap-2 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-zinc-800">
-                          {emp?.name ?? "Bilinmeyen personel"}{" "}
-                          <span className="font-normal text-zinc-500">
-                            · {IZIN_TUR_ETIKETI[t.tur]}
-                          </span>
-                        </p>
-                        <p className="truncate text-xs text-zinc-500">
-                          {izinTarihMetni(t.baslangic, t.bitis)}
-                          {t.not ? ` · ${t.not}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => izinKararVer(t, "onaylandi")}
-                          disabled={izinBusyId === t.id}
-                          className="btn-birincil btn-kucuk disabled:opacity-50"
-                        >
-                          Onayla
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => izinKararVer(t, "reddedildi")}
-                          disabled={izinBusyId === t.id}
-                          className="btn-ikincil btn-kucuk disabled:opacity-50"
-                        >
-                          Reddet
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            {bekleyenIzinler.length > 4 && (
-              <button
-                type="button"
-                onClick={() => setShowIzin(true)}
-                className="mt-1 text-xs text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
-              >
-                +{bekleyenIzinler.length - 4} talep daha
-              </button>
-            )}
-
-            {izinliGunAtamalari.length > 0 && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
-                <strong>{izinliGunAtamalari.length} vardiya</strong> onaylı izin gününe
-                atanmış. Planda “İzinli” işaretli hücreleri gözden geçir.
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Plan */}
-      {weekEmpty ? (
-        <div className="kart mt-4 border-dashed p-10 text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-amber-50">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.7}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6 text-amber-700"
-              aria-hidden="true"
-            >
-              <path d="M4 6h16v14H4z" />
-              <path d="M4 10h16M8 3v4M16 3v4" />
-            </svg>
-          </div>
-          <h2 className="mt-4 text-lg font-semibold">Başlamaya hazırsın</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-zinc-600">
-            Önce personelini ekle, sonra günlere vardiya seç. Hepsi bu.
-          </p>
-          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button onClick={() => setShowForm(true)} className="btn-birincil">
-              + İlk personeli ekle
-            </button>
-            <button onClick={() => handleReset("demo")} className="btn-ikincil">
-              Örnek veriyle dene
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div id="hafta-plani" className="kart mt-4 scroll-mt-20 overflow-hidden">
-          <div className="kart-baslik">
-            <div className="flex items-center gap-2">
-              <h2 className="bolum-baslik">Haftalık plan</h2>
-              <span className="text-xs text-zinc-400">·</span>
-              <span className="text-xs text-zinc-500">
-                {visibleEmployees.length} kişi
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Personel ara…"
-                aria-label="Personel ara"
-                className="giris h-8 w-32 py-1 sm:w-44"
-              />
-              <button onClick={() => setShowBulk(true)} className="btn-birincil btn-kucuk">
-                Mesaj gönder
-              </button>
-              <details className="relative">
-                <summary
-                  className="btn-ikincil btn-kucuk cursor-pointer list-none px-2 [&::-webkit-details-marker]:hidden"
-                  aria-label="Diğer işlemler"
-                >
-                  ⋯
-                </summary>
-                <div className="absolute right-0 z-30 mt-1 w-52 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg" onClick={kapatMenu}>
-                  <Link
-                    href="/yazdir"
-                    className="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
-                  >
-                    Yazdır / çizelge
-                  </Link>
-                  <a
-                    href={`/api/plan/pdf?hafta=${weekISO}`}
-                    download
-                    className="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
-                  >
-                    Planı PDF indir
-                  </a>
-                  <button
-                    onClick={planPdfGonder}
-                    disabled={postaBusy}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 disabled:opacity-60"
-                  >
-                    {postaBusy ? "Gönderiliyor…" : "PDF'i e-postaya gönder"}
-                  </button>
-                  <button
-                    onClick={exportCsv}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
-                  >
-                    Excel (CSV) indir
-                  </button>
-                  <button
-                    onClick={() => setShowPersonel(true)}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
-                  >
-                    Personel listesi
-                  </button>
-                  <button
-                    onClick={() => setShowSettings(true)}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
-                  >
-                    Ayarlar
-                  </button>
-                  <button
-                    onClick={handleClearWeek}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Bu haftayı temizle
-                  </button>
-                </div>
-              </details>
-            </div>
-          </div>
-
-          {/* Hızlı doldurma şeridi */}
-          <div className="hidden flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-zinc-50/60 px-4 py-2 sm:flex">
-            <span className="mr-1 inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                className="h-3.5 w-3.5"
-                aria-hidden
-              >
-                <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" strokeLinejoin="round" />
-                <path d="m14.5 5.5 3 3" />
-              </svg>
-              Hızlı doldur
-            </span>
-            {data.shiftTemplates.map((t) => {
-              const secili = firca === t.id;
+      {/* Bugün şeridi */}
+      {buHaftaMi ? (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[12.5px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">Bugün</span>
+          {bugunVardiyalar.size === 0 ? (
+            <span className="text-zinc-500">Bugün için vardiya yok.</span>
+          ) : (
+            [...bugunVardiyalar.entries()].map(([sablonId, isimler]) => {
+              const s = sablonById.get(sablonId);
+              if (!s) return null;
               return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setFirca(secili ? null : t.id)}
-                  aria-pressed={secili}
-                  title={`${t.name} · ${shiftSaatMetni(t)}`}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] transition-colors ${
-                    COLOR_CLASSES[t.color]?.chip ?? ""
-                  } ${
-                    secili
-                      ? "ring-2 ring-zinc-900 ring-offset-1"
-                      : "hover:border-zinc-300"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      COLOR_CLASSES[t.color]?.dot ?? ""
-                    }`}
-                  />
-                  {t.name}
-                </button>
+                <span key={sablonId} className="inline-flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[s.color].dot}`} aria-hidden />
+                  <strong className="font-medium">{s.name}:</strong> {isimler.join(", ")}
+                </span>
               );
-            })}
-            <button
-              type="button"
-              onClick={() => setFirca(firca === "sil" ? null : "sil")}
-              aria-pressed={firca === "sil"}
-              className={`rounded-lg border px-2.5 py-1 text-[11.5px] transition-colors ${
-                firca === "sil"
-                  ? "border-red-300 bg-red-50 text-red-700 ring-2 ring-red-400 ring-offset-1"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300"
-              }`}
-            >
-              Boşalt
-            </button>
-            {firca && (
-              <button
-                type="button"
-                onClick={() => setFirca(null)}
-                className="ml-1 text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-900"
-              >
-                Kapat (Esc)
-              </button>
-            )}
-            <span className="ml-auto hidden text-[11px] text-zinc-500 lg:block">
-              {firca
-                ? "Hücrelere tıkla — her tık anında kaydedilir."
-                : "Bir vardiya seç, sonra hücrelere tıklayarak doldur."}
-            </span>
-          </div>
+            })
+          )}
+        </div>
+      ) : null}
 
-          {/* Masaüstü ızgara */}
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full min-w-[840px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-zinc-100 text-zinc-500">
-                  <th className="sticky left-0 z-10 bg-white px-4 py-2.5 text-left text-xs font-semibold">
-                    Personel
-                  </th>
-                  {weekDates.map((d) => {
-                    const iso = toISODate(d);
-                    const holiday = getHoliday(iso);
-                    const not = dayNoteMap.get(iso);
-                    return (
-                      <th key={iso} className="px-1.5 py-2 text-center text-xs font-semibold">
-                        <span className={holiday ? "text-red-600" : "text-zinc-700"}>
-                          {DAY_SHORT_TR[(d.getDay() + 6) % 7]}
-                        </span>
-                        <span className="mt-0.5 block text-[10px] font-normal text-zinc-400">
-                          {formatShort(d)}
-                        </span>
-                        {holiday && (
+      {/* Masaüstü ızgara */}
+      <div className="mt-4 hidden overflow-x-auto rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 sm:block">
+        <table className="w-full min-w-[820px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-zinc-200 text-[11.5px] text-zinc-500 dark:border-zinc-800">
+              <th className="sticky left-0 z-10 bg-white px-3 py-2.5 font-semibold dark:bg-zinc-900">
+                Personel
+              </th>
+              {haftalar.map((d, i) => (
+                <th
+                  key={gunler[i]}
+                  className={`px-2 py-2.5 text-center font-semibold ${
+                    gunler[i] === BUGUN ? "text-amber-700" : ""
+                  }`}
+                >
+                  {DAY_SHORT_TR[i]}
+                  <span className="ml-1 font-normal text-zinc-400">{d.getDate()}</span>
+                </th>
+              ))}
+              <th className="px-2 py-2.5 text-center font-semibold">Saat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {personel.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-4 py-10 text-center text-[13px] text-zinc-500">
+                  Henüz personel yok.{" "}
+                  <button type="button" onClick={() => setModal("ekip")} className="underline underline-offset-2">
+                    Ekip ekle
+                  </button>
+                </td>
+              </tr>
+            ) : (
+              personel.map((emp) => {
+                const saat = analiz.perEmployee.get(emp.id)?.weeklyHours ?? 0;
+                const kisilerUyari = analiz.issues.filter((u) => u.employeeId === emp.id);
+                return (
+                  <tr key={emp.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
+                    <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-medium dark:bg-zinc-900">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"}`}
+                          aria-hidden
+                        />
+                        <span className="text-[13px]">{emp.name}</span>
+                        {kisilerUyari.length ? (
                           <span
-                            className="mt-0.5 block truncate text-[9px] font-normal text-red-500"
-                            title={holiday.name}
-                          >
-                            {holiday.halfDay ? "Arife" : "Tatil"}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => editDayNote(iso)}
-                          title={not ?? "Gün notu ekle"}
-                          aria-label={`${formatShort(d)} gün notu`}
-                          className={`mx-auto mt-1 flex h-5 max-w-[104px] items-center gap-1 truncate rounded px-1 text-[10px] font-normal transition-colors ${
-                            not
-                              ? "text-amber-700 hover:bg-amber-50"
-                              : "text-zinc-300 hover:bg-zinc-100 hover:text-zinc-600"
-                          }`}
-                        >
-                          <KalemIkon className="h-3 w-3 shrink-0" />
-                          {not ? <span className="truncate">{not}</span> : null}
-                        </button>
-                      </th>
-                    );
-                  })}
-                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-zinc-500">
-                    Toplam
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleEmployees.map((emp) => {
-                  const total = weekTotal(emp);
-                  const over = total > WEEKLY_LIMIT_HOURS;
-                  const leaveLeft = emp.annualLeaveDays ?? 0;
-                  const stat = empMonthStats.get(emp.id) ?? { hours: 0, days: 0 };
-                  const acik = expandedEmpId === emp.id;
-                  const satirTint =
-                    acik || vurgu?.startsWith(`${emp.id}__`)
-                      ? "satir-secili"
-                      : uyariliIdler.has(emp.id)
-                        ? "satir-uyari"
-                        : "";
-                  return (
-                    <Fragment key={emp.id}>
-                      <tr
-                        id={`satir-${emp.id}`}
-                        className={`border-t border-zinc-100 ${satirTint}`}
-                      >
-                        <td
-                          className={`sticky left-0 z-10 px-4 py-2 ${
-                            satirTint || "bg-white"
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setExpandedEmpId(acik ? null : emp.id)}
-                            className="flex w-full items-center gap-2 text-left"
-                            title="Detayları göster/gizle"
-                            aria-expanded={acik}
-                          >
-                            <span
-                              className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                                COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
-                              }`}
-                            />
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium text-zinc-800">
-                                {emp.name}
-                              </span>
-                              <span className="block truncate text-[11px] text-zinc-400">
-                                {emp.role || "Görev yok"} · izin {leaveLeft} gün
-                              </span>
-                            </span>
-                          </button>
-                        </td>
-                        {weekDates.map((d) => {
-                          const iso = toISODate(d);
-                          const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
-                          const template = shiftId ? templateById.get(shiftId) : undefined;
-                          const cls = template
-                            ? COLOR_CLASSES[template.color]?.chip ?? ""
-                            : "border-dashed border-zinc-200 bg-white text-zinc-400";
-                          return (
-                            <td
-                              key={iso}
-                              className={`px-1 py-1.5 ${
-                                vurgu === keyOf(emp.id, iso)
-                                  ? "rounded-lg ring-2 ring-amber-400"
-                                  : ""
-                              }`}
-                            >
-                              {firca ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    changeAssignment(
-                                      emp.id,
-                                      iso,
-                                      firca === "sil" ? "" : firca
-                                    )
-                                  }
-                                  className={`w-full min-w-[84px] rounded-lg border px-1.5 py-1.5 text-[13px] transition-colors hover:ring-2 hover:ring-zinc-300 ${cls}`}
-                                  aria-label={`${emp.name} ${formatShort(d)}: ${
-                                    template?.name ?? "boş"
-                                  } → ${
-                                    firca === "sil"
-                                      ? "boşalt"
-                                      : templateById.get(firca)?.name ?? "vardiya"
-                                  }`}
-                                >
-                                  {template?.name ?? "—"}
-                                </button>
-                              ) : (
-                                <select
-                                  value={shiftId}
-                                  onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
-                                  aria-label={`${emp.name} ${formatShort(d)} vardiyası`}
-                                  className={`w-full min-w-[84px] cursor-pointer rounded-lg border px-1.5 py-1.5 text-[13px] outline-none transition-colors focus:ring-2 focus:ring-zinc-300 ${cls}`}
-                                >
-                                  <option value="">—</option>
-                                  {data.shiftTemplates.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                      {t.name}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-                              {template && onayliIzinVarMi(onayliIzinler, emp.id, iso) && (
-                                <span
-                                  className="mt-1 block text-center text-[10px] font-medium text-emerald-700"
-                                  title="Onaylı izin — vardiya atanmış olsa bile bu gün izinli sayılır"
-                                >
-                                  İzinli
-                                </span>
-                              )}
-                            </td>
-                          );
-                        })}
-                        <td className="whitespace-nowrap px-3 py-2 text-right">
-                          <span
-                            className={`font-semibold ${
-                              over ? "text-red-600" : "text-zinc-700"
-                            }`}
-                          >
-                            {total} sa
-                          </span>
-                          {over && (
-                            <span
-                              className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-500 align-middle"
-                              title={`${WEEKLY_LIMIT_HOURS} saati aştı`}
-                            />
-                          )}
-                          {empOvertime(emp) > 0 && (
-                            <span className="block text-[10px] text-amber-700">
-                              +{empOvertime(emp)} sa fazla
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-
-                      {acik && (
-                        <tr className="border-t border-zinc-100 bg-zinc-50/60">
-                          <td colSpan={weekDates.length + 2} className="px-4 py-3">
-                            {editingEmpId === emp.id ? (
-                              <div className="flex flex-wrap items-end gap-2">
-                                <div>
-                                  <label className="etiket" htmlFor={`ad-${emp.id}`}>
-                                    Ad
-                                  </label>
-                                  <input
-                                    id={`ad-${emp.id}`}
-                                    value={empDraft.name}
-                                    onChange={(e) =>
-                                      setEmpDraft({ ...empDraft, name: e.target.value })
-                                    }
-                                    className="giris h-8 w-40 py-1"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="etiket" htmlFor={`gorev-${emp.id}`}>
-                                    Görev
-                                  </label>
-                                  <input
-                                    id={`gorev-${emp.id}`}
-                                    value={empDraft.role}
-                                    onChange={(e) =>
-                                      setEmpDraft({ ...empDraft, role: e.target.value })
-                                    }
-                                    className="giris h-8 w-32 py-1"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="etiket" htmlFor={`tel-${emp.id}`}>
-                                    Telefon
-                                  </label>
-                                  <input
-                                    id={`tel-${emp.id}`}
-                                    value={empDraft.phone}
-                                    onChange={(e) =>
-                                      setEmpDraft({ ...empDraft, phone: e.target.value })
-                                    }
-                                    className="giris h-8 w-36 py-1"
-                                    inputMode="tel"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="etiket" htmlFor={`izin-${emp.id}`}>
-                                    Yıllık izin
-                                  </label>
-                                  <input
-                                    id={`izin-${emp.id}`}
-                                    value={empDraft.annualLeaveDays}
-                                    onChange={(e) =>
-                                      setEmpDraft({ ...empDraft, annualLeaveDays: e.target.value })
-                                    }
-                                    className="giris h-8 w-20 py-1"
-                                    inputMode="numeric"
-                                  />
-                                </div>
-                                <button onClick={saveEmp} className="btn-birincil btn-kucuk">
-                                  Kaydet
-                                </button>
-                                <button
-                                  onClick={() => setEditingEmpId(null)}
-                                  className="btn-ikincil btn-kucuk"
-                                >
-                                  Vazgeç
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-600">
-                                {emp.phone ? <span>Tel: {emp.phone}</span> : null}
-                                <span>
-                                  Bu ay: <strong className="text-zinc-800">{Math.round(stat.hours * 10) / 10} sa</strong>{" "}
-                                  · {stat.days} gün
-                                </span>
-                                <span>
-                                  Bu hafta:{" "}
-                                  <strong className="text-zinc-800">
-                                    {(() => {
-                                      const gunler = calistigiGunler(emp);
-                                      return gunler.length ? gunler.join(", ") : "atanmamış";
-                                    })()}
-                                  </strong>
-                                </span>
-                                <span className="ml-auto flex flex-wrap gap-1.5">
-                                  <button onClick={() => sendWhatsApp(emp)} className="btn-birincil btn-kucuk">
-                                    WhatsApp
-                                  </button>
-                                  <button onClick={() => copySchedule(emp)} className="btn-ikincil btn-kucuk">
-                                    Kopyala
-                                  </button>
-                                  <button onClick={() => copyStaffLink(emp)} className="btn-ikincil btn-kucuk">
-                                    Link
-                                  </button>
-                                  <button
-                                    onClick={() => linkIslem(emp, "yenile")}
-                                    className="btn-ikincil btn-kucuk"
-                                    title="Eski bağlantıyı geçersiz kılar, yenisini kopyalar"
-                                  >
-                                    Linki yenile
-                                  </button>
-                                  <button
-                                    onClick={() => linkIslem(emp, "kapat")}
-                                    className="btn-sessiz btn-kucuk"
-                                    title="Personelin elindeki bağlantıyı kapatır"
-                                  >
-                                    Linki kapat
-                                  </button>
-                                  <button onClick={() => startEditEmp(emp)} className="btn-ikincil btn-kucuk">
-                                    Düzenle
-                                  </button>
-                                  <button onClick={() => handleRemoveEmployee(emp)} className="btn-tehlike btn-kucuk">
-                                    Çıkar
-                                  </button>
-                                </span>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-                {visibleEmployees.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={weekDates.length + 2}
-                      className="px-4 py-10 text-center text-sm text-zinc-500"
-                    >
-                      {sadeceUyarili
-                        ? "Bu hafta süre uyarısı olan personel yok."
-                        : "Aramanla eşleşen personel yok."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-zinc-100 bg-zinc-50 text-[11px] text-zinc-500">
-                  <td className="sticky left-0 z-10 bg-zinc-50 px-4 py-2 font-medium">
-                    Günlük kapsam
-                  </td>
-                  {dayCounts.map((c, i) => (
-                    <td
-                      key={i}
-                      className={`px-1.5 py-2 text-center font-medium ${
-                        c === 0 ? "text-red-600" : "text-zinc-600"
-                      }`}
-                    >
-                      {c}
-                    </td>
-                  ))}
-                  <td className="px-3 py-2 text-right text-zinc-400">{summaryHours} sa</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* Mobil liste */}
-          <div className="divide-y divide-zinc-100 sm:hidden">
-            {visibleEmployees.map((emp) => {
-              const total = weekTotal(emp);
-              const over = total > WEEKLY_LIMIT_HOURS;
-              return (
-                <details key={emp.id} className="group">
-                  <summary className="flex cursor-pointer list-none items-center gap-2.5 px-4 py-3 [&::-webkit-details-marker]:hidden">
-                    <span
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                        COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
-                      }`}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{emp.name}</span>
-                      <span className="block truncate text-[11px] text-zinc-400">
-                        {emp.role || "Görev yok"} · izin {emp.annualLeaveDays ?? 0} gün
-                      </span>
-                    </span>
-                    <span className={`text-sm font-semibold ${over ? "text-red-600" : "text-zinc-700"}`}>
-                      {total} sa
-                    </span>
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-zinc-400 transition-transform group-open:rotate-180"
-                      aria-hidden
-                    >
-                      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </summary>
-
-                  <div className="space-y-1.5 px-4 pb-4">
-                    {weekDates.map((d) => {
-                      const iso = toISODate(d);
-                      const shiftId = assignMap.get(keyOf(emp.id, iso)) ?? "";
-                      const template = shiftId ? templateById.get(shiftId) : undefined;
-                      const cls = template
-                        ? COLOR_CLASSES[template.color]?.chip ?? ""
-                        : "border-dashed border-zinc-200 bg-white text-zinc-400";
+                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"
+                            title={`${kisilerUyari.length} uyarı`}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="pl-4 text-[11px] font-normal text-zinc-500">{emp.role}</div>
+                    </th>
+                    {gunler.map((iso) => {
+                      const sablonId = atamaMap.get(`${emp.id}__${iso}`);
+                      const sablon = sablonId ? sablonById.get(sablonId) : undefined;
+                      const izin = izinliMi(emp.id, iso);
                       return (
-                        <div key={iso} className="flex items-center gap-2">
-                          <span className="w-[74px] shrink-0 text-xs text-zinc-500">
-                            {DAY_SHORT_TR[(d.getDay() + 6) % 7]} {formatShort(d)}
-                          </span>
-                          <select
-                            value={shiftId}
-                            onChange={(e) => changeAssignment(emp.id, iso, e.target.value)}
-                            aria-label={`${emp.name} ${formatShort(d)} vardiyası`}
-                            className={`h-9 min-w-0 flex-1 rounded-lg border px-2 text-[13px] outline-none ${cls}`}
-                          >
-                            <option value="">—</option>
-                            {data.shiftTemplates.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.name}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => editDayNote(iso)}
-                            aria-label={`${formatShort(d)} gün notu`}
-                            title={dayNoteMap.get(iso) ?? "Gün notu"}
-                            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg border ${
-                              dayNoteMap.get(iso)
-                                ? "border-amber-200 bg-amber-50 text-amber-700"
-                                : "border-transparent text-zinc-300 hover:bg-zinc-100"
-                            }`}
-                          >
-                            <KalemIkon />
-                          </button>
-                        </div>
+                        <td key={iso} className="px-1.5 py-2 align-middle">
+                          <Hucre
+                            sablon={sablon}
+                            izin={izin}
+                            bugun={iso === BUGUN}
+                            onClick={() => setSecim({ employeeId: emp.id, iso })}
+                            etiket={`${emp.name} · ${formatDayDate(new Date(`${iso}T12:00:00`))}`}
+                          />
+                        </td>
                       );
                     })}
-
-                    <div className="flex flex-wrap gap-1.5 pt-2">
-                      <button onClick={() => sendWhatsApp(emp)} className="btn-birincil btn-kucuk">
-                        WhatsApp
-                      </button>
-                      <button onClick={() => startEditEmp(emp)} className="btn-ikincil btn-kucuk">
-                        Düzenle
-                      </button>
-                      <button onClick={() => copyStaffLink(emp)} className="btn-ikincil btn-kucuk">
-                        Link
-                      </button>
-                      <button
-                        onClick={() => linkIslem(emp, "yenile")}
-                        className="btn-ikincil btn-kucuk"
-                        title="Eski bağlantıyı geçersiz kılar, yenisini kopyalar"
-                      >
-                        Linki yenile
-                      </button>
-                      <button
-                        onClick={() => linkIslem(emp, "kapat")}
-                        className="btn-sessiz btn-kucuk"
-                        title="Personelin elindeki bağlantıyı kapatır"
-                      >
-                        Kapat
-                      </button>
-                      <button onClick={() => handleRemoveEmployee(emp)} className="btn-tehlike btn-kucuk">
-                        Çıkar
-                      </button>
-                    </div>
-                  </div>
-                </details>
-              );
-            })}
-            {visibleEmployees.length === 0 && (
-              <p className="px-4 py-10 text-center text-sm text-zinc-500">
-                {sadeceUyarili
-                  ? "Bu hafta süre uyarısı olan personel yok."
-                  : "Aramanla eşleşen personel yok."}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {!weekEmpty && uyariSayisi === 0 && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-700">
-          <span aria-hidden>✓</span> Bu hafta süre ve kapsam uyarısı yok.
-        </p>
-      )}
-
-      {/* Uyarılar — yalnızca varsa */}
-      {uyariSayisi > 0 && (
-        <div id="uyarilar" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="text-sm font-semibold text-amber-900">
-              Uyarılar ({uyariSayisi})
-            </h3>
-            <p className="text-[11px] text-amber-800 opacity-80">
-              Bir uyarıya tıkla → ilgili satıra git.
-            </p>
-          </div>
-          {issues.length > 0 && (
-            <ul className="mt-2 space-y-0.5 text-sm">
-              {issues.map((it, idx) => {
-                const emp = empById.get(it.employeeId);
-                const isErr = it.severity === "error";
-                return (
-                  <li key={`${it.employeeId}-${it.type}-${it.date}-${idx}`}>
-                    <button
-                      type="button"
-                      onClick={() => uyariyaGit(it.employeeId, it.date)}
-                      className="flex w-full gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-amber-100/70"
-                    >
-                      <span
-                        aria-hidden
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                          isErr ? "bg-red-500" : "bg-amber-500"
-                        }`}
-                      />
-                      <span className="text-amber-900">
-                        <strong>{emp?.name ?? "Bilinmeyen"}</strong>{" "}
-                        <span className={isErr ? "text-red-700" : ""}>{it.message}</span>
+                    <td className="px-2 py-2 text-center text-[12px] tabular-nums">
+                      <span className={saat > 45 ? "font-semibold text-red-600" : "text-zinc-600"}>
+                        {saat % 1 === 0 ? saat : saat.toFixed(1)}
                       </span>
-                    </button>
-                  </li>
+                    </td>
+                  </tr>
                 );
-              })}
-            </ul>
-          )}
-          {coverageIssues.length > 0 && (
-            <ul className="mt-2 space-y-0.5 border-t border-amber-200 pt-2 text-sm text-amber-900">
-              {coverageIssues.map((c, i) => {
-                const t = templateById.get(c.templateId);
-                const day = new Date(c.date + "T00:00:00");
-                return (
-                  <li key={i}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document
-                          .getElementById("hafta-plani")
-                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                      }
-                      className="w-full rounded-md px-1 py-1 text-left transition-colors hover:bg-amber-100/70"
-                    >
-                      <strong>{formatShort(day)}</strong> · {t?.name ?? "?"}: {c.have}/{c.need} kişi
-                      <span className="text-amber-700"> (eksik {c.need - c.have})</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* Site trafiği — yalnızca site sahibi görür */}
-      {ziyaret && (
-        <div className="kart mt-4 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h2 className="bolum-baslik">Site trafiği</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Çerezsiz sayaç · IP saklanmaz · 120 gün sonra silinir
-              </p>
-            </div>
-            <Link
-              href="/gizlilik"
-              className="text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
-            >
-              Nasıl sayılıyor?
-            </Link>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            {[
-              { etiket: "bugün", deger: ziyaret.bugun },
-              { etiket: "son 7 gün", deger: ziyaret.hafta },
-              { etiket: "bu ay", deger: ziyaret.ay },
-            ].map((k) => (
-              <div key={k.etiket} className="rounded-xl bg-zinc-50 px-2 py-3">
-                <div className="text-2xl font-semibold tabular-nums">{k.deger}</div>
-                <div className="mt-0.5 text-[11px] text-zinc-500">{k.etiket}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Alt bölüm: duyurular + ayarlar */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        {/* Duyurular */}
-        <details className="kart self-start" open={data.announcements.length > 0}>
-          <summary className="kart-baslik cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-            <div>
-              <h2 className="bolum-baslik">Duyurular</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                {data.announcements.length > 0
-                  ? `${data.announcements.length} yayında`
-                  : "Ekibe kısa bir mesaj bırak"}
-              </p>
-            </div>
-            <span className="text-xs font-medium text-zinc-500">Aç / kapat</span>
-          </summary>
-          <div className="border-t border-zinc-100 p-4">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={announcementDraft}
-                onChange={(e) => setAnnouncementDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") postAnnouncement();
-                }}
-                placeholder="Ör. Cumartesi canlı müzik var"
-                aria-label="Duyuru metni"
-                className="giris flex-1"
-              />
-              <button onClick={postAnnouncement} className="btn-birincil">
-                Yayınla
-              </button>
-            </div>
-            {data.announcements.length > 0 && (
-              <ul className="mt-3 space-y-1.5">
-                {data.announcements.slice(0, 5).map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-start justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm"
-                  >
-                    <span className="text-zinc-700">{a.message}</span>
-                    <button
-                      onClick={() => removeAnnouncement(a.id)}
-                      className="shrink-0 text-xs text-zinc-400 hover:text-red-600"
-                    >
-                      Sil
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              })
             )}
-          </div>
-        </details>
+          </tbody>
+        </table>
+      </div>
 
-        {/* Şablonlar + standart */}
-        <div className="kart overflow-hidden">
-          <div className="kart-baslik">
-            <div>
-              <h2 className="bolum-baslik">Vardiya şablonları</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                {data.shiftTemplates.length} şablon · {data.business.openTime}–{data.business.closeTime}
-              </p>
-            </div>
+      {/* Mobil ajanda */}
+      <div className="mt-4 sm:hidden">
+        <div className="grid grid-cols-7 gap-1">
+          {haftalar.map((d, i) => (
             <button
-              onClick={() => setShowTemplates((s) => !s)}
-              className="btn-ikincil btn-kucuk"
+              key={gunler[i]}
+              type="button"
+              onClick={() => setMobilGun(i)}
+              className={`rounded-lg py-2 text-center text-[11.5px] ${
+                seciliGun === i
+                  ? "bg-zinc-900 text-white"
+                  : gunler[i] === BUGUN
+                    ? "bg-amber-50 text-amber-900"
+                    : "bg-zinc-100 text-zinc-600"
+              }`}
             >
-              {showTemplates ? "Kapat" : "Yönet"}
+              <span className="block font-semibold">{DAY_SHORT_TR[i]}</span>
+              <span className="block">{d.getDate()}</span>
             </button>
-          </div>
-          <div className="p-4">
-            <div className="flex flex-wrap gap-1.5">
-              {data.shiftTemplates.map((t) => (
-                <span
-                  key={t.id}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
-                    COLOR_CLASSES[t.color]?.chip ?? ""
-                  }`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
-                  {t.name} · {shiftSaatMetni(t)}
-                </span>
-              ))}
-            </div>
+          ))}
+        </div>
 
-            {showTemplates && (
-              <div className="mt-4">
-                <TemplateManager
-                  templates={data.shiftTemplates}
-                  standart={{ openTime: data.business.openTime, closeTime: data.business.closeTime }}
-                  onChanged={load}
-                  gomulu
-                />
-              </div>
-            )}
-
-            <div className="mt-4 border-t border-zinc-100 pt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs text-zinc-500">
-                  Standart mesai:{" "}
-                  <strong className="text-zinc-700">
-                    {data.business.openTime} – {data.business.closeTime}
-                  </strong>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowStandart((s) => !s)}
-                  className="btn-sessiz btn-kucuk"
-                >
-                  {showStandart ? "Kapat" : "Mesai saati ayarla"}
-                </button>
-              </div>
-
-              {showStandart && (
-                <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                  <div className="flex flex-wrap items-end gap-2">
-                    <label className="text-xs text-zinc-600">
-                      <span className="block">Açılış</span>
-                      <input
-                        type="time"
-                        value={acilisDraft}
-                        onChange={(e) => setAcilisDraft(e.target.value)}
-                        className="giris mt-1 w-28"
-                      />
-                    </label>
-                    <label className="text-xs text-zinc-600">
-                      <span className="block">Kapanış</span>
-                      <input
-                        type="time"
-                        value={kapanisDraft}
-                        onChange={(e) => setKapanisDraft(e.target.value)}
-                        className="giris mt-1 w-28"
-                      />
-                    </label>
-                    <button type="button" onClick={standartKaydet} className="btn-birincil btn-kucuk">
-                      Kaydet
-                    </button>
-                    <button
-                      type="button"
-                      onClick={sablonlariStandartaUydur}
-                      className="btn-ikincil btn-kucuk"
-                    >
-                      Şablonları uydur
-                    </button>
-                  </div>
-                  <p className="mt-2 text-[11px] text-zinc-500">
-                    &quot;Şablonları uydur&quot; Sabah / Akşam / Tam Gün / Ara saatlerini günceller;
-                    mevcut atamalar silinmez.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <p className="mt-3 text-[11px] leading-relaxed text-zinc-400">
-              Denetim: haftalık {WEEKLY_LIMIT_HOURS} saat, iki vardiya arası en az{" "}
-              {MIN_DAILY_REST_HOURS} saat dinlenme (İş Kanunu 4857).
+        <div className="mt-3 space-y-2">
+          {personel.length === 0 ? (
+            <p className="rounded-xl border border-zinc-200 px-4 py-6 text-center text-[13px] text-zinc-500">
+              Henüz personel yok.
             </p>
-          </div>
+          ) : (
+            personel.map((emp) => {
+              const iso = gunler[seciliGun];
+              const sablonId = atamaMap.get(`${emp.id}__${iso}`);
+              const sablon = sablonId ? sablonById.get(sablonId) : undefined;
+              return (
+                <button
+                  key={emp.id}
+                  type="button"
+                  onClick={() => setSecim({ employeeId: emp.id, iso })}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"}`} aria-hidden />
+                    <span className="truncate text-[13px] font-medium">{emp.name}</span>
+                  </span>
+                  {izinliMi(emp.id, iso) ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900">İzinli</span>
+                  ) : sablon ? (
+                    <span className={`rounded-full border px-2 py-0.5 text-[11px] ${COLOR_CLASSES[sablon.color].chip}`}>
+                      {sablon.name} · {shiftSaatMetni(sablon)}
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-zinc-400">+ Vardiya</span>
+                  )}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
-      {/* Personel yönetimi */}
-      <Modal
-        acik={showPersonel}
-        kapat={() => setShowPersonel(false)}
-        baslik="Personel"
-        genislik="max-w-lg"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-zinc-500">
-            {data.employees.length} kişi · {data.business.name}
-          </p>
+      {/* Özet + uyarılar */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] text-zinc-600 dark:text-zinc-300">
+        <span>
+          <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{haftaAtama}</strong>{" "}
+          vardiya
+        </span>
+        <span>
+          <strong className="font-semibold text-zinc-900 dark:text-zinc-100">
+            {haftaSaat % 1 === 0 ? haftaSaat : haftaSaat.toFixed(1)}
+          </strong>{" "}
+          saat
+        </span>
+        <span>
+          <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{calisanKisi}</strong>/
+          {personel.length} kişi
+        </span>
+        {uyariVar ? (
           <button
             type="button"
-            onClick={() => {
-              setShowPersonel(false);
-              setShowForm(true);
-            }}
-            className="btn-birincil btn-kucuk"
+            onClick={() => setModal("uyarilar")}
+            className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[12px] font-medium text-red-700"
           >
-            + Personel ekle
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
+            {analiz.issues.length} uyarı
           </button>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+            Uyarı yok
+          </span>
+        )}
+        {yayinda ? null : <span className="text-zinc-500">Bu hafta taslak — ekip görmüyor.</span>}
+      </div>
+
+      {/* ---------------- Modallar ---------------- */}
+      <Modal acik={secim !== null} kapat={() => setSecim(null)} baslik="Vardiya seç" genislik="max-w-lg">
+        {secim ? (
+          <VardiyaSecici
+            emp={personel.find((p) => p.id === secim.employeeId) ?? null}
+            iso={secim.iso}
+            sablonlar={sablonlar}
+            secili={atamaMap.get(`${secim.employeeId}__${secim.iso}`) ?? ""}
+            izin={izinliMi(secim.employeeId, secim.iso)}
+            onSec={(sablonId) => {
+              void atamaYaz(secim.employeeId, secim.iso, sablonId);
+              setSecim(null);
+            }}
+            onKapat={() => setSecim(null)}
+          />
+        ) : null}
+      </Modal>
+
+      <Modal acik={modal === "araclar"} kapat={() => setModal(null)} baslik="Araçlar" genislik="max-w-lg">
+        <div className="grid grid-cols-2 gap-2">
+          <AracDugme baslik="Ekip" aciklama={`${personel.length} kişi`} onClick={() => setModal("ekip")} />
+          <AracDugme
+            baslik="İzin talepleri"
+            aciklama={bekleyenIzinler.length ? `${bekleyenIzinler.length} bekliyor` : "Bekleyen yok"}
+            onClick={() => setModal("izin")}
+          />
+          <AracDugme baslik="Duyuru" aciklama="Ekibe mesaj" onClick={() => setModal("duyuru")} />
+          <AracDugme baslik="Vardiya şablonları" aciklama={`${sablonlar.length} şablon`} onClick={() => setModal("sablon")} />
+          <AracDugme baslik="Paylaş" aciklama="PDF · WhatsApp" onClick={() => setModal("paylas")} />
+          <AracDugme baslik="Kim gördü?" aciklama="Okundu bilgisi" onClick={() => setModal("okundu")} />
+          <AracDugme baslik="Mesai saatleri" aciklama={`${data.business.openTime}–${data.business.closeTime}`} onClick={() => setModal("saatler")} />
+          <AracDugme baslik="Raporlar" aciklama="CSV · yazdır" onClick={() => setModal("rapor")} />
         </div>
 
-        {data.employees.length === 0 ? (
-          <p className="mt-6 rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
-            Henüz personel yok. Yukarıdaki düğmeyle ekleyebilirsin.
-          </p>
-        ) : (
-          <ul className="mt-3 divide-y divide-zinc-100">
-            {data.employees.map((emp) => (
-              <li key={emp.id} className="flex items-center gap-3 py-3">
-                <span
-                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                    COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"
-                  }`}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-900">{emp.name}</p>
-                  <p className="truncate text-[11px] text-zinc-500">
-                    {emp.role || "Görev yok"}
-                    {emp.phone ? ` · ${emp.phone}` : ""} · izin{" "}
-                    {emp.annualLeaveDays ?? 0} gün
-                  </p>
-                </div>
+        {ziyaret ? (
+          <div className="mt-4 rounded-xl border border-zinc-200 px-3 py-2.5 text-[12px] text-zinc-600">
+            Site ziyaretçisi (tekil): bugün <strong>{ziyaret.bugun}</strong> · son 7 gün{" "}
+            <strong>{ziyaret.hafta}</strong> · bu ay <strong>{ziyaret.ay}</strong>
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm("Bu haftanın tüm vardiyaları silinsin mi?")) return;
+              await clearWeek(haftaISO);
+              await yukle();
+              bidirKapat();
+            }}
+            className="btn-sessiz h-9 text-[12px]"
+          >
+            Haftayı temizle
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const hedef = gunler[gunler.length - 1];
+              const yeni = toISODate(new Date(new Date(`${hedef}T12:00:00`).getTime() + 86_400_000));
+              await copyWeek(haftaISO, yeni);
+              setOffset((o) => o + 1);
+              await yukle();
+            }}
+            className="btn-sessiz h-9 text-[12px]"
+          >
+            Haftayı sonraki haftaya kopyala
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm("Panel demo verilerine sıfırlansın mı? Mevcut plan silinir.")) return;
+              await resetData("demo");
+              await yukle();
+              setModal(null);
+            }}
+            className="btn-sessiz h-9 text-[12px] text-red-600"
+          >
+            Demo verisine sıfırla
+          </button>
+        </div>
+      </Modal>
+
+      <Modal acik={modal === "ekip"} kapat={() => setModal(null)} baslik="Ekip" genislik="max-w-2xl">
+        <EkipYonetimi
+          personel={personel}
+          haftalar={haftalar}
+          atamaMap={atamaMap}
+          sablonlar={sablonlar}
+          isletme={data.business.name}
+          duzenlenen={duzenlenen}
+          setDuzenlenen={setDuzenlenen}
+          onChanged={yukle}
+          bildir={bildir}
+        />
+      </Modal>
+
+      <Modal acik={modal === "izin"} kapat={() => setModal(null)} baslik="İzin talepleri" genislik="max-w-2xl">
+        <IzinYonetimi
+          personel={personel}
+          talepler={data.izinTalepleri ?? []}
+          onChanged={yukle}
+          bildir={bildir}
+        />
+      </Modal>
+
+      <Modal acik={modal === "duyuru"} kapat={() => setModal(null)} baslik="Duyurular" genislik="max-w-xl">
+        <DuyuruYonetimi
+          duyurular={data.announcements}
+          onChanged={yukle}
+          bildir={bildir}
+        />
+      </Modal>
+
+      <Modal acik={modal === "sablon"} kapat={() => setModal(null)} baslik="Vardiya şablonları" genislik="max-w-2xl">
+        <TemplateManager
+          templates={sablonlar}
+          standart={{ openTime: data.business.openTime, closeTime: data.business.closeTime }}
+          onChanged={yukle}
+          gomulu
+        />
+      </Modal>
+
+      <Modal acik={modal === "saatler"} kapat={() => setModal(null)} baslik="Standart mesai saatleri" genislik="max-w-md">
+        <SaatAyari
+          business={data.business}
+          onKaydet={async (acilis, kapanis) => {
+            await updateBusiness({ openTime: acilis, closeTime: kapanis });
+            await yukle();
+            bildir("Mesai saatleri güncellendi.");
+            setModal(null);
+          }}
+        />
+      </Modal>
+
+      <Modal acik={modal === "paylas"} kapat={() => setModal(null)} baslik="Planı paylaş" genislik="max-w-xl">
+        <Paylasim
+          haftaISO={haftaISO}
+          personel={personel}
+          haftalar={haftalar}
+          atamaMap={atamaMap}
+          sablonlar={sablonlar}
+          isletme={data.business.name}
+          bildir={bildir}
+        />
+      </Modal>
+
+      <Modal acik={modal === "okundu"} kapat={() => setModal(null)} baslik="Kim gördü?" genislik="max-w-xl">
+        <OkunduKarti haftaISO={haftaISO} veri={okundu} setVeri={setOkundu} />
+      </Modal>
+
+      <Modal acik={modal === "rapor"} kapat={() => setModal(null)} baslik="Raporlar" genislik="max-w-md">
+        <div className="space-y-2">
+          <Link href="/raporlar" className="btn-ikincil flex h-10 items-center justify-center text-[13px]">
+            Raporlar (CSV indir)
+          </Link>
+          <Link href="/takvim" className="btn-ikincil flex h-10 items-center justify-center text-[13px]">
+            Takvim
+          </Link>
+          <Link href="/yazdir" className="btn-ikincil flex h-10 items-center justify-center text-[13px]">
+            Yazdır
+          </Link>
+          <Link href="/bugun" className="btn-ikincil flex h-10 items-center justify-center text-[13px]">
+            Bugün ekranı
+          </Link>
+        </div>
+      </Modal>
+
+      <Modal acik={modal === "uyarilar"} kapat={() => setModal(null)} baslik="Uyarılar" genislik="max-w-xl">
+        <ul className="space-y-1.5">
+          {analiz.issues.map((u, i) => {
+            const emp = personel.find((p) => p.id === u.employeeId);
+            return (
+              <li key={`${u.employeeId}-${u.date}-${u.type}-${i}`}>
                 <button
                   type="button"
                   onClick={() => {
-                    setShowPersonel(false);
-                    startEditEmp(emp);
-                    window.setTimeout(
-                      () =>
-                        document
-                          .getElementById(`satir-${emp.id}`)
-                          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
-                      150
-                    );
+                    setModal(null);
+                    setSecim({ employeeId: u.employeeId, iso: u.date });
                   }}
-                  className="btn-ikincil btn-kucuk"
+                  className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-zinc-50"
                 >
-                  Düzenle
+                  <span
+                    className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${
+                      u.severity === "error" ? "bg-red-500" : "bg-amber-500"
+                    }`}
+                    aria-hidden
+                  />
+                  <span>
+                    <strong className="font-medium">{emp?.name ?? "Personel"}</strong> ·{" "}
+                    {formatDayDate(new Date(`${u.date}T12:00:00`))} — {u.message}
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveEmployee(emp)}
-                  className="btn-tehlike btn-kucuk"
-                >
-                  Çıkar
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
-          Personel çıkarılınca o kişinin vardiyaları ve kişisel bağlantısı da silinir.
-          Bu işlem geri alınamaz.
-        </p>
-      </Modal>
-
-      {/* Ayarlar modali */}
-      <Modal
-        acik={showSettings}
-        kapat={() => setShowSettings(false)}
-        baslik="Ayarlar"
-      >
-        <p className="text-sm text-zinc-500">
-          Veri işlemleri. İşletme adını üstteki başlıktan değiştirebilirsin.
-        </p>
-        <div className="mt-4 space-y-2">
-          <button
-            onClick={() => handleReset("demo")}
-            className="btn-ikincil w-full justify-start"
-          >
-            Örnek veriyi (demo) yükle
-          </button>
-          <button
-            onClick={() => handleReset("empty")}
-            className="btn-tehlike w-full justify-start"
-          >
-            Boş başla (tüm personeli sil)
-          </button>
-        </div>
-      </Modal>
-
-      {/* Personel içe aktarma (Excel / CSV) */}
-      <Modal
-        acik={showImport}
-        kapat={() => setShowImport(false)}
-        baslik="Excel / CSV'den personel aktar"
-        genislik="max-w-lg"
-      >
-        <p className="text-sm text-zinc-600">
-          Excel&apos;deki listeyi olduğu gibi kopyalayıp yapıştır ya da{" "}
-          <code className="rounded bg-zinc-100 px-1 py-0.5 text-[12px]">.csv</code>{" "}
-          dosyası yükle. Sütun sırası: <strong>Ad; Görev; Telefon</strong>. Başlık
-          satırı otomatik atlanır; görev ve telefon isteğe bağlıdır.
-        </p>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <input
-            ref={importDosya}
-            type="file"
-            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-            onChange={handleImportDosya}
-            className="sr-only"
-            id="ice-aktar-dosya"
-          />
-          <button
-            type="button"
-            onClick={() => importDosya.current?.click()}
-            className="btn-ikincil btn-kucuk"
-          >
-            Dosya seç
-          </button>
-          <span className="text-xs text-zinc-500">
-            {importDosyaAdi || ".csv, .tsv, .txt · en fazla 200 kişi"}
-          </span>
-        </div>
-
-        <textarea
-          value={importText}
-          onChange={(e) => {
-            setImportText(e.target.value);
-            setImportDosyaAdi("");
-          }}
-          rows={8}
-          placeholder={"Ad Soyad\tGörev\tTelefon\nAyşe Yılmaz\tBarista\t0532 111 22 33\nMehmet Kaya\tGarson\t0533 222 33 44"}
-          className="giris mt-3 font-mono text-[13px]"
-          aria-label="Personel listesi"
-        />
-
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="text-xs font-medium text-emerald-700">
-            {parseEmployeeText(importText).length > 0
-              ? `✓ ${parseEmployeeText(importText).length} personel algılandı`
-              : "Henüz personel algılanmadı"}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowImport(false)}
-              className="btn-ghost btn-kucuk"
-            >
-              Vazgeç
-            </button>
-            <button
-              type="button"
-              onClick={handleImport}
-              disabled={importBusy || parseEmployeeText(importText).length === 0}
-              className="btn-birincil btn-kucuk"
-            >
-              {importBusy ? "Aktarılıyor…" : "İçe aktar"}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Toplu gönderim modali */}
-      <Modal
-        acik={showBulk}
-        kapat={() => setShowBulk(false)}
-        baslik="Tüm personele gönder"
-      >
-        <p className="text-sm text-zinc-500">
-          Her personele kendi programı hazırlanır. Sırayla açıp gönder.
-        </p>
-        <ul className="mt-3 max-h-80 space-y-1.5 overflow-y-auto">
-          {data.employees.map((emp) => {
-            const text = buildScheduleText(
-              emp,
-              weekDates,
-              Object.fromEntries([...assignMap.entries()]),
-              data.shiftTemplates,
-              data.business.name
-            );
-            const link = buildWhatsAppLink(emp.phone, text);
-            return (
-              <li
-                key={emp.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-              >
-                <span className="truncate">{emp.name}</span>
-                {emp.phone ? (
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-birincil btn-kucuk"
-                  >
-                    WhatsApp
-                  </a>
-                ) : (
-                  <span className="text-xs text-zinc-400">telefon yok</span>
-                )}
               </li>
             );
           })}
+          {analiz.issues.length === 0 ? (
+            <li className="text-[13px] text-zinc-500">Uyarı yok.</li>
+          ) : null}
         </ul>
+        <p className="mt-3 text-[11.5px] leading-relaxed text-zinc-500">
+          Kontroller: haftalık 45 saat, günlük 11 saat, iki vardiya arası 11 saat dinlenme,
+          gece 7,5 saat. Bu ekran hukuki danışmanlık değildir.
+        </p>
       </Modal>
+    </main>
+  );
 
-      {/* İzin talepleri modalı — karar ver + patron elle ekleme */}
-      <Modal
-        acik={showIzin}
-        kapat={() => setShowIzin(false)}
-        baslik="İzin talepleri"
-        genislik="max-w-2xl"
-      >
-        {/* Patronun elle eklemesi (doğrudan onaylı) */}
-        <form onSubmit={izinElleEkle} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-          <p className="text-xs font-semibold text-zinc-600">
-            İzin ekle (patron / yöneticinin elle kararıyla)
+  function bidirKapat() {
+    setModal(null);
+    bildir("Hafta temizlendi.");
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Küçük parçalar
+ * ------------------------------------------------------------------ */
+
+function Hucre({
+  sablon,
+  izin,
+  bugun,
+  onClick,
+  etiket,
+}: {
+  sablon?: ShiftTemplate;
+  izin: boolean;
+  bugun: boolean;
+  onClick: () => void;
+  etiket: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${etiket}: ${izin ? "izinli" : sablon ? `${sablon.name} ${shiftSaatMetni(sablon)}` : "vardiya yok"}`}
+      className={`flex h-[46px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border text-[11.5px] transition-colors ${
+        izin
+          ? "border-amber-200 bg-amber-50 text-amber-900"
+          : sablon
+            ? `${COLOR_CLASSES[sablon.color].chip} hover:brightness-95`
+            : `border-dashed border-zinc-200 text-zinc-400 hover:border-zinc-400 hover:text-zinc-600 ${
+                bugun ? "bg-amber-50/40" : ""
+              }`
+      }`}
+    >
+      {izin ? (
+        <span>İzinli</span>
+      ) : sablon ? (
+        <>
+          <span className="font-medium leading-tight">{sablon.name}</span>
+          <span className="text-[10.5px] leading-tight opacity-80">{shiftSaatMetni(sablon)}</span>
+        </>
+      ) : (
+        <span aria-hidden>+</span>
+      )}
+    </button>
+  );
+}
+
+function VardiyaSecici({
+  emp,
+  iso,
+  sablonlar,
+  secili,
+  izin,
+  onSec,
+  onKapat,
+}: {
+  emp: Employee | null;
+  iso: string;
+  sablonlar: ShiftTemplate[];
+  secili: string;
+  izin: boolean;
+  onSec: (sablonId: string) => void;
+  onKapat: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-zinc-600">
+        <strong className="text-zinc-900">{emp?.name ?? "Personel"}</strong> ·{" "}
+        {formatDayDate(new Date(`${iso}T12:00:00`))}
+        {izin ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900">İzinli</span> : null}
+      </p>
+
+      <div className="grid gap-2">
+        {sablonlar.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => onSec(s.id)}
+            className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-[13px] ${
+              secili === s.id ? "border-zinc-900 ring-1 ring-zinc-900" : "border-zinc-200 hover:bg-zinc-50"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span className={`h-2.5 w-2.5 rounded-full ${COLOR_CLASSES[s.color].dot}`} aria-hidden />
+              <span className="font-medium">{s.name}</span>
+            </span>
+            <span className="text-[12px] text-zinc-500">
+              {shiftSaatMetni(s)} · {shiftHours(s)} sa
+            </span>
+          </button>
+        ))}
+
+        {sablonlar.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 px-3 py-6 text-center text-[13px] text-zinc-500">
+            Vardiya şablonu yok. Araçlar → Vardiya şablonları.
           </p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <label className="text-xs text-zinc-600">
-              <span className="etiket">Personel</span>
-              <select
-                value={izinEkle.employeeId}
-                onChange={(e) => setIzinEkle({ ...izinEkle, employeeId: e.target.value })}
-                className="giris mt-1"
-                required
-              >
-                <option value="">Seç…</option>
-                {data.employees.map((e2) => (
-                  <option key={e2.id} value={e2.id}>
-                    {e2.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs text-zinc-600">
-              <span className="etiket">Tür</span>
-              <select
-                value={izinEkle.tur}
-                onChange={(e) => setIzinEkle({ ...izinEkle, tur: e.target.value as IzinTuru })}
-                className="giris mt-1"
-              >
-                {IZIN_TURLERI.map((t) => (
-                  <option key={t} value={t}>
-                    {IZIN_TUR_ETIKETI[t]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="text-xs text-zinc-600">
-                <span className="etiket">Başlangıç</span>
-                <input
-                  type="date"
-                  value={izinEkle.baslangic}
-                  onChange={(e) => setIzinEkle({ ...izinEkle, baslangic: e.target.value })}
-                  className="giris mt-1"
-                  required
-                />
-              </label>
-              <label className="text-xs text-zinc-600">
-                <span className="etiket">Bitiş</span>
-                <input
-                  type="date"
-                  value={izinEkle.bitis}
-                  min={izinEkle.baslangic}
-                  onChange={(e) => setIzinEkle({ ...izinEkle, bitis: e.target.value })}
-                  className="giris mt-1"
-                  required
-                />
-              </label>
-            </div>
-            <label className="text-xs text-zinc-600 sm:col-span-2">
-              <span className="etiket">Not (isteğe bağlı)</span>
-              <textarea
-                value={izinEkle.not}
-                onChange={(e) => setIzinEkle({ ...izinEkle, not: e.target.value })}
-                maxLength={500}
-                rows={2}
-                className="giris mt-1"
-              />
-            </label>
-            <div className="sm:col-span-2">
-              <button type="submit" disabled={izinEkleBusy} className="btn-birincil btn-kucuk disabled:opacity-60">
-                {izinEkleBusy ? "Ekleniyor…" : "Ekle"}
-              </button>
-            </div>
-          </div>
-        </form>
+        ) : null}
+      </div>
 
-        <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Talepler
-        </h3>
-        {izinler.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">Henüz talep yok.</p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onSec("")}
+          disabled={!secili}
+          className="btn-sessiz h-10 flex-1 text-[13px] disabled:opacity-40"
+        >
+          Boşalt
+        </button>
+        <button type="button" onClick={onKapat} className="btn-ikincil h-10 flex-1 text-[13px]">
+          Kapat
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AracDugme({ baslik, aciklama, onClick }: { baslik: string; aciklama: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl border border-zinc-200 px-3 py-2.5 text-left transition-colors hover:bg-zinc-50"
+    >
+      <span className="block text-[13px] font-medium text-zinc-900">{baslik}</span>
+      <span className="block text-[11.5px] text-zinc-500">{aciklama}</span>
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Ekip
+ * ------------------------------------------------------------------ */
+
+function EkipYonetimi({
+  personel,
+  haftalar,
+  atamaMap,
+  sablonlar,
+  isletme,
+  duzenlenen,
+  setDuzenlenen,
+  onChanged,
+  bildir,
+}: {
+  personel: Employee[];
+  haftalar: Date[];
+  atamaMap: Map<string, string>;
+  sablonlar: ShiftTemplate[];
+  isletme: string;
+  duzenlenen: Duzenlenen;
+  setDuzenlenen: (d: Duzenlenen) => void;
+  onChanged: () => Promise<void>;
+  bildir: (m: string) => void;
+}) {
+  const [ad, setAd] = useState("");
+  const [rol, setRol] = useState("");
+  const [tel, setTel] = useState("");
+  const [mesgul, setMesgul] = useState(false);
+
+  async function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    if (!ad.trim()) return;
+    setMesgul(true);
+    try {
+      await addEmployee({ name: ad.trim(), role: rol.trim() || "Personel", phone: tel.trim() });
+      setAd("");
+      setRol("");
+      setTel("");
+      await onChanged();
+      bildir("Personel eklendi.");
+    } catch {
+      bildir("Personel eklenemedi.");
+    } finally {
+      setMesgul(false);
+    }
+  }
+
+  async function kaydet() {
+    if (!duzenlenen) return;
+    setMesgul(true);
+    try {
+      await updateEmployee(duzenlenen.id, {
+        name: duzenlenen.name,
+        role: duzenlenen.role,
+        phone: duzenlenen.phone,
+      });
+      setDuzenlenen(null);
+      await onChanged();
+      bildir("Personel güncellendi.");
+    } catch {
+      bildir("Güncellenemedi.");
+    } finally {
+      setMesgul(false);
+    }
+  }
+
+  async function cikar(emp: Employee) {
+    if (!confirm(`${emp.name} çıkarılsın mı? Vardiyaları da silinir.`)) return;
+    try {
+      await deleteEmployee(emp.id);
+      await onChanged();
+      bildir("Personel çıkarıldı.");
+    } catch {
+      bildir("Çıkarılamadı.");
+    }
+  }
+
+  async function baglantiKopyala(emp: Employee) {
+    try {
+      const r = await fetch(`/api/baglanti/${emp.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ islem: "ac" }),
+      });
+      const j = (await r.json()) as { yol?: string | null; aktif?: boolean };
+      if (!j.yol) throw new Error("yol yok");
+      const tam = new URL(j.yol, window.location.origin).toString();
+      await navigator.clipboard.writeText(tam);
+      bildir("Personel bağlantısı kopyalandı.");
+    } catch {
+      bildir("Bağlantı oluşturulamadı.");
+    }
+  }
+
+  function whatsapp(emp: Employee) {
+    const atamalar: Record<string, string> = {};
+    for (const [k, v] of atamaMap) atamalar[k.replace("__", "__")] = v;
+    const metin = buildScheduleText(
+      emp,
+      haftalar,
+      atamalar,
+      sablonlar,
+      isletme,
+    );
+    window.open(buildWhatsAppLink(emp.phone, metin), "_blank", "noopener");
+  }
+
+  return (
+    <div className="space-y-4">
+      <form onSubmit={ekle} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+        <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Ad soyad" className="giris h-9 text-[13px]" required />
+        <input value={rol} onChange={(e) => setRol(e.target.value)} placeholder="Görev (Barista)" className="giris h-9 text-[13px]" />
+        <input value={tel} onChange={(e) => setTel(e.target.value)} placeholder="Telefon (05..)" className="giris h-9 text-[13px]" />
+        <button type="submit" disabled={mesgul} className="btn-birincil h-9 text-[12.5px] disabled:opacity-50">
+          Ekle
+        </button>
+      </form>
+
+      <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200">
+        {personel.length === 0 ? (
+          <p className="px-3 py-6 text-center text-[13px] text-zinc-500">Henüz personel yok.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-zinc-100">
-            {izinler.map((t) => {
-              const emp = empById.get(t.employeeId);
-              const busy = izinBusyId === t.id;
+          personel.map((emp) => (
+            <div key={emp.id} className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+              {duzenlenen?.id === emp.id ? (
+                <div className="flex w-full flex-wrap items-center gap-2">
+                  <input
+                    value={duzenlenen.name}
+                    onChange={(e) => setDuzenlenen({ ...duzenlenen, name: e.target.value })}
+                    className="giris h-8 w-40 text-[12.5px]"
+                  />
+                  <input
+                    value={duzenlenen.role}
+                    onChange={(e) => setDuzenlenen({ ...duzenlenen, role: e.target.value })}
+                    className="giris h-8 w-32 text-[12.5px]"
+                  />
+                  <input
+                    value={duzenlenen.phone}
+                    onChange={(e) => setDuzenlenen({ ...duzenlenen, phone: e.target.value })}
+                    className="giris h-8 w-36 text-[12.5px]"
+                  />
+                  <button type="button" onClick={() => void kaydet()} className="btn-birincil h-8 text-[12px]">
+                    Kaydet
+                  </button>
+                  <button type="button" onClick={() => setDuzenlenen(null)} className="btn-sessiz h-8 text-[12px]">
+                    Vazgeç
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <span className={`h-2 w-2 rounded-full ${COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"}`} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{emp.name}</span>
+                  <span className="hidden text-[12px] text-zinc-500 sm:inline">{emp.role}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDuzenlenen({ id: emp.id, name: emp.name, role: emp.role, phone: emp.phone })}
+                    className="btn-sessiz h-8 text-[11.5px]"
+                  >
+                    Düzenle
+                  </button>
+                  <button type="button" onClick={() => void baglantiKopyala(emp)} className="btn-sessiz h-8 text-[11.5px]">
+                    Bağlantı
+                  </button>
+                  <button type="button" onClick={() => whatsapp(emp)} className="btn-sessiz h-8 text-[11.5px]">
+                    WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void cikar(emp)}
+                    className="btn-sessiz h-8 text-[11.5px] text-red-600"
+                  >
+                    Çıkar
+                  </button>
+                </>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      <p className="text-[11.5px] leading-relaxed text-zinc-500">
+        Personel numarası gerekmez. “Bağlantı” ile personele özel, salt okunur plan adresi
+        kopyalanır (telefon numarası paylaşılmaz).
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * İzin
+ * ------------------------------------------------------------------ */
+
+function IzinYonetimi({
+  personel,
+  talepler,
+  onChanged,
+  bildir,
+}: {
+  personel: Employee[];
+  talepler: IzinTalebi[];
+  onChanged: () => Promise<void>;
+  bildir: (m: string) => void;
+}) {
+  const [empId, setEmpId] = useState(personel[0]?.id ?? "");
+  const [bas, setBas] = useState(BUGUN);
+  const [bit, setBit] = useState(BUGUN);
+  const [tur, setTur] = useState("izin");
+  const bekleyen = talepler.filter((t) => t.durum === "bekliyor");
+
+  async function karar(id: string, durum: "onaylandi" | "reddedildi") {
+    try {
+      await decideIzin(id, durum);
+      await onChanged();
+      bildir(durum === "onaylandi" ? "İzin onaylandı." : "İzin reddedildi.");
+    } catch {
+      bildir("İşlem yapılamadı.");
+    }
+  }
+
+  async function ekle(e: React.FormEvent) {
+    e.preventDefault();
+    if (!empId) return;
+    try {
+      await addIzin({ employeeId: empId, baslangic: bas, bitis: bit, tur });
+      await onChanged();
+      bildir("İzin eklendi (onaylı).");
+    } catch {
+      bildir("İzin eklenemedi.");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-[13px] font-semibold">Bekleyen talepler</h3>
+        {bekleyen.length === 0 ? (
+          <p className="mt-1 text-[12.5px] text-zinc-500">Bekleyen talep yok.</p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {bekleyen.map((t) => {
+              const emp = personel.find((p) => p.id === t.employeeId);
               return (
-                <li
-                  key={t.id}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-zinc-800">
-                      {emp?.name ?? "Bilinmeyen"} · {IZIN_TUR_ETIKETI[t.tur]} ·{" "}
-                      {izinTarihMetni(t.baslangic, t.bitis)}
-                    </p>
-                    <p className="text-[11px] text-zinc-500">
-                      {new Date(t.createdAt).toLocaleDateString("tr-TR")} —{" "}
-                      {IZIN_DURUM_ETIKETI[t.durum]}
+                <div key={t.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium">{emp?.name ?? "Personel"}</p>
+                    <p className="text-[12px] text-zinc-500">
+                      {t.baslangic} → {t.bitis} · {t.tur}
+                      {t.not ? ` · ${t.not}` : ""}
                     </p>
                   </div>
-                  {t.durum === "bekliyor" ? (
-                    <div className="flex shrink-0 gap-1.5">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => izinKararVer(t, "onaylandi")}
-                        className="btn-birincil btn-kucuk disabled:opacity-50"
-                      >
-                        {busy ? "…" : "Onayla"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => izinKararVer(t, "reddedildi")}
-                        className="btn-ikincil btn-kucuk disabled:opacity-50"
-                      >
-                        Reddet
-                      </button>
-                    </div>
-                  ) : (
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                        DURUM_SINIFI[t.durum] ?? "border-zinc-200 bg-white text-zinc-600"
-                      }`}
-                    >
-                      {IZIN_DURUM_ETIKETI[t.durum]}
-                    </span>
-                  )}
-                </li>
+                  <button type="button" onClick={() => void karar(t.id, "onaylandi")} className="btn-birincil h-8 text-[12px]">
+                    Onayla
+                  </button>
+                  <button type="button" onClick={() => void karar(t.id, "reddedildi")} className="btn-sessiz h-8 text-[12px]">
+                    Reddet
+                  </button>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
-      </Modal>
+      </div>
 
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg sm:bottom-6"
-        >
-          {toast}
+      <form onSubmit={ekle} className="space-y-2 rounded-xl border border-zinc-200 p-3">
+        <h3 className="text-[13px] font-semibold">Elle izin ekle</h3>
+        <select value={empId} onChange={(e) => setEmpId(e.target.value)} className="giris h-9 text-[13px]">
+          {personel.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="date" value={bas} onChange={(e) => setBas(e.target.value)} className="giris h-9 text-[13px]" />
+          <input type="date" value={bit} onChange={(e) => setBit(e.target.value)} className="giris h-9 text-[13px]" />
         </div>
-      )}
-    </main>
+        <select value={tur} onChange={(e) => setTur(e.target.value)} className="giris h-9 text-[13px]">
+          <option value="izin">İzin</option>
+          <option value="mazeret">Mazeret</option>
+          <option value="rapor">Rapor</option>
+          <option value="degisim">Vardiya değişimi</option>
+        </select>
+        <button type="submit" className="btn-birincil h-9 w-full text-[12.5px]">
+          Ekle
+        </button>
+      </form>
+
+      <div>
+        <h3 className="text-[13px] font-semibold">Son kararlar</h3>
+        <ul className="mt-1 space-y-1 text-[12px] text-zinc-600">
+          {talepler
+            .filter((t) => t.durum !== "bekliyor")
+            .slice(0, 8)
+            .map((t) => (
+              <li key={t.id}>
+                {personel.find((p) => p.id === t.employeeId)?.name ?? "Personel"} · {t.baslangic} → {t.bitis} ·{" "}
+                <strong>{t.durum}</strong>
+              </li>
+            ))}
+          {talepler.filter((t) => t.durum !== "bekliyor").length === 0 ? <li>Kayıt yok.</li> : null}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Duyuru
+ * ------------------------------------------------------------------ */
+
+function DuyuruYonetimi({
+  duyurular,
+  onChanged,
+  bildir,
+}: {
+  duyurular: StatePayload["announcements"];
+  onChanged: () => Promise<void>;
+  bildir: (m: string) => void;
+}) {
+  const [metin, setMetin] = useState("");
+
+  async function gonder(e: React.FormEvent) {
+    e.preventDefault();
+    const temiz = metin.trim();
+    if (!temiz) return;
+    try {
+      await createAnnouncement(temiz);
+      setMetin("");
+      await onChanged();
+      bildir("Duyuru eklendi.");
+    } catch {
+      bildir("Duyuru eklenemedi.");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <form onSubmit={gonder} className="space-y-2">
+        <textarea
+          value={metin}
+          onChange={(e) => setMetin(e.target.value)}
+          rows={3}
+          maxLength={400}
+          placeholder="Ekibe kısa bir not (ör. cumartesi stok sayımı 10:00)."
+          className="giris w-full py-2 text-[13px]"
+        />
+        <button type="submit" className="btn-birincil h-9 w-full text-[12.5px]">
+          Duyuruyu yayınla
+        </button>
+      </form>
+
+      <ul className="space-y-2">
+        {duyurular.map((d) => (
+          <li key={d.id} className="flex items-start gap-2 rounded-xl border border-zinc-200 px-3 py-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px]">{d.message}</p>
+              <p className="text-[11px] text-zinc-400">
+                {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(d.createdAt))}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm("Duyuru silinsin mi?")) return;
+                await deleteAnnouncement(d.id);
+                await onChanged();
+              }}
+              className="text-[11.5px] text-red-600"
+            >
+              Sil
+            </button>
+          </li>
+        ))}
+        {duyurular.length === 0 ? <li className="text-[12.5px] text-zinc-500">Henüz duyuru yok.</li> : null}
+      </ul>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Mesai saatleri
+ * ------------------------------------------------------------------ */
+
+function SaatAyari({
+  business,
+  onKaydet,
+}: {
+  business: StatePayload["business"];
+  onKaydet: (acilis: string, kapanis: string) => Promise<void>;
+}) {
+  const [acilis, setAcilis] = useState(business.openTime);
+  const [kapanis, setKapanis] = useState(business.closeTime);
+  const [mesgul, setMesgul] = useState(false);
+  const gecerli = acilis !== kapanis;
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-[12px] text-zinc-600">
+          Açılış
+          <input type="time" value={acilis} onChange={(e) => setAcilis(e.target.value)} className="giris mt-1 h-9 text-[13px]" />
+        </label>
+        <label className="text-[12px] text-zinc-600">
+          Kapanış
+          <input type="time" value={kapanis} onChange={(e) => setKapanis(e.target.value)} className="giris mt-1 h-9 text-[13px]" />
+        </label>
+      </div>
+      {!gecerli ? (
+        <p className="text-[12px] text-red-600">Açılış ve kapanış aynı olamaz (24 saat için 23:59 yaz).</p>
+      ) : null}
+      <button
+        type="button"
+        disabled={!gecerli || mesgul}
+        onClick={async () => {
+          setMesgul(true);
+          try {
+            await onKaydet(acilis, kapanis);
+          } finally {
+            setMesgul(false);
+          }
+        }}
+        className="btn-birincil h-9 w-full text-[12.5px] disabled:opacity-50"
+      >
+        Kaydet
+      </button>
+      <p className="text-[11.5px] leading-relaxed text-zinc-500">
+        Bu saatler yeni vardiya şablonlarının varsayılanıdır ve mevcut şablonları değiştirmez.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Paylaşım
+ * ------------------------------------------------------------------ */
+
+function Paylasim({
+  haftaISO,
+  personel,
+  haftalar,
+  atamaMap,
+  sablonlar,
+  isletme,
+  bildir,
+}: {
+  haftaISO: string;
+  personel: Employee[];
+  haftalar: Date[];
+  atamaMap: Map<string, string>;
+  sablonlar: ShiftTemplate[];
+  isletme: string;
+  bildir: (m: string) => void;
+}) {
+  const [gonderiliyor, setGonderiliyor] = useState(false);
+
+  function atamalar(): Record<string, string> {
+    const cikti: Record<string, string> = {};
+    for (const [k, v] of atamaMap) cikti[k] = v;
+    return cikti;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <a
+          href={`/api/plan/pdf?hafta=${haftaISO}`}
+          className="btn-ikincil flex h-10 items-center justify-center text-[13px]"
+        >
+          PDF indir
+        </a>
+        <button
+          type="button"
+          disabled={gonderiliyor}
+          onClick={async () => {
+            setGonderiliyor(true);
+            try {
+              const r = await fetch(`/api/plan/pdf?hafta=${haftaISO}`, { method: "POST" });
+              const j = (await r.json().catch(() => ({}))) as { hata?: string };
+              bildir(r.ok ? "PDF e-posta ile gönderildi." : (j.hata ?? "Gönderilemedi."));
+            } catch {
+              bildir("Gönderilemedi.");
+            } finally {
+              setGonderiliyor(false);
+            }
+          }}
+          className="btn-ikincil h-10 text-[13px] disabled:opacity-50"
+        >
+          {gonderiliyor ? "Gönderiliyor…" : "Kendime e-postala"}
+        </button>
+      </div>
+
+      <div>
+        <h3 className="text-[13px] font-semibold">WhatsApp mesajı</h3>
+        <div className="mt-2 space-y-2">
+          {personel.map((emp) => (
+            <div key={emp.id} className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2">
+              <span className="truncate text-[13px]">{emp.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const metin = buildScheduleText(emp, haftalar, atamalar(), sablonlar, isletme);
+                  window.open(buildWhatsAppLink(emp.phone, metin), "_blank", "noopener");
+                }}
+                className="btn-sessiz h-8 text-[11.5px]"
+              >
+                Gönder
+              </button>
+            </div>
+          ))}
+          {personel.length === 0 ? <p className="text-[12.5px] text-zinc-500">Personel yok.</p> : null}
+        </div>
+      </div>
+
+      <p className="text-[11.5px] leading-relaxed text-zinc-500">
+        Otomatik toplu gönderim yok: her mesaj WhatsApp&apos;ta senin onayınla açılır.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Okundu
+ * ------------------------------------------------------------------ */
+
+function OkunduKarti({
+  haftaISO,
+  veri,
+  setVeri,
+}: {
+  haftaISO: string;
+  veri: OkunduYaniti | null;
+  setVeri: (v: OkunduYaniti | null) => void;
+}) {
+  const [hata, setHata] = useState(false);
+
+  useEffect(() => {
+    let iptal = false;
+    okunduOzeti(haftaISO)
+      .then((v) => {
+        if (!iptal) {
+          setVeri(v);
+          setHata(false);
+        }
+      })
+      .catch(() => {
+        if (!iptal) setHata(true);
+      });
+    return () => {
+      iptal = true;
+    };
+  }, [haftaISO, setVeri]);
+
+  if (hata) return <p className="text-[13px] text-zinc-500">Okundu bilgisi alınamadı.</p>;
+  if (!veri || veri.hafta !== haftaISO) {
+    return <p className="text-[13px] text-zinc-500">Yükleniyor…</p>;
+  }
+  if (!veri.yayinda) {
+    return <p className="text-[13px] text-zinc-500">Bu hafta taslak — yayınlayınca personel görebilir.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex items-center justify-between text-[12.5px]">
+          <span className="font-semibold">Haftalık plan</span>
+          <span className="text-zinc-500">
+            {veri.plan.goren}/{veri.plan.toplam} · %{Math.round(veri.plan.oran * 100)}
+          </span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-100">
+          <div className="h-full bg-emerald-500" style={{ width: `${Math.round(veri.plan.oran * 100)}%` }} />
+        </div>
+        {veri.plan.gormeyenAdlar.length ? (
+          <p className="mt-1 text-[11.5px] text-zinc-500">Görmeyenler: {veri.plan.gormeyenAdlar.join(", ")}</p>
+        ) : null}
+      </div>
+
+      {veri.duyurular.map((d) => (
+        <div key={d.id}>
+          <div className="flex items-center justify-between text-[12px]">
+            <span className="max-w-[70%] truncate">{d.message}</span>
+            <span className="text-zinc-500">
+              {d.ozet.goren}/{d.ozet.toplam}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

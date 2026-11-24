@@ -147,6 +147,14 @@ export default async function GirisPage({
         .
       </p>
 
+      <p className="mt-2 text-[12px] leading-relaxed text-zinc-500">
+        Şifre yazmadan mı girmek istiyorsun?{" "}
+        <Link href="/kodla-giris" className="auth-baglanti">
+          E-posta kodla giriş yap
+        </Link>
+        .
+      </p>
+
       <div className="auth-form-baglanti mt-5 border-t border-zinc-100 pt-5">
         Hesabın yok mu? <Link href="/kayit">Ücretsiz kayıt ol</Link>
       </div>

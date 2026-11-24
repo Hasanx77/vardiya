@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * "Google ile devam et" düğmesi — Google Identity Services (GSI).
+ * "Google ile devam et" düğmesi — Google Identity Services (GSI), **popup** modu.
  *
- * Neden bu yöntem: **client secret gerektirmez**. Tarayıcıda Google'ın kendi
- * düğmesi çizilir, dönen ID token sunucuda doğrulanır (`/api/auth/google/gsi`).
- * Sunucuda saklanan bir sır olmadığı için sızma riski de yok.
+ * Neden popup:
+ *   • `redirect` modunda Google, ID token'ı sitenin dışından **form POST** ile
+ *     gönderiyor; paylaşımlı hosting'in önündeki güvenlik katmanları bu gövdeyi
+ *     bozabiliyor (canlıda `tokeninfo` 400 hatası yaşandı).
+ *   • Popup modunda token, kendi sayfamızdaki JS geri çağrısına gelir ve
+ *     **aynı kaynaklı** JSON isteğiyle gönderilir: araya giren katman yok.
  *
- * Düğme, Google'ın marka kurallarına uygun olarak kendi iframe'i içinde gelir;
- * bu yüzden görünümü biz boyamıyoruz.
+ * Düğme, Google'ın marka kurallarına uygun olarak kendi iframe'i içinde gelir.
+ * Client secret gerekmez; sunucuda saklanan bir Google sırrı yoktur.
  */
 type GsiCredentialResponse = { credential?: string; select_by?: string };
 
@@ -25,7 +28,6 @@ type GsiWindow = Window & {
           cancel_on_tap_outside?: boolean;
           locale?: string;
           ux_mode?: "popup" | "redirect";
-          login_uri?: string;
         }) => void;
         renderButton: (
           hedef: HTMLElement,
@@ -67,6 +69,8 @@ function betigiYukle(): Promise<void> {
   });
 }
 
+type Durum = "yukleniyor" | "hazir" | "gonderiliyor" | "hata";
+
 export default function GoogleGiris({
   istemciKimligi,
   hedef = "/panel",
@@ -75,8 +79,37 @@ export default function GoogleGiris({
   hedef?: string;
 }) {
   const kap = useRef<HTMLDivElement>(null);
+  const [durum, setDurum] = useState<Durum>("yukleniyor");
   const [hata, setHata] = useState<string | null>(null);
-  const [hazir, setHazir] = useState(false);
+
+  const girisYap = useCallback(
+    async (credential: string) => {
+      setDurum("gonderiliyor");
+      setHata(null);
+      try {
+        const r = await fetch("/api/auth/google/gsi", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ credential, next: hedef }),
+        });
+        const j = (await r.json().catch(() => ({}))) as {
+          ok?: boolean;
+          hedef?: string;
+          hata?: string;
+        };
+        if (!r.ok || !j.ok) {
+          setHata(j.hata ?? "Google ile giriş yapılamadı. Lütfen tekrar dene.");
+          setDurum("hata");
+          return;
+        }
+        window.location.assign(j.hedef ?? "/panel");
+      } catch {
+        setHata("Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.");
+        setDurum("hata");
+      }
+    },
+    [hedef],
+  );
 
   useEffect(() => {
     let iptal = false;
@@ -92,30 +125,14 @@ export default function GoogleGiris({
           client_id: istemciKimligi,
           locale: "tr",
           cancel_on_tap_outside: true,
-          // "redirect" modu: popup engelleyicilerine takılmaz; Google, ID token'ı
-          // doğrudan sunucuya form olarak gönderir, sunucu oturumu açar ve yönlendirir.
-          ux_mode: "redirect",
-          login_uri: `${window.location.origin}/api/auth/google/gsi`,
-          callback: async (yanit) => {
+          ux_mode: "popup",
+          callback: (yanit) => {
             if (!yanit.credential) {
-              setHata("Google girişi tamamlanmadı.");
+              // Kullanıcı pencereyi kapattı: sert hata gösterme.
+              setDurum("hazir");
               return;
             }
-            try {
-              const r = await fetch("/api/auth/google/gsi", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ credential: yanit.credential, next: hedef }),
-              });
-              const j = (await r.json().catch(() => ({}))) as { ok?: boolean; hedef?: string; hata?: string };
-              if (!r.ok || !j.ok) {
-                setHata(j.hata ?? "Google ile giriş yapılamadı.");
-                return;
-              }
-              window.location.assign(j.hedef ?? "/panel");
-            } catch {
-              setHata("Bağlantı kurulamadı. Lütfen tekrar dene.");
-            }
+            void girisYap(yanit.credential);
           },
         });
 
@@ -130,23 +147,42 @@ export default function GoogleGiris({
           width: genislik,
           locale: "tr",
         });
-        setHazir(true);
+        setDurum("hazir");
       } catch {
-        if (!iptal) setHata("Google düğmesi yüklenemedi. Sayfayı yenileyip tekrar dene.");
+        if (!iptal) {
+          setDurum("hata");
+          setHata(
+            "Google düğmesi yüklenemedi. Sayfayı yenileyip tekrar dene; dilersen e-posta ile giriş yapabilirsin.",
+          );
+        }
       }
     })();
 
     return () => {
       iptal = true;
     };
-  }, [istemciKimligi, hedef]);
+  }, [istemciKimligi, girisYap]);
 
   return (
     <div>
-      <div ref={kap} className="flex min-h-[44px] w-full items-center justify-center [color-scheme:light]" />
-      {!hazir && !hata ? (
-        <div className="h-[44px] w-full animate-pulse rounded-[10px] border border-[#2a2a30] bg-[#f7f7f8]" aria-hidden />
+      <div
+        ref={kap}
+        className="flex min-h-[44px] w-full items-center justify-center [color-scheme:light]"
+      />
+
+      {durum === "yukleniyor" ? (
+        <div
+          className="h-[44px] w-full animate-pulse rounded-[10px] border border-[#2a2a30] bg-[#f7f7f8]"
+          aria-hidden
+        />
       ) : null}
+
+      {durum === "gonderiliyor" ? (
+        <p className="mt-2 text-center text-[12px] text-[#a1a1aa]" role="status">
+          Google hesabın doğrulanıyor…
+        </p>
+      ) : null}
+
       {hata ? (
         <p role="alert" className="mt-2 text-[12px] leading-relaxed text-[#cfa9a9]">
           {hata}

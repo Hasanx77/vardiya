@@ -26,6 +26,7 @@ const PUBLIC_PATHS = new Set([
   "/demo",
   "/giris",
   "/kayit",
+  "/kodla-giris",
   "/iki-adim",
   "/gizlilik",
   "/personel-aydinlatma",
@@ -64,6 +65,7 @@ const KORUMALI_ONEKLER = [
   "/profil",
   "/basla",
   "/mesajlar",
+  "/eposta-dogrula",
 ];
 
 /** /ekip/<tek-parça-id> → personel bağlantısı. /ekip listesi kapalı kalır. */
@@ -97,17 +99,41 @@ function korumaliMi(pathname: string): boolean {
  *     Statik HTML'e nonce eklenemediği için `'unsafe-inline'` korunur; bu
  *     sayfalarda form/hesap verisi yok, risk düşük.
  * ------------------------------------------------------------------ */
+/**
+ * Pazarlama/ölçüm etiketlerinin (GTM, GA4, Google Ads, Meta piksel) ihtiyaç
+ * duyduğu alan adları. Reklam verileceği için bu izinler gerekli; yalnızca
+ * **görsel + bağlantı + çerçeve** için açılır, betik izni ayrıca verilir.
+ */
+const OLCUM_ALANLARI = [
+  "https://www.googletagmanager.com",
+  "https://*.googletagmanager.com",
+  "https://www.google-analytics.com",
+  "https://*.google-analytics.com",
+  "https://*.analytics.google.com",
+  "https://www.google.com",
+  "https://*.google.com",
+  "https://google.com.tr",
+  "https://*.google.com.tr",
+  "https://www.googleadservices.com",
+  "https://*.googleadservices.com",
+  "https://googleads.g.doubleclick.net",
+  "https://*.doubleclick.net",
+  "https://*.g.doubleclick.net",
+  "https://connect.facebook.net",
+  "https://www.facebook.com",
+].join(" ");
+
 const ORTAK_CSP = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "img-src 'self' data: blob: https://www.gstatic.com https://*.gstatic.com",
+  `img-src 'self' data: blob: https://www.gstatic.com https://*.gstatic.com ${OLCUM_ALANLARI}`,
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline' https://accounts.google.com",
-  "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com",
-  "frame-src https://accounts.google.com",
+  `connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com ${OLCUM_ALANLARI}`,
+  "frame-src https://accounts.google.com https://www.googletagmanager.com https://td.doubleclick.net https://www.google.com",
   "manifest-src 'self'",
   "worker-src 'self' blob:",
 ];
@@ -136,10 +162,16 @@ function nonceUret(): string {
 
 function cspUret(nonce: string | null): string {
   const gelistirme = process.env.NODE_ENV !== "production";
+  const kaynaklar =
+    "https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://connect.facebook.net";
   const betik = nonce
-    ? `script-src 'self' 'nonce-${nonce}' '${TEMA_BETIGI_HASH}' https://accounts.google.com${gelistirme ? " 'unsafe-eval'" : ""}`
-    : `script-src 'self' 'unsafe-inline' https://accounts.google.com${gelistirme ? " 'unsafe-eval'" : ""}`;
-  const ek = gelistirme ? ["connect-src 'self' ws: wss: https://accounts.google.com https://oauth2.googleapis.com"] : [];
+    ? `script-src 'self' 'nonce-${nonce}' '${TEMA_BETIGI_HASH}' ${kaynaklar}${gelistirme ? " 'unsafe-eval'" : ""}`
+    : `script-src 'self' 'unsafe-inline' ${kaynaklar}${gelistirme ? " 'unsafe-eval'" : ""}`;
+  const ek = gelistirme
+    ? [
+        `connect-src 'self' ws: wss: https://accounts.google.com https://oauth2.googleapis.com ${OLCUM_ALANLARI}`,
+      ]
+    : [];
   return [...ORTAK_CSP.filter((d) => !(gelistirme && d.startsWith("connect-src"))), betik, ...ek].join("; ");
 }
 

@@ -15,6 +15,8 @@ export default function SifreAlani({
   placeholder,
   minLength,
   autoFocus,
+  value,
+  onChange,
 }: {
   id: string;
   name: string;
@@ -23,6 +25,9 @@ export default function SifreAlani({
   placeholder?: string;
   minLength?: number;
   autoFocus?: boolean;
+  /** Verilirse alan denetimli (controlled) olur. */
+  value?: string;
+  onChange?: (deger: string) => void;
 }) {
   const [goster, setGoster] = useState(false);
   const [caps, setCaps] = useState(false);
@@ -48,6 +53,9 @@ export default function SifreAlani({
           minLength={minLength}
           autoFocus={autoFocus}
           placeholder={placeholder}
+          {...(value !== undefined
+            ? { value, onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target.value) }
+            : {})}
           aria-describedby={caps ? `${id}-caps` : undefined}
           onKeyDown={capsKontrol}
           onKeyUp={capsKontrol}

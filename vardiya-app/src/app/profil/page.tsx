@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { aktifKullanici } from "@/lib/auth";
 import { getStatePayload } from "@/lib/state";
 import HesapSilButonu from "@/components/HesapSilButonu";
+import KodAkisi from "@/components/KodAkisi";
 import { mesajOzeti } from "@/lib/messages";
 import { sahipMi } from "@/lib/visits";
 import { ikiAdimDurumu } from "@/lib/iki-adim";
@@ -128,6 +129,43 @@ export default async function ProfilPage({
             </Link>
           </section>
         ) : null}
+
+        {/* E-posta adresi */}
+        <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">E-posta adresi</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {kullanici.email} ·{" "}
+                <strong className={kullanici.emailVerifiedAt ? "text-emerald-700" : "text-amber-700"}>
+                  {kullanici.emailVerifiedAt ? "doğrulanmış" : "doğrulanmamış"}
+                </strong>
+              </p>
+              <p className="mt-1 text-[12.5px] text-zinc-500">
+                Doğrulanmış adres, şifre sıfırlama ve şifresiz giriş için gerekir.
+              </p>
+            </div>
+            {!kullanici.emailVerifiedAt ? (
+              <Link href="/eposta-dogrula" className="btn-birincil">
+                Doğrula
+              </Link>
+            ) : null}
+          </div>
+
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm font-medium text-zinc-700">
+              E-posta adresini değiştir
+            </summary>
+            <div className="mt-2 rounded-xl border border-zinc-200 p-4">
+              <KodAkisi
+                amac="eposta-degistir"
+                hedef="/profil"
+                basariliMetni="E-posta adresin güncellendi."
+                basariliBaglanti={{ href: "/profil", yazi: "Profile dön" }}
+              />
+            </div>
+          </details>
+        </section>
 
         {/* Şifre değiştir */}
         <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

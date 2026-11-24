@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -9,8 +10,7 @@ import SiteMenusu from "@/components/SiteMenusu";
 import Marka from "@/components/Marka";
 import LogoV from "@/components/LogoV";
 import { aktifKullanici } from "@/lib/auth";
-import { TEMA_BETIGI } from "@/lib/tema-betik";
-import { prisma } from "@/lib/prisma";
+import { TEMA_BETIGI } from "@/lib/tema-betik";import { prisma } from "@/lib/prisma";
 import { sahipMi } from "@/lib/visits";
 import "./globals.css";
 
@@ -80,9 +80,25 @@ export const viewport: Viewport = {
   ],
 };
 
+/**
+ * Google Tag Manager kapsayıcısı.
+ * Kapsayıcı kimliği değişirse yalnız bu sabiti güncelle.
+ */
+const GTM_ID = "GTM-5V2CMGFF";
+
+/**
+ * GTM'in resmî yükleyicisi.
+ * `dataLayer` dizisini kurar, `gtm.start` olayını atar ve `gtm.js` betiğini
+ * async olarak indirir. `gtm.js` yüklendiğinde kapsayıcıdaki etiketler
+ * (GA4, Ads dönüşümü, piksel vb.) devreye girer.
+ */
+const GTM_BETIGI = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`;
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Sağ üst menü ve alt menü oturuma göre değişir (giriş yapılmış / yapılmamış).
   const kullanici = await aktifKullanici();
+  // CSP nonce'u middleware üretir; satır içi betiklerin çalışması için gerekli.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const isletme = kullanici
     ? await prisma.business.findUnique({
         where: { userId: kullanici.id },
@@ -97,13 +113,30 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
       className={`${bodyFont.variable} ${headingFont.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Google Tag Manager — kapsayıcı betiği (head'in en üstünde olmalı) */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: GTM_BETIGI }} />
+        {/* End Google Tag Manager */}
+      </head>
       <body
         className={`flex min-h-full flex-col ${
           kullanici ? "pb-16 sm:pb-0" : ""
         }`}
       >
+        {/* Google Tag Manager (noscript) — JS kapalıysa devreye girer */}
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+            title="Google Tag Manager"
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
+
         {/* Tema tercihini ilk boyamadan önce uygula (flicker önleyici) */}
-        <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
 
         <a
           href="#icerik"

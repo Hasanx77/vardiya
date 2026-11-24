@@ -44,6 +44,11 @@ export default async function GizlilikPage() {
           <h2 className="text-lg font-semibold text-zinc-900">1) Hangi veriler işlenir?</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li><strong>Hesap:</strong> e-posta adresi, şifrenin geri döndürülemez özeti (hash), hesap oluşturma ve son giriş zamanı.</li>
+            <li>
+              <strong>Doğrulama kodları:</strong> e-posta ile gönderilen 6 haneli kodun
+              kendisi <strong>saklanmaz</strong>; yalnızca geri döndürülemez özeti, amacı
+              ve son kullanma zamanı (10 dakika) tutulur. 2 gün sonra silinir.
+            </li>
             <li><strong>İşletme:</strong> işletme adı, vardiya şablonları (saat/renk).</li>
             <li><strong>Personel kayıtları:</strong> ad, telefon, görev, yıllık izin hakkı — <em>senin girdiğin kadarıyla</em>. (Ücret/maaş bilgisi <strong>istenmez ve saklanmaz</strong>.)</li>
             <li><strong>Planlama:</strong> vardiya atamaları, duyurular, gün notları.</li>
@@ -200,7 +205,9 @@ export default async function GizlilikPage() {
                 </tr>
                 <tr className="border-b border-zinc-100">
                   <td className="py-2 pr-4">E-posta sunucusu (kendi SMTP)</td>
-                  <td className="py-2 pr-4">Şifre sıfırlama, doğrulama, plan PDF</td>
+                  <td className="py-2 pr-4">
+                    Şifre sıfırlama, e-posta doğrulama, şifresiz giriş, plan PDF
+                  </td>
                   <td className="py-2">Türkiye</td>
                 </tr>
                 <tr className="border-b border-zinc-100">

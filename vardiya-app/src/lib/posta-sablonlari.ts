@@ -123,6 +123,58 @@ Ek: ${opts.pdfAdi}
   return { konu, html, metin };
 }
 
+/**
+ * Tek kullanımlık **6 haneli kod** e-postası.
+ *
+ * Neden kod: telefonda bağlantıya tıklamak gerekmez; e-posta güvenlik
+ * tarayıcıları bağlantıyı önden açıp "kullanılmış" hâle getiremez.
+ */
+export function kodPostasi(opts: {
+  kod: string;
+  baslik: string;
+  dakika: number;
+  kullaniciAdi?: string;
+}): { konu: string; html: string; metin: string } {
+  const konu = `Vardiya — ${opts.baslik} kodun: ${opts.kod}`;
+  const hitap = opts.kullaniciAdi ? `Merhaba ${opts.kullaniciAdi},` : "Merhaba,";
+  const gruplu = `${opts.kod.slice(0, 3)} ${opts.kod.slice(3)}`;
+
+  const metin = `${hitap}
+
+${opts.baslik} için doğrulama kodun:
+
+${gruplu}
+
+Kod ${opts.dakika} dakika geçerlidir ve yalnızca bir kez kullanılabilir.
+Bu isteği sen yapmadıysan bu e-postayı yok say — hesabında bir değişiklik olmaz.
+
+— Vardiya · zihnora.com.tr`;
+
+  const html = kabuk({
+    onBaslik: opts.baslik,
+    icerik: `
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#18181b;">${opts.baslik}</h1>
+      <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:${METIN};">
+        ${hitap} aşağıdaki kodu Vardiya ekranına yaz.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 18px;">
+        <tr>
+          <td style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:34px;font-weight:700;letter-spacing:.16em;color:#18181b;">${gruplu}</div>
+            <div style="margin-top:8px;font-size:12px;color:${SOLUK};">${opts.dakika} dakika geçerli · tek kullanımlık</div>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:${SOLUK};">
+        Bu isteği sen yapmadıysan bu e-postayı yok say — hesabında bir değişiklik olmaz.
+        Kodu kimseyle paylaşma; Vardiya çalışanları senden kod istemez.
+      </p>`,
+    altNot: "Kod yalnızca sen istediğinde gönderilir.",
+  });
+
+  return { konu, html, metin };
+}
+
 export function dogrulamaPostasi(opts: {
   kullaniciAdi: string;
   baglanti: string;
