@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { aktifKullaniciId, COOKIE_NAME, cerezAyarlari, sifreDogruMu, sifreOzetle } from "@/lib/auth";
 import { oturumTokeni } from "@/lib/session";
-import { disAdres, httpsMi } from "@/lib/url";
+import { disAdres, guvenliHedef, httpsMi } from "@/lib/url";
 
 /**
  * Şifre değiştir (giriş yapmış kullanıcı).
@@ -16,9 +16,12 @@ export async function POST(req: Request) {
   const mevcut = String(form.get("mevcut") ?? "");
   const yeni = String(form.get("yeni") ?? "");
   const yeniTekrar = String(form.get("yeniTekrar") ?? "");
+  // Ayarlar ekranından gelindiyse oraya dön; başka adrese yönlendirme yok.
+  const donusHam = guvenliHedef(String(form.get("donus") ?? ""), "/profil");
+  const donus = donusHam.startsWith("/ayarlar") ? donusHam : "/profil";
 
   const hata = (mesaj: string) => {
-    const url = disAdres(req, "/profil");
+    const url = disAdres(req, donus);
     url.searchParams.set("sifreHata", mesaj);
     return NextResponse.redirect(url, 303);
   };
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
     select: { sessionVersion: true },
   });
 
-  const url = disAdres(req, "/profil");
+  const url = disAdres(req, donus);
   url.searchParams.set("sifreOk", "1");
   const res = NextResponse.redirect(url, 303);
   // Bu cihaz yeni sürümle devam eder; diğer cihazlardaki eski çerezler ölür.

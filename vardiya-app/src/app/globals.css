@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Koyu tema: işletim sistemi değil, <html class="dark"> belirler.
+   Böylece `dark:` sınıfları site içindeki tema düğmesiyle uyumlu çalışır. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Tema: varsayılan açık; <html class="dark"> ile koyu tema.
    TEK PALET (30 Eki 2026): tüm site — vitrin, giriş, uygulama — aynı
    nötr "zinc" ailesinin açık/koyu tonlarını kullanır. Tek vurgu: amber.
@@ -1748,4 +1752,64 @@ html.dark .satir-uyari {
   letter-spacing: -0.035em;
   color: #f2f2f4;
   text-wrap: balance;
+}
+
+/* ==========================================================================
+   ETKİLEŞİM RENGİ (26 Kas 2026)
+   --------------------------------------------------------------------------
+   Patron: "dark temada bir özelliğin üstüne gelince beyaz parlıyor, yazılar
+   görünmüyor; parlamayı sıfıra indir. Üstüne geldiğim özellik renk değiştirsin:
+   dark temada altın sarısı, beyaz temada koyu mavi."
+
+   Tailwind'in `hover:bg-zinc-50/100/800` gibi sınıfları koyu temada beyaz/pembe
+   parlama yaratıyordu. Bu katman tüm yüzey etkileşimlerini tek renge bağlar.
+   ========================================================================== */
+:root {
+  --etk: #16336b;        /* açık tema: koyu mavi */
+  --etk-yazi: #ffffff;
+}
+html.dark {
+  --etk: #e8ae55;        /* koyu tema: altın sarısı */
+  --etk-yazi: #1b1204;
+}
+
+@media (hover: hover) {
+  button:hover:not(:disabled),
+  [role="switch"]:hover,
+  summary:hover,
+  a[class*="btn-"]:hover,
+  nav a:hover,
+  .menu-baglanti:hover,
+  tbody a:hover,
+  .kart a:hover,
+  li > a:hover {
+    background-color: var(--etk) !important;
+    color: var(--etk-yazi) !important;
+    border-color: var(--etk) !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+
+  button:hover:not(:disabled) *,
+  [role="switch"]:hover *,
+  summary:hover *,
+  a[class*="btn-"]:hover *,
+  nav a:hover *,
+  .menu-baglanti:hover *,
+  tbody a:hover *,
+  .kart a:hover *,
+  li > a:hover * {
+    color: inherit !important;
+  }
+
+  /* Satır içi bağlantılar: zemini boyamak yerine yalnız renk (okunurluk). */
+  p a:hover,
+  span a:hover,
+  td a:hover,
+  footer a:hover {
+    background-color: transparent !important;
+    color: var(--etk) !important;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "@/components/Modal";
 import TemplateManager from "@/components/TemplateManager";
+import { useDil } from "@/components/DilSaglayici";
 import {
   addEmployee,
   addIzin,
@@ -25,7 +27,6 @@ import {
 import { COLOR_CLASSES } from "@/lib/colors";
 import { analyzeWeek } from "@/lib/compliance";
 import {
-  DAY_SHORT_TR,
   formatDayDate,
   formatWeekRange,
   getWeekDates,
@@ -73,14 +74,28 @@ export default function PanelClient({
   eposta,
   epostaDogrulanmis = true,
   ziyaret,
+  sahip = false,
+  baslangicGun,
 }: {
   initialData: StatePayload;
   eposta?: string;
   epostaDogrulanmis?: boolean;
   ziyaret?: { bugun: number; hafta: number; ay: number };
+  sahip?: boolean;
+  /** Takvimden "panelde düzenle" ile gelindiğinde o günün haftası açılır. */
+  baslangicGun?: string;
 }) {
   const [data, setData] = useState<StatePayload>(initialData);
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState(() => {
+    if (!baslangicGun) return 0;
+    const pzt = isoHaftaBasi(baslangicGun);
+    if (!pzt) return 0;
+    const buPzt = haftaBasiISO();
+    const fark = Math.round(
+      (Date.parse(`${pzt}T00:00:00Z`) - Date.parse(`${buPzt}T00:00:00Z`)) / 604_800_000,
+    );
+    return Number.isFinite(fark) ? Math.max(-104, Math.min(104, fark)) : 0;
+  });
   const [secim, setSecim] = useState<Secim | null>(null);
   const [modal, setModal] = useState<ModalTuru>(null);
   const [duzenlenen, setDuzenlenen] = useState<Duzenlenen>(null);
@@ -90,6 +105,15 @@ export default function PanelClient({
   const [yayinBusy, setYayinBusy] = useState(false);
   const [mobilGun, setMobilGun] = useState<number | null>(null);
   const [okundu, setOkundu] = useState<OkunduYaniti | null>(null);
+  const [sayiAcik, setSayiAcik] = useState(false);
+  const [sayi, setSayi] = useState(4);
+  const [adDuzenle, setAdDuzenle] = useState<{ id: string; deger: string } | null>(null);
+  const yonlendir = useRouter();
+  const { t, dil } = useDil();
+  const gunKisa = useMemo(
+    () => new Intl.DateTimeFormat(dil === "en" ? "en-GB" : "tr-TR", { weekday: "short" }),
+    [dil],
+  );
   const [tarihGirdi, setTarihGirdi] = useState("");
   const zaman = useRef<number | null>(null);
 
@@ -165,6 +189,81 @@ export default function PanelClient({
       bildir("Veriler yenilenemedi. Sayfayı yenile.");
     }
   }, []);
+
+  /**
+   * "Kaç personel var?" sorusu.
+   *  • Personel hiç yoksa panel açılınca hemen sorulur.
+   *  • Personel varsa **günde bir kez** hatırlatılır (patron: "her seferinde sorsun").
+   */
+  useEffect(() => {
+    if (personel.length > 0) return;
+    const t = window.setTimeout(() => {
+      setSayi(4);
+      setSayiAcik(true);
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [personel.length]);
+
+  useEffect(() => {
+    const gun = istanbulGunu();
+    const anahtar = `vardiya-personel-soruldu-${gun}`;
+    if (window.localStorage.getItem(anahtar)) return;
+    const t = window.setTimeout(() => {
+      setSayi((s) => Math.max(personel.length, s));
+      setSayiAcik(true);
+    }, 900);
+    return () => window.clearTimeout(t);
+    // Sayı sorusu yalnız açılışta bir kez değerlendirilir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function sayiKapat() {
+    setSayiAcik(false);
+    try {
+      window.localStorage.setItem(`vardiya-personel-soruldu-${istanbulGunu()}`, "1");
+    } catch {
+      /* gizli mod: sorun değil */
+    }
+  }
+
+  async function personelSatirlariEkle() {
+    const adet = Math.trunc(Number(sayi));
+    if (!Number.isFinite(adet) || adet < 1 || adet > 50) {
+      bildir("1 ile 50 arasında bir sayı gir.");
+      return;
+    }
+    try {
+      const r = await fetch("/api/employees/toplu", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ adet }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { hata?: string; created?: number };
+      if (!r.ok) {
+        bildir(j.hata ?? "Satırlar oluşturulamadı.");
+        return;
+      }
+      await yukle();
+      sayiKapat();
+      bildir(`${j.created ?? adet} kişilik satır açıldı. Adları ızgaradan düzenleyebilirsin.`);
+    } catch {
+      bildir("Bağlantı kurulamadı. Tekrar dene.");
+    }
+  }
+
+  async function adiKaydet() {
+    if (!adDuzenle) return;
+    const ad = adDuzenle.deger.trim();
+    const id = adDuzenle.id;
+    setAdDuzenle(null);
+    if (!ad) return;
+    try {
+      await updateEmployee(id, { name: ad });
+      await yukle();
+    } catch {
+      bildir("Ad güncellenemedi.");
+    }
+  }
 
   async function atamaYaz(employeeId: string, iso: string, sablonId: string) {
     setData((onceki) => {
@@ -293,8 +392,8 @@ export default function PanelClient({
           <div className="min-w-[168px] text-center">
             <div className="text-[15px] font-semibold tracking-tight">{formatWeekRange(haftalar)}</div>
             <div className="text-[11px] text-zinc-500">
-              {offset === 0 ? "Bu hafta" : offset > 0 ? `${offset} hafta sonra` : `${-offset} hafta önce`}
-              {kayit === "yaziyor" ? " · kaydediliyor…" : kayit === "tamam" ? " · kaydedildi" : ""}
+              {offset === 0 ? t("panel.thisWeek") : offset > 0 ? t("panel.weeksLater", { n: offset }) : t("panel.weeksAgo", { n: -offset })}
+              {kayit === "yaziyor" ? ` · ${t("panel.saving")}` : kayit === "tamam" ? ` · ${t("panel.saved")}` : ""}
             </div>
           </div>
           <button
@@ -337,7 +436,7 @@ export default function PanelClient({
                 : "bg-zinc-100 text-zinc-600"
             }`}
           >
-            {yayinda ? (degisti ? "Yayında · yeni değişiklik" : "Yayında") : "Taslak"}
+            {yayinda ? (degisti ? t("panel.publishedNew") : t("panel.published")) : t("panel.draft")}
           </span>
           {yayinda ? (
             <button
@@ -346,7 +445,7 @@ export default function PanelClient({
               disabled={yayinBusy}
               className="btn-sessiz h-9 text-[12px] disabled:opacity-50"
             >
-              Geri al
+              {t("panel.undo")}
             </button>
           ) : null}
           <button
@@ -356,14 +455,38 @@ export default function PanelClient({
             title={haftaAtama === 0 ? "Önce bu haftaya vardiya ekle" : undefined}
             className="btn-birincil h-9 text-[12.5px] disabled:opacity-50"
           >
-            {yayinda && !degisti ? "Yeniden yayınla" : "Planı yayınla"}
+            {yayinda && !degisti ? t("panel.republish") : t("panel.publish")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setModal("sablon")}
+            className="btn-sessiz inline-flex h-9 items-center gap-1.5 text-[12px]"
+            title="Vardiya saatlerini düzenle"
+            aria-label="Vardiya saatlerini düzenle"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-3.5 w-3.5" aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="hidden md:inline">{t("panel.shiftTimes")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSayi(Math.max(personel.length, 4));
+              setSayiAcik(true);
+            }}
+            className="btn-sessiz h-9 text-[12px]"
+            title="Personel satırı ekle"
+          >
+            {personel.length > 0 ? t("panel.staff", { n: personel.length }) : t("panel.addStaff")}
           </button>
           <button
             type="button"
             onClick={() => setModal("araclar")}
             className="btn-sessiz h-9 text-[12px]"
           >
-            ⋯ Araçlar
+            ⋯ {t("panel.tools")}
           </button>
         </div>
       </div>
@@ -371,9 +494,9 @@ export default function PanelClient({
       {/* Bugün şeridi */}
       {buHaftaMi ? (
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[12.5px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">Bugün</span>
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t("panel.today")}</span>
           {bugunVardiyalar.size === 0 ? (
-            <span className="text-zinc-500">Bugün için vardiya yok.</span>
+            <span className="text-zinc-500">{t("panel.noShiftToday")}</span>
           ) : (
             [...bugunVardiyalar.entries()].map(([sablonId, isimler]) => {
               const s = sablonById.get(sablonId);
@@ -395,7 +518,7 @@ export default function PanelClient({
           <thead>
             <tr className="border-b border-zinc-200 text-[11.5px] text-zinc-500 dark:border-zinc-800">
               <th className="sticky left-0 z-10 bg-white px-3 py-2.5 font-semibold dark:bg-zinc-900">
-                Personel
+                {t("panel.employee")}
               </th>
               {haftalar.map((d, i) => (
                 <th
@@ -404,20 +527,20 @@ export default function PanelClient({
                     gunler[i] === BUGUN ? "text-amber-700" : ""
                   }`}
                 >
-                  {DAY_SHORT_TR[i]}
+                  {gunKisa.format(d)}
                   <span className="ml-1 font-normal text-zinc-400">{d.getDate()}</span>
                 </th>
               ))}
-              <th className="px-2 py-2.5 text-center font-semibold">Saat</th>
+              <th className="px-2 py-2.5 text-center font-semibold">{t("panel.hoursCol")}</th>
             </tr>
           </thead>
           <tbody>
             {personel.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-[13px] text-zinc-500">
-                  Henüz personel yok.{" "}
+                  {t("panel.noStaff")}{" "}
                   <button type="button" onClick={() => setModal("ekip")} className="underline underline-offset-2">
-                    Ekip ekle
+                    {t("panel.addTeam")}
                   </button>
                 </td>
               </tr>
@@ -433,7 +556,29 @@ export default function PanelClient({
                           className={`h-2 w-2 shrink-0 rounded-full ${COLOR_CLASSES[emp.color]?.dot ?? "bg-zinc-400"}`}
                           aria-hidden
                         />
-                        <span className="text-[13px]">{emp.name}</span>
+                        {adDuzenle?.id === emp.id ? (
+                          <input
+                            autoFocus
+                            value={adDuzenle.deger}
+                            onChange={(e) => setAdDuzenle({ id: emp.id, deger: e.target.value })}
+                            onBlur={() => void adiKaydet()}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") void adiKaydet();
+                              if (e.key === "Escape") setAdDuzenle(null);
+                            }}
+                            className="h-6 w-[120px] rounded border border-zinc-300 px-1 text-[12.5px]"
+                            aria-label="Personel adı"
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setAdDuzenle({ id: emp.id, deger: emp.name })}
+                            className="truncate text-left text-[13px] hover:underline"
+                            title="Adı düzenle"
+                          >
+                            {emp.name}
+                          </button>
+                        )}
                         {kisilerUyari.length ? (
                           <span
                             className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"
@@ -488,7 +633,7 @@ export default function PanelClient({
                     : "bg-zinc-100 text-zinc-600"
               }`}
             >
-              <span className="block font-semibold">{DAY_SHORT_TR[i]}</span>
+              <span className="block font-semibold">{gunKisa.format(d)}</span>
               <span className="block">{d.getDate()}</span>
             </button>
           ))}
@@ -497,7 +642,7 @@ export default function PanelClient({
         <div className="mt-3 space-y-2">
           {personel.length === 0 ? (
             <p className="rounded-xl border border-zinc-200 px-4 py-6 text-center text-[13px] text-zinc-500">
-              Henüz personel yok.
+              {t("panel.noStaff")}
             </p>
           ) : (
             personel.map((emp) => {
@@ -522,7 +667,7 @@ export default function PanelClient({
                       {sablon.name} · {shiftSaatMetni(sablon)}
                     </span>
                   ) : (
-                    <span className="text-[12px] text-zinc-400">+ Vardiya</span>
+                    <span className="text-[12px] text-zinc-400">+ {t("genel.vardiya")}</span>
                   )}
                 </button>
               );
@@ -535,17 +680,17 @@ export default function PanelClient({
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] text-zinc-600 dark:text-zinc-300">
         <span>
           <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{haftaAtama}</strong>{" "}
-          vardiya
+          {t("genel.vardiya")}
         </span>
         <span>
           <strong className="font-semibold text-zinc-900 dark:text-zinc-100">
             {haftaSaat % 1 === 0 ? haftaSaat : haftaSaat.toFixed(1)}
           </strong>{" "}
-          saat
+          {t("genel.saat")}
         </span>
         <span>
           <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{calisanKisi}</strong>/
-          {personel.length} kişi
+          {personel.length} {t("genel.kisi")}
         </span>
         {uyariVar ? (
           <button
@@ -554,16 +699,20 @@ export default function PanelClient({
             className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[12px] font-medium text-red-700"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
-            {analiz.issues.length} uyarı
+            {t("panel.warnings", { n: analiz.issues.length })}
           </button>
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] text-emerald-700">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-            Uyarı yok
+            {t("panel.noWarnings")}
           </span>
         )}
-        {yayinda ? null : <span className="text-zinc-500">Bu hafta taslak — ekip görmüyor.</span>}
+        {yayinda ? null : <span className="text-zinc-500">{t("panel.draftNote")}</span>}
       </div>
+
+      {personel.some((p) => /^Personel \d+$/.test(p.name)) ? (
+        <p className="mt-2 text-[11.5px] text-zinc-500">{t("panel.placeholderHint")}</p>
+      ) : null}
 
       {/* ---------------- Modallar ---------------- */}
       <Modal acik={secim !== null} kapat={() => setSecim(null)} baslik="Vardiya seç" genislik="max-w-lg">
@@ -578,9 +727,23 @@ export default function PanelClient({
               void atamaYaz(secim.employeeId, secim.iso, sablonId);
               setSecim(null);
             }}
+            onSaatDuzenle={() => {
+              setSecim(null);
+              setModal("sablon");
+            }}
             onKapat={() => setSecim(null)}
           />
         ) : null}
+      </Modal>
+
+      <Modal acik={sayiAcik} kapat={sayiKapat} baslik="Kaç personel var?" genislik="max-w-md">
+        <PersonelSayisi
+          sayi={sayi}
+          setSayi={setSayi}
+          mevcut={personel.length}
+          onEkle={() => void personelSatirlariEkle()}
+          onKapat={sayiKapat}
+        />
       </Modal>
 
       <Modal acik={modal === "araclar"} kapat={() => setModal(null)} baslik="Araçlar" genislik="max-w-lg">
@@ -592,11 +755,15 @@ export default function PanelClient({
             onClick={() => setModal("izin")}
           />
           <AracDugme baslik="Duyuru" aciklama="Ekibe mesaj" onClick={() => setModal("duyuru")} />
-          <AracDugme baslik="Vardiya şablonları" aciklama={`${sablonlar.length} şablon`} onClick={() => setModal("sablon")} />
+          <AracDugme baslik="Vardiya saatleri" aciklama={`${sablonlar.length} vardiya · saati düzenle`} onClick={() => setModal("sablon")} />
           <AracDugme baslik="Paylaş" aciklama="PDF · WhatsApp" onClick={() => setModal("paylas")} />
           <AracDugme baslik="Kim gördü?" aciklama="Okundu bilgisi" onClick={() => setModal("okundu")} />
           <AracDugme baslik="Mesai saatleri" aciklama={`${data.business.openTime}–${data.business.closeTime}`} onClick={() => setModal("saatler")} />
           <AracDugme baslik="Raporlar" aciklama="CSV · yazdır" onClick={() => setModal("rapor")} />
+          <AracDugme baslik="Geçmiş" aciklama="Son 3 ay" onClick={() => yonlendir.push("/gecmis")} />
+          {sahip ? (
+            <AracDugme baslik="SQL paneli" aciklama="Salt-okunur sorgu" onClick={() => yonlendir.push("/sql")} />
+          ) : null}
         </div>
 
         {ziyaret ? (
@@ -678,7 +845,12 @@ export default function PanelClient({
         />
       </Modal>
 
-      <Modal acik={modal === "sablon"} kapat={() => setModal(null)} baslik="Vardiya şablonları" genislik="max-w-2xl">
+      <Modal acik={modal === "sablon"} kapat={() => setModal(null)} baslik="Vardiya saatlerini düzenle" genislik="max-w-2xl">
+        <p className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-[12px] leading-relaxed text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
+          Her işletmenin saatleri farklıdır. Buradaki saatler <strong>yalnızca senin
+          işletmene</strong> aittir. Saati değiştirdiğinde o vardiyaya atanmış mevcut günler de
+          yeni saate göre hesaplanır. Aynı vardiyaya farklı saat vermek için ayrı bir vardiya ekle.
+        </p>
         <TemplateManager
           templates={sablonlar}
           standart={{ openTime: data.business.openTime, closeTime: data.business.closeTime }}
@@ -824,6 +996,104 @@ function Hucre({
   );
 }
 
+/** "Kaç personel var?" — sayı seçici. 4 yazarsan 4 satır açılır. */
+function PersonelSayisi({
+  sayi,
+  setSayi,
+  mevcut,
+  onEkle,
+  onKapat,
+}: {
+  sayi: number;
+  setSayi: (n: number) => void;
+  mevcut: number;
+  onEkle: () => void;
+  onKapat: () => void;
+}) {
+  const sinirla = (n: number) => Math.max(1, Math.min(50, Math.trunc(n)));
+  return (
+    <div className="space-y-4">
+      <p className="text-[13px] leading-relaxed text-zinc-600">
+        Kaç kişi çalışıyor? Yazdığın sayı kadar satır açarım; adları sonra ızgaradan
+        tek tıkla düzeltebilirsin.
+        {mevcut > 0 ? (
+          <>
+            {" "}
+            Şu an <strong>{mevcut}</strong> kişi var; eklersen üzerine eklenir.
+          </>
+        ) : null}
+      </p>
+
+      <div className="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => setSayi(sinirla(sayi - 1))}
+          className="btn-sessiz h-11 w-11 !px-0 text-lg"
+          aria-label="Azalt"
+        >
+          −
+        </button>
+        <input
+          type="number"
+          min={1}
+          max={50}
+          value={sayi}
+          onChange={(e) => setSayi(sinirla(Number(e.target.value)))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onEkle();
+          }}
+          className="giris h-14 w-24 text-center text-[26px] font-semibold"
+          aria-label="Personel sayısı"
+          autoFocus
+        />
+        <button
+          type="button"
+          onClick={() => setSayi(sinirla(sayi + 1))}
+          className="btn-sessiz h-11 w-11 !px-0 text-lg"
+          aria-label="Arttır"
+        >
+          +
+        </button>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-2">
+        {[2, 3, 4, 5, 6, 8, 10].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setSayi(n)}
+            className={`h-8 min-w-[40px] rounded-full border px-2 text-[12.5px] ${
+              sayi === n
+                ? "border-zinc-900 bg-zinc-900 text-white"
+                : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+
+      <button type="button" onClick={onEkle} className="btn-birincil h-11 w-full text-sm">
+        {sayi} satır aç
+      </button>
+
+      {mevcut > 0 ? (
+        <button
+          type="button"
+          onClick={onKapat}
+          className="btn-ikincil h-10 w-full text-[12.5px]"
+        >
+          Mevcut {mevcut} kişi yeterli
+        </button>
+      ) : null}
+
+      <button type="button" onClick={onKapat} className="w-full text-center text-[12px] text-zinc-500 underline underline-offset-2">
+        Şimdi değil
+      </button>
+    </div>
+  );
+}
+
 function VardiyaSecici({
   emp,
   iso,
@@ -831,6 +1101,7 @@ function VardiyaSecici({
   secili,
   izin,
   onSec,
+  onSaatDuzenle,
   onKapat,
 }: {
   emp: Employee | null;
@@ -839,6 +1110,7 @@ function VardiyaSecici({
   secili: string;
   izin: boolean;
   onSec: (sablonId: string) => void;
+  onSaatDuzenle: () => void;
   onKapat: () => void;
 }) {
   return (
@@ -889,6 +1161,14 @@ function VardiyaSecici({
           Kapat
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={onSaatDuzenle}
+        className="w-full text-center text-[12px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+      >
+        Saatler uymuyor mu? Vardiya saatlerini düzenle
+      </button>
     </div>
   );
 }

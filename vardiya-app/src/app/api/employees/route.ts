@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { nextColor } from "@/lib/colors";
 import { sinirliTamSayi } from "@/lib/validate";
+import { metinNormalize, telefonTemizle } from "@/lib/metin";
 
 /**
  * Yeni personel ekle.
@@ -10,7 +11,7 @@ import { sinirliTamSayi } from "@/lib/validate";
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const name = String(body?.name ?? "").trim();
+  const name = metinNormalize(body?.name, 60);
   if (!name) {
     return NextResponse.json({ error: "Ad gerekli" }, { status: 400 });
   }
@@ -25,8 +26,8 @@ export async function POST(request: Request) {
     data: {
       businessId: business.id,
       name: name.slice(0, 60),
-      phone: String(body?.phone ?? "").trim().slice(0, 30),
-      role: String(body?.role ?? "").trim().slice(0, 40) || "Personel",
+      phone: telefonTemizle(body?.phone, 30),
+      role: metinNormalize(body?.role, 40) || "Personel",
       color: nextColor(count),
       annualLeaveDays,
     },

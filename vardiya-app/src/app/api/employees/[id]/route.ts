@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { sinirliTamSayi } from "@/lib/validate";
+import { metinNormalize, telefonTemizle } from "@/lib/metin";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -18,9 +19,12 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const body = await request.json().catch(() => ({}));
 
   const data: Record<string, string | number> = {};
-  if (typeof body?.name === "string" && body.name.trim()) data.name = body.name.trim().slice(0, 60);
-  if (typeof body?.phone === "string") data.phone = body.phone.trim().slice(0, 30);
-  if (typeof body?.role === "string") data.role = body.role.trim().slice(0, 40) || "Personel";
+  if (typeof body?.name === "string") {
+    const ad = metinNormalize(body.name, 60);
+    if (ad) data.name = ad;
+  }
+  if (typeof body?.phone === "string") data.phone = telefonTemizle(body.phone, 30);
+  if (typeof body?.role === "string") data.role = metinNormalize(body.role, 40) || "Personel";
   if (body?.annualLeaveDays !== undefined) {
     const izin = Number(body.annualLeaveDays);
     if (Number.isFinite(izin)) data.annualLeaveDays = sinirliTamSayi(izin, 0, 365, 14);

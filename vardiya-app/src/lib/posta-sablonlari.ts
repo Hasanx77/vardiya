@@ -203,3 +203,87 @@ Bağlantı 24 saat geçerlidir. Bu hesabı sen açmadıysan yok say.
 
   return { konu, html, metin };
 }
+
+/* ------------------------------------------------------------------ *
+ * Bildirim e-postalarÄ± (ayarlardan aÃ§Ä±lÄ±p kapanÄ±r)
+ * ------------------------------------------------------------------ */
+
+/** Plan yayÄ±nlandÄ± â€” iÅŸletme sahibine kopya. */
+export function yayinPostasi(opts: {
+  isletme: string;
+  hafta: string;
+  vardiya: number;
+  kisi: number;
+}): { konu: string; html: string; metin: string } {
+  const konu = `${opts.isletme} â€” haftalÄ±k plan yayÄ±nlandÄ±`;
+  const metin = `Merhaba,
+
+${opts.isletme} iÃ§in ${opts.hafta} haftasÄ±nÄ±n planÄ± yayÄ±nlandÄ±.
+${opts.vardiya} vardiya Â· ${opts.kisi} kiÅŸi.
+
+Personel baÄŸlantÄ±sÄ± ve takvim (.ics) artÄ±k bu haftayÄ± gÃ¶steriyor.
+
+â€” Vardiya Â· zihnora.com.tr`;
+
+  const html = kabuk({
+    onBaslik: "Plan yayÄ±nlandÄ±",
+    icerik: `
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#18181b;">Plan yayÄ±nda</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+        <strong>${opts.isletme}</strong> iÃ§in <strong>${opts.hafta}</strong> haftasÄ±nÄ±n planÄ± yayÄ±nlandÄ±.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;">
+        <tr><td style="padding:14px 16px;font-size:14px;color:#27272a;">
+          <strong>${opts.vardiya}</strong> vardiya Â· <strong>${opts.kisi}</strong> kiÅŸi
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#71717a;">
+        Personel baÄŸlantÄ±sÄ± ve takvim (.ics) artÄ±k bu haftayÄ± gÃ¶steriyor.
+      </p>`,
+    altNot: "Bu bildirimi Ayarlar â†’ Bildirimler'den kapatabilirsin.",
+  });
+
+  return { konu, html, metin };
+}
+
+/** Personelden izin/mazeret talebi geldi â€” iÅŸletme sahibine haber. */
+export function izinTalebiPostasi(opts: {
+  isletme: string;
+  personel: string;
+  tur: string;
+  baslangic: string;
+  bitis: string;
+  not?: string;
+}): { konu: string; html: string; metin: string } {
+  const konu = `${opts.personel} â€” izin talebi`;
+  const metin = `Merhaba,
+
+${opts.isletme} ekibinden ${opts.personel} bir ${opts.tur} talebi aÃ§tÄ±.
+Tarih: ${opts.baslangic} â†’ ${opts.bitis}
+${opts.not ? `Not: ${opts.not}\n` : ""}
+Talebi panelden onaylayabilir veya reddedebilirsin.
+
+â€” Vardiya Â· zihnora.com.tr`;
+
+  const html = kabuk({
+    onBaslik: "Ä°zin talebi",
+    icerik: `
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#18181b;">Yeni izin talebi</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+        <strong>${opts.personel}</strong> bir <strong>${opts.tur}</strong> talebi aÃ§tÄ±.
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;">
+        <tr><td style="padding:14px 16px;font-size:14px;color:#27272a;">
+          ${opts.baslangic} â†’ ${opts.bitis}
+          ${opts.not ? `<br><span style="color:#71717a;">${opts.not}</span>` : ""}
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#71717a;">
+        Talebi panelden onaylayabilir veya reddedebilirsin.
+      </p>`,
+    altNot: "Bu bildirimi Ayarlar â†’ Bildirimler'den kapatabilirsin.",
+  });
+
+  return { konu, html, metin };
+}
+

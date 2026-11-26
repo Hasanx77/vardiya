@@ -126,6 +126,11 @@ export default async function GizlilikPage() {
           <h2 className="pt-3 text-lg font-semibold text-zinc-900">5) Güvenlik</h2>
           <ul className="list-disc space-y-1 pl-5">
             <li>Şifreler <strong>scrypt</strong> ile tuzlanıp özetlenir; düz metin şifre hiçbir yerde saklanmaz.</li>
+            <li>
+              Veritabanına erişim yalnızca uygulama sunucusundadır; SQL sorgu ekranı
+              <strong> site sahibine</strong> kapalıdır (salt-okunur). Yedek dosyaları tüm
+              kayıtları içerir ve yalnızca sahibi tarafından indirilebilir.
+            </li>
             <li>Oturum çerezi <strong>HMAC-SHA256</strong> ile imzalanır; değiştirilirse geçersiz olur.</li>
             <li>Tüm trafik <strong>HTTPS</strong> üzerinden şifrelenir (Let&apos;s Encrypt sertifikası).</li>
             <li><strong>Hesap izolasyonu:</strong> her hesap yalnızca kendi işletmesinin verisini okuyabilir.</li>

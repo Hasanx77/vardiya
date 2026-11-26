@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Marka from "@/components/Marka";
 import LogoV from "@/components/LogoV";
+import { useDil } from "@/components/DilSaglayici";
 
 /**
  * Giriş / kayıt sayfalarının ortak kabuğu.
@@ -24,6 +27,7 @@ export default function AuthKabuk({
   karsilamaAlt?: string;
   children: ReactNode;
 }) {
+  const { t } = useDil();
   return (
     <main className="giris-sayfa flex-1">
       <div className="auth-kap">
@@ -40,7 +44,7 @@ export default function AuthKabuk({
             href="/"
             className="auth-ust-baglanti"
           >
-            Ana sayfa <span aria-hidden>↗</span>
+            {t("auth.home")} <span aria-hidden>↗</span>
           </Link>
         </header>
 
@@ -58,15 +62,13 @@ export default function AuthKabuk({
             <p className="auth-karsilama-alt">{karsilamaAlt}</p>
 
             <ul className="auth-liste">
-              <li>Excel tablosu yok, kâğıt çizelge yok</li>
-              <li>WhatsApp&apos;a hazır mesaj</li>
-              <li>45 saat ve dinlenme uyarıları</li>
-              <li>Veriler Türkiye&apos;de, hesabına kilitli</li>
+              <li>{t("auth.benefit1")}</li>
+              <li>{t("auth.benefit2")}</li>
+              <li>{t("auth.benefit3")}</li>
+              <li>{t("auth.benefit4")}</li>
             </ul>
 
-            <p className="auth-alt-not">
-              Kredi kartı yok · abonelik yok · reklam yok
-            </p>
+            <p className="auth-alt-not">{t("auth.noCard")}</p>
           </section>
 
           {/* Form */}
@@ -91,16 +93,16 @@ export default function AuthKabuk({
                 <rect x="4" y="10" width="16" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
               </svg>
-              Bağlantı şifreli · Şifren düz metin olarak saklanmaz
+              {t("auth.secure")}
             </p>
           </section>
         </div>
 
         <footer className="auth-altbilgi">
-          <span>© {new Date().getFullYear()} Vardiya · Zihnora&apos;nın ürünü</span>
+          <span>© {new Date().getFullYear()} {t("auth.footer")}</span>
           <span className="flex gap-4">
-            <Link href="/gizlilik">Gizlilik</Link>
-            <a href="mailto:destek@zihnora.com.tr">Destek</a>
+            <Link href="/gizlilik">{t("auth.privacy")}</Link>
+            <a href="mailto:destek@zihnora.com.tr">{t("auth.destek")}</a>
           </span>
         </footer>
       </div>

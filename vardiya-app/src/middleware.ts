@@ -66,6 +66,9 @@ const KORUMALI_ONEKLER = [
   "/basla",
   "/mesajlar",
   "/eposta-dogrula",
+  "/ayarlar",
+  "/gecmis",
+  "/sql",
 ];
 
 /** /ekip/<tek-parça-id> → personel bağlantısı. /ekip listesi kapalı kalır. */
@@ -216,6 +219,7 @@ export async function middleware(req: NextRequest) {
     if (!nonce) return imzala(NextResponse.next());
     const basliklar = new Headers(req.headers);
     basliklar.set("x-nonce", nonce);
+    basliklar.set("x-yol", pathname);
     basliklar.set("Content-Security-Policy", csp);
     return imzala(NextResponse.next({ request: { headers: basliklar } }));
   };

@@ -57,6 +57,19 @@ const sections: { id: string; title: string; items: string[] }[] = [
     ],
   },
   {
+    id: "uygulama",
+    title: "Giriş sonrası ekran, geçmiş ve SQL",
+    items: [
+      "Giriş yaptıktan sonra pazarlama sitesi kapanır; sol menülü uygulama açılır (mobilde alt menü).",
+      "Panel ilk açılışta 'Kaç personel var?' diye sorar. Yazdığın sayı kadar satır açılır; adları ızgaradan tek tıkla düzeltebilirsin.",
+      "Geçmiş: son 3 ayın kişi × ay özeti (gün, saat). CSV olarak indirilebilir; daha eski kayıtlar silinmez.",
+      "SQL: yalnızca site sahibinin gördüğü salt-okunur sorgu ekranı. Tablo listesi, şema ve sonuç tablosu; yazma/silme komutları sunucuda reddedilir.",
+      "SQL panelindeki 'Veritabanı yedeğini indir' tüm veritabanının tutarlı bir kopyasını üretir; dosyayı güvenli bir yerde tut.",
+      "Takvimde bir güne tıkla: o günün vardiyaları, çalışanlar, izinliler ve uyarılar ayrı sayfada açılır.",
+      "Ayarlar: kullanıcı adı, e-posta değiştirme, şifre, iki adımlı doğrulama, bildirim tercihleri, tema, işletme bilgileri ve veri indirme/silme tek yerde.",
+    ],
+  },
+  {
     id: "personel",
     title: "Personel Görünümü (salt-okunur)",
     items: [

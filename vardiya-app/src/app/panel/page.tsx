@@ -7,11 +7,16 @@ import PanelClient from "./panel-client";
 // Veri her istekte taze gelsin (statik on-render edilmesin).
 export const dynamic = "force-dynamic";
 
-export default async function PanelPage() {
+export default async function PanelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ gun?: string }>;
+}) {
   // Site trafiği kartı yalnızca site sahibinde görünür.
   const kullanici = await oturumGerekli("/panel");
   const initialData: StatePayload = await getStatePayload();
   const ziyaret = sahipMi(kullanici.email) ? await ziyaretOzeti() : undefined;
+  const { gun } = await searchParams;
 
   return (
     <PanelClient
@@ -19,6 +24,8 @@ export default async function PanelPage() {
       eposta={kullanici.email}
       epostaDogrulanmis={Boolean(kullanici.emailVerifiedAt)}
       ziyaret={ziyaret}
+      sahip={sahipMi(kullanici.email)}
+      baslangicGun={gun}
     />
   );
 }

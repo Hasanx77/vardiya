@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tokenCoz } from "@/lib/employee-link";
 import { izinTalebiOlustur, personelIzinTalepleri } from "@/lib/izin-db";
 import { hizDenetle } from "@/lib/hiz-siniri";
 import { istemciIp } from "@/lib/url";
 import { cleanText } from "@/lib/validate";
+import { bildirimAcikMi } from "@/lib/ayarlar";
+import { postaGonder } from "@/lib/mail";
+import { izinTalebiPostasi } from "@/lib/posta-sablonlari";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -57,7 +60,7 @@ export async function POST(req: Request, { params }: Ctx) {
 
   const personel = await prisma.employee.findFirst({
     where: { id: employeeId, active: true },
-    select: { id: true, businessId: true },
+    select: { id: true, name: true, businessId: true },
   });
   if (!personel) {
     return NextResponse.json(
@@ -79,6 +82,34 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!sonuc.ok) {
     return NextResponse.json({ hata: sonuc.hata }, { status: 400, headers: BASLIKLAR });
   }
+
+  // Bildirim açıksa işletme sahibine haber ver (yanıtı bekletmeden).
+  after(async () => {
+    try {
+      const isletme = await prisma.business.findUnique({
+        where: { id: personel.businessId },
+        select: { name: true, userId: true },
+      });
+      if (!isletme?.userId) return;
+      if (!(await bildirimAcikMi(isletme.userId, "bildirimIzin"))) return;
+      const sahip = await prisma.user.findUnique({
+        where: { id: isletme.userId },
+        select: { email: true },
+      });
+      if (!sahip?.email) return;
+      const posta = izinTalebiPostasi({
+        isletme: isletme.name,
+        personel: personel.name,
+        tur: String(sonuc.talep.tur ?? "izin"),
+        baslangic: String(sonuc.talep.baslangic),
+        bitis: String(sonuc.talep.bitis),
+        not: sonuc.talep.not || undefined,
+      });
+      await postaGonder({ kime: sahip.email, ...posta });
+    } catch (e) {
+      console.error("izin bildirimi:", e instanceof Error ? e.message : e);
+    }
+  });
 
   return NextResponse.json(
     { ok: true, talep: sonuc.talep, talepler: await personelIzinTalepleri(personel.id) },

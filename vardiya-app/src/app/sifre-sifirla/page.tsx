@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AuthKabuk from "@/components/AuthKabuk";
 import KodAkisi from "@/components/KodAkisi";
 import { aktifKullanici } from "@/lib/auth";
 import { kaydetZiyaret } from "@/lib/visits";
+import { DIL_COOKIE, dilOku, t } from "@/lib/dil";
 
 export const metadata = {
   title: "Şifre sıfırla — Vardiya",
@@ -33,12 +35,13 @@ export default async function SifreSifirlaPage({
 
   await kaydetZiyaret();
 
+  const dil = dilOku((await cookies()).get(DIL_COOKIE)?.value);
   return (
     <AuthKabuk
-      karsilama="Şifren aklında değil mi?"
-      karsilamaAlt="Sorun değil. Kayıtlı e-posta adresine 6 haneli bir kod gönderiyoruz; kodla yeni şifreni belirle."
-      baslik="Şifreni sıfırla"
-      alt="E-postana kod gönderelim, yeni şifreni sen seç."
+      karsilama={t(dil, "auth.resetWelcome")}
+      karsilamaAlt={t(dil, "auth.resetWelcomeSub")}
+      baslik={t(dil, "auth.resetTitle")}
+      alt={t(dil, "auth.resetSub")}
     >
       <KodAkisi amac="sifre" baslangicEposta={email ?? ""} />
 
@@ -54,7 +57,7 @@ export default async function SifreSifirlaPage({
       </p>
 
       <div className="auth-form-baglanti mt-5 border-t border-zinc-100 pt-5">
-        <Link href="/giris">← Giriş sayfasına dön</Link>
+        <Link href="/giris">{t(dil, "auth.backToLogin")}</Link>
       </div>
     </AuthKabuk>
   );

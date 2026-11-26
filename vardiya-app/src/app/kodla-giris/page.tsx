@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AuthKabuk from "@/components/AuthKabuk";
 import KodAkisi from "@/components/KodAkisi";
 import { aktifKullanici } from "@/lib/auth";
 import { kaydetZiyaret } from "@/lib/visits";
+import { DIL_COOKIE, dilOku, t } from "@/lib/dil";
 
 export const metadata = {
   title: "Şifresiz giriş — Vardiya",
@@ -30,12 +32,13 @@ export default async function KodlaGirisPage({
 
   await kaydetZiyaret();
 
+  const dil = dilOku((await cookies()).get(DIL_COOKIE)?.value);
   return (
     <AuthKabuk
-      karsilama="Şifre yazmadan gir."
-      karsilamaAlt="E-posta adresine 6 haneli bir kod gönderiyoruz; kodu yaz, panele dön."
-      baslik="Kodla giriş"
-      alt="E-posta adresini yaz, kodu gönderelim."
+      karsilama={t(dil, "auth.passwordlessTitle")}
+      karsilamaAlt={t(dil, "auth.passwordlessSub")}
+      baslik={t(dil, "auth.codeTitle")}
+      alt={t(dil, "auth.codeSub")}
     >
       <KodAkisi
         amac="giris"
@@ -44,7 +47,7 @@ export default async function KodlaGirisPage({
       />
 
       <div className="auth-form-baglanti mt-5 border-t border-zinc-100 pt-5">
-        <Link href="/giris">← Şifre ile giriş yap</Link>
+        <Link href="/giris">{t(dil, "auth.backToPassword")}</Link>
       </div>
     </AuthKabuk>
   );

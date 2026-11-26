@@ -6,6 +6,7 @@ import { disAdres } from "@/lib/url";
 import { normalizeTime } from "@/lib/validate";
 import { standartSablonlar } from "@/lib/shifts";
 import { kullaniciAdiHatasi, kullaniciAdiTemizle } from "@/lib/kullanici-adi";
+import { metinNormalize } from "@/lib/metin";
 
 /**
  * Başlangıç adımları (onboarding).
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
 
   const form = await req.formData();
   const adHam = String(form.get("username") ?? "");
-  const isletme = String(form.get("isletme") ?? "").trim().slice(0, 80);
+  const isletme = metinNormalize(form.get("isletme"), 80);
   const acilis = normalizeTime(String(form.get("acilis") ?? "")) || "09:00";
   const kapanisHam = normalizeTime(String(form.get("kapanis") ?? "")) || "23:00";
   const kapanis = kapanisHam === acilis ? "23:59" : kapanisHam;

@@ -1,16 +1,43 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { StatePayload } from "@/lib/types";
-import { DAY_SHORT_TR, MONTH_SHORT_TR, toISODate } from "@/lib/dates";
+import { toISODate } from "@/lib/dates";
 import { getHoliday } from "@/lib/holidays";
-import { shiftSaatMetni } from "@/lib/shifts";
+import { shiftHours } from "@/lib/shifts";
 import { COLOR_CLASSES } from "@/lib/colors";
-import SayfaBasligi from "@/components/SayfaBasligi";
+import { useDil } from "@/components/DilSaglayici";
+
+/**
+ * Aylık takvim — **özet** görünüm.
+ *
+ * Patron geri bildirimi (26 Kas 2026): "kaç kişi varsa o kadar sıkışır hücre;
+ * üstüne gelip tıkladığım gün için yeni bir sayfa açılsın, orada detaylar olsun."
+ *
+ * Hücrelerde isim yok: yalnız gün, kişi/vardiya sayısı ve renk noktaları.
+ * Hücrenin tamamı `/takvim/<gün>` sayfasına gider.
+ */
+type GunOzet = { kisi: number; vardiya: number; saat: number; sablonlar: string[] };
 
 export default function TakvimClient({ initialData }: { initialData: StatePayload }) {
   const data = initialData;
+  const { t, dil } = useDil();
   const [offset, setOffset] = useState(0);
+
+  const yerel = dil === "en" ? "en-GB" : "tr-TR";
+  const ayAdi = useMemo(
+    () => new Intl.DateTimeFormat(yerel, { month: "long", year: "numeric" }).format(new Date()),
+    [yerel],
+  );
+  const gunAdiKisa = useMemo(
+    () => new Intl.DateTimeFormat(yerel, { weekday: "short" }),
+    [yerel],
+  );
+  const ayBicim = useMemo(
+    () => new Intl.DateTimeFormat(yerel, { month: "long", year: "numeric" }),
+    [yerel],
+  );
 
   const { first, days } = useMemo(() => {
     const base = new Date();
@@ -24,181 +51,204 @@ export default function TakvimClient({ initialData }: { initialData: StatePayloa
   }, [offset]);
 
   const startIdx = (first.getDay() + 6) % 7; // Pazartesi = 0
+  const bugun = toISODate(new Date());
 
-  const byDay = useMemo(() => {
-    const m = new Map<string, Map<string, string[]>>();
-    if (!data) return m;
-    const empName = new Map(data.employees.map((e) => [e.id, e.name]));
+  const ozet = useMemo(() => {
+    const m = new Map<string, GunOzet>();
+    const ay = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, "0")}`;
+    const sablonById = new Map(data.shiftTemplates.map((s) => [s.id, s]));
+    const kisiSet = new Map<string, Set<string>>();
     for (const a of data.assignments) {
-      if (!a.date.startsWith(`${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, "0")}`))
-        continue;
-      const dayMap = m.get(a.date) ?? new Map<string, string[]>();
-      const arr = dayMap.get(a.shiftTemplateId) ?? [];
-      const name = empName.get(a.employeeId);
-      if (name) arr.push(name);
-      dayMap.set(a.shiftTemplateId, arr);
-      m.set(a.date, dayMap);
+      if (!a.date.startsWith(ay)) continue;
+      const s = sablonById.get(a.shiftTemplateId);
+      const g = m.get(a.date) ?? { kisi: 0, vardiya: 0, saat: 0, sablonlar: [] };
+      g.vardiya += 1;
+      if (s) {
+        g.saat += shiftHours(s);
+        if (!g.sablonlar.includes(a.shiftTemplateId)) g.sablonlar.push(a.shiftTemplateId);
+      }
+      m.set(a.date, g);
+      const set = kisiSet.get(a.date) ?? new Set<string>();
+      set.add(a.employeeId);
+      kisiSet.set(a.date, set);
+    }
+    for (const [gun, set] of kisiSet) {
+      const g = m.get(gun);
+      if (g) g.kisi = set.size;
     }
     return m;
   }, [data, first]);
 
-  if (!data) {
-    return (
-      <main className="flex-1 grid place-items-center">
-        <p className="text-sm text-zinc-500">Yükleniyor…</p>
-      </main>
-    );
-  }
-
-  const doluGunler = days.filter((iso) => byDay.has(iso));
-
   return (
-    <main className="sayfa max-w-6xl">
-      <SayfaBasligi ust="Takvim" baslik="Aylık görünüm" alt={data.business.name} />
-
-      <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-2 py-1.5">
-        <button
-          onClick={() => setOffset((o) => o - 1)}
-          className="btn-sessiz btn-kucuk"
-          aria-label="Önceki ay"
-        >
-          ←
-        </button>
-        <div className="text-center">
-          <div className="text-sm font-semibold">
-            {MONTH_SHORT_TR[first.getMonth()]} {first.getFullYear()}
-          </div>
-          {offset !== 0 && (
-            <button
-              onClick={() => setOffset(0)}
-              className="text-[11px] text-zinc-500 underline-offset-2 hover:underline"
-            >
-              Bu aya dön
-            </button>
-          )}
+    <main className="kap py-5 sm:py-7">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+            {t("cal.title")}
+          </p>
+          <h1 className="mt-1 text-[22px] font-semibold capitalize tracking-tight">
+            {ayBicim.format(first)}
+          </h1>
+          <p className="mt-1 text-[13px] text-zinc-500">{t("cal.sub")}</p>
         </div>
-        <button
-          onClick={() => setOffset((o) => o + 1)}
-          className="btn-sessiz btn-kucuk"
-          aria-label="Sonraki ay"
-        >
-          →
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setOffset((o) => o - 1)}
+            className="btn-sessiz h-9 w-9 !px-0"
+            aria-label={t("cal.prev")}
+          >
+            ‹
+          </button>
+          {offset !== 0 ? (
+            <button type="button" onClick={() => setOffset(0)} className="btn-sessiz h-9 text-[12px]">
+              {t("cal.thisMonth")}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setOffset((o) => o + 1)}
+            className="btn-sessiz h-9 w-9 !px-0"
+            aria-label={t("cal.next")}
+          >
+            ›
+          </button>
+        </div>
       </div>
 
-      {/* Masaüstü takvim */}
-      <div className="kart mt-4 hidden overflow-hidden sm:block">
-        <div className="grid grid-cols-7 border-b border-zinc-100 bg-zinc-50 text-center text-[11px] font-semibold text-zinc-500">
-          {DAY_SHORT_TR.map((d) => (
-            <div key={d} className="py-2">
-              {d}
-            </div>
-          ))}
+      {/* Masaüstü ay ızgarası */}
+      <div className="mt-4 hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white sm:block dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="grid grid-cols-7 border-b border-zinc-100 bg-zinc-50 text-center text-[11px] font-semibold text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">
+          {Array.from({ length: 7 }, (_, i) => {
+            const gun = new Date(2026, 0, 5 + i); // 5 Ocak 2026 Pazartesi
+            return (
+              <div key={i} className="py-2 capitalize">
+                {gunAdiKisa.format(gun)}
+              </div>
+            );
+          })}
         </div>
         <div className="grid grid-cols-7">
           {Array.from({ length: startIdx }).map((_, i) => (
-            <div key={`b${i}`} className="min-h-[92px] border-b border-r border-zinc-100 bg-zinc-50/50" />
+            <div
+              key={`b${i}`}
+              className="min-h-[94px] border-b border-r border-zinc-100 bg-zinc-50/40 last:border-r-0 dark:border-zinc-800 dark:bg-zinc-950/40"
+            />
           ))}
-          {days.map((iso, i) => {
-            const dayNum = Number(iso.slice(-2));
+          {days.map((iso) => {
+            const d = new Date(`${iso}T12:00:00`);
             const holiday = getHoliday(iso);
-            const dayMap = byDay.get(iso);
-            const cellIdx = startIdx + i + 1;
+            const g = ozet.get(iso);
+            const bugunMu = iso === bugun;
             return (
-              <div
+              <Link
                 key={iso}
-                className={`min-h-[92px] border-b border-r border-zinc-100 p-1.5 ${
-                  cellIdx % 7 === 0 ? "border-r-0" : ""
+                href={`/takvim/${iso}`}
+                className={`group flex min-h-[94px] flex-col gap-1 border-b border-r border-zinc-100 p-2 transition-colors last:border-r-0 dark:border-zinc-800 ${
+                  bugunMu ? "bg-amber-50/40 dark:bg-amber-500/10" : ""
                 }`}
+                aria-label={`${d.getDate()} ${ayAdi}${g ? `, ${t("genel.kisi")}: ${g.kisi}` : `, ${t("cal.noShift")}`}`}
               >
-                <div
-                  className={`text-[11px] font-semibold ${holiday ? "text-red-600" : "text-zinc-500"}`}
-                  title={holiday?.name}
-                >
-                  {dayNum}
+                <div className="flex items-start justify-between">
+                  <span
+                    className={`text-[12px] font-semibold ${
+                      bugunMu ? "text-amber-700 dark:text-amber-300" : "text-zinc-600 dark:text-zinc-300"
+                    }`}
+                  >
+                    {d.getDate()}
+                  </span>
+                  {holiday ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-500" title={holiday.name} />
+                  ) : null}
                 </div>
-                <div className="mt-1 space-y-0.5">
-                  {dayMap &&
-                    data.shiftTemplates
-                      .filter((t) => dayMap.has(t.id))
-                      .map((t) => (
-                        <div
-                          key={t.id}
-                          className={`truncate rounded border px-1 py-0.5 text-[10px] leading-tight ${
-                            COLOR_CLASSES[t.color]?.chip ?? ""
-                          }`}
-                          title={`${t.name}: ${(dayMap.get(t.id) ?? []).join(", ")}`}
-                        >
-                          <strong>{t.name}:</strong> {(dayMap.get(t.id) ?? []).join(", ")}
-                        </div>
-                      ))}
-                </div>
-              </div>
+
+                {g ? (
+                  <>
+                    <div className="flex flex-wrap gap-1">
+                      {g.sablonlar.slice(0, 4).map((id) => {
+                        const s = data.shiftTemplates.find((x) => x.id === id);
+                        if (!s) return null;
+                        return (
+                          <span
+                            key={id}
+                            className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[s.color]?.dot ?? "bg-zinc-400"}`}
+                            aria-hidden
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="mt-auto text-[11px] leading-tight text-zinc-500 dark:text-zinc-400">
+                      <span className="font-medium text-zinc-700 dark:text-zinc-200">
+                        {g.kisi} {t("genel.kisi")}
+                      </span>
+                      <span className="mx-1 text-zinc-300 dark:text-zinc-600">·</span>
+                      {g.vardiya} {t("genel.vardiya")}
+                      {g.saat > 0 ? (
+                        <span className="block text-[10.5px] text-zinc-400">
+                          {Math.round(g.saat)} {t("genel.saat")}
+                        </span>
+                      ) : null}
+                    </div>
+                  </>
+                ) : (
+                  <span className="mt-auto text-[11px] text-zinc-300 dark:text-zinc-600">—</span>
+                )}
+              </Link>
             );
           })}
         </div>
       </div>
 
       {/* Mobil ajanda */}
-      <div className="mt-4 space-y-2 sm:hidden">
-        {doluGunler.length === 0 ? (
-          <div className="kart border-dashed p-8 text-center text-sm text-zinc-500">
-            Bu ay için atanmış vardiya yok.
-          </div>
-        ) : (
-          doluGunler.map((iso) => {
-            const dayMap = byDay.get(iso);
-            if (!dayMap) return null;
-            const d = new Date(iso + "T00:00:00");
-            const holiday = getHoliday(iso);
-            return (
-              <div key={iso} className="kart p-3">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-sm font-semibold">
-                    {DAY_SHORT_TR[(d.getDay() + 6) % 7]} {d.getDate()}{" "}
-                    {MONTH_SHORT_TR[d.getMonth()]}
-                  </div>
-                  {holiday && (
-                    <span className="text-[11px] font-medium text-red-600">{holiday.name}</span>
-                  )}
-                </div>
-                <ul className="mt-2 space-y-1.5">
-                  {data.shiftTemplates
-                    .filter((t) => dayMap.has(t.id))
-                    .map((t) => (
-                      <li key={t.id} className="flex items-start gap-2 text-sm">
-                        <span
-                          className={`mt-0.5 shrink-0 rounded border px-1.5 py-0.5 text-[10px] ${
-                            COLOR_CLASSES[t.color]?.chip ?? ""
-                          }`}
-                        >
-                          {t.name} {shiftSaatMetni(t)}
-                        </span>
-                        <span className="text-zinc-700">{(dayMap.get(t.id) ?? []).join(", ")}</span>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {days.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {data.shiftTemplates.map((t) => (
-            <span
-              key={t.id}
-              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${
-                COLOR_CLASSES[t.color]?.chip ?? ""
+      <div className="mt-4 space-y-1.5 sm:hidden">
+        {days.map((iso) => {
+          const d = new Date(`${iso}T12:00:00`);
+          const holiday = getHoliday(iso);
+          const g = ozet.get(iso);
+          const bugunMu = iso === bugun;
+          return (
+            <Link
+              key={iso}
+              href={`/takvim/${iso}`}
+              className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
+                bugunMu
+                  ? "border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10"
+                  : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
               }`}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[t.color]?.dot ?? ""}`} />
-              {t.name}
-            </span>
-          ))}
-        </div>
-      )}
+              <span className="w-10 text-center">
+                <span className="block text-[15px] font-semibold">{d.getDate()}</span>
+                <span className="block text-[10px] uppercase text-zinc-400">
+                  {gunAdiKisa.format(d)}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] font-medium">
+                  {g ? `${g.kisi} ${t("genel.kisi")} · ${g.vardiya} ${t("genel.vardiya")}` : t("cal.noShift")}
+                </span>
+                <span className="block text-[11px] text-zinc-500">
+                  {holiday ? holiday.name : g && g.saat > 0 ? `${Math.round(g.saat)} ${t("genel.saat")}` : "—"}
+                </span>
+              </span>
+              <span className="text-zinc-400" aria-hidden>
+                ›
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {data.shiftTemplates.map((s) => (
+          <span
+            key={s.id}
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${COLOR_CLASSES[s.color]?.chip ?? ""}`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${COLOR_CLASSES[s.color]?.dot ?? ""}`} />
+            {s.name}
+          </span>
+        ))}
+      </div>
     </main>
   );
 }

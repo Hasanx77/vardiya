@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AuthKabuk from "@/components/AuthKabuk";
 import SifreAlani from "@/components/SifreAlani";
@@ -7,6 +8,7 @@ import { aktifKullanici } from "@/lib/auth";
 import { googleHazirMi, googleIstemciKimligi } from "@/lib/google";
 import { kaydetZiyaret } from "@/lib/visits";
 import { guvenliHedef } from "@/lib/url";
+import { DIL_COOKIE, dilOku, t } from "@/lib/dil";
 
 export const metadata = {
   title: "Giriş yap — Vardiya",
@@ -31,14 +33,15 @@ export default async function GirisPage({
 
   await kaydetZiyaret();
 
+  const dil = dilOku((await cookies()).get(DIL_COOKIE)?.value);
   const sifreHatasi = Boolean(hata && /hatalı/i.test(hata));
 
   return (
     <AuthKabuk
-      karsilama="Tekrar hoş geldin."
-      karsilamaAlt="Haftalık planın, ekibin ve raporların seni bekliyor."
-      baslik="Giriş yap"
-      alt="Hesabınla devam et."
+      karsilama={t(dil, "auth.welcome")}
+      karsilamaAlt={t(dil, "auth.welcomeSub")}
+      baslik={t(dil, "auth.loginTitle")}
+      alt={t(dil, "auth.loginSub")}
     >
       {yenilendi === "1" ? (
         <div role="status" className="auth-uyari mt-5 border-[#3f4a3a] bg-[#1b211a] text-[#dbe7d6]">
@@ -61,13 +64,12 @@ export default async function GirisPage({
             !
           </span>
           <div>
-            <p className="font-semibold">Giriş yapılamadı</p>
+            <p className="font-semibold">
+              {dil === "en" ? "Could not sign in" : "Giriş yapılamadı"}
+            </p>
             <p className="mt-0.5">{hata}</p>
             {sifreHatasi ? (
-              <p className="mt-1 text-[#cfa9a9]">
-                Caps Lock kapalı mı? Şifreni &quot;Göster&quot; ile kontrol
-                edebilirsin.
-              </p>
+              <p className="mt-1 text-[#cfa9a9]">{t(dil, "auth.caps")}</p>
             ) : null}
           </div>
         </div>
@@ -77,7 +79,7 @@ export default async function GirisPage({
         <div className="mt-5">
           <GoogleGiris istemciKimligi={googleIstemciKimligi()} hedef={hedef} />
           <div className="auth-ayrac" aria-hidden>
-            <span>veya e-posta ile</span>
+            <span>{t(dil, "auth.orEmail")}</span>
           </div>
         </div>
       ) : null}
@@ -87,7 +89,7 @@ export default async function GirisPage({
 
         <div>
           <label className="etiket" htmlFor="email">
-            E-posta
+            {t(dil, "auth.email")}
           </label>
           <input
             id="email"
@@ -105,9 +107,9 @@ export default async function GirisPage({
         <SifreAlani
           id="sifre"
           name="sifre"
-          label="Şifre"
+          label={t(dil, "auth.password")}
           autoComplete="current-password"
-          placeholder="Şifren"
+          placeholder={dil === "en" ? "Your password" : "Şifren"}
         />
 
         <div className="flex items-center justify-between gap-3 pt-0.5">
@@ -123,40 +125,41 @@ export default async function GirisPage({
               defaultChecked
               className="h-4 w-4 shrink-0 rounded border-zinc-300"
             />
-            Bu cihazda 30 gün açık kal
+            {t(dil, "auth.remember")}
           </label>
         </div>
 
         <button type="submit" className="btn-birincil !mt-5 h-11 w-full text-sm">
-          Giriş yap <span aria-hidden>→</span>
+          {t(dil, "auth.login")} <span aria-hidden>→</span>
         </button>
       </form>
 
       <p className="mt-4 text-[12px] leading-relaxed text-zinc-500">
-        Şifreni mi unuttun?{" "}
+        {t(dil, "auth.forgot")}{" "}
         <Link href="/sifre-sifirla" className="auth-baglanti">
-          E-posta ile sıfırla
+          {t(dil, "auth.resetLink")}
         </Link>
-        . E-postana erişemiyorsan{" "}
+        .{" "}
+        {dil === "en" ? "If you cannot access your email," : "E-postana erişemiyorsan"}{" "}
         <a
           href="mailto:destek@zihnora.com.tr?subject=Vardiya%20hesap%20eri%C5%9Fimi"
           className="auth-baglanti"
         >
-          bize yaz
+          {dil === "en" ? "contact us" : "bize yaz"}
         </a>
         .
       </p>
 
       <p className="mt-2 text-[12px] leading-relaxed text-zinc-500">
-        Şifre yazmadan mı girmek istiyorsun?{" "}
+        {dil === "en" ? "Prefer no password?" : "Şifre yazmadan mı girmek istiyorsun?"}{" "}
         <Link href="/kodla-giris" className="auth-baglanti">
-          E-posta kodla giriş yap
+          {t(dil, "auth.codeLogin")}
         </Link>
         .
       </p>
 
       <div className="auth-form-baglanti mt-5 border-t border-zinc-100 pt-5">
-        Hesabın yok mu? <Link href="/kayit">Ücretsiz kayıt ol</Link>
+        {t(dil, "auth.noAccount")} <Link href="/kayit">{t(dil, "auth.register")}</Link>
       </div>
     </AuthKabuk>
   );

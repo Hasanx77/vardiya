@@ -9,8 +9,12 @@ import { AltMenu, UstMenu } from "@/components/Menu";
 import SiteMenusu from "@/components/SiteMenusu";
 import Marka from "@/components/Marka";
 import LogoV from "@/components/LogoV";
+import UygulamaKabuk from "@/components/UygulamaKabuk";
 import { aktifKullanici } from "@/lib/auth";
-import { TEMA_BETIGI } from "@/lib/tema-betik";import { prisma } from "@/lib/prisma";
+import { TEMA_BETIGI } from "@/lib/tema-betik";
+import { DilSaglayici } from "@/components/DilSaglayici";
+import { DIL_COOKIE, dilOku } from "@/lib/dil";
+import { cookies } from "next/headers";import { prisma } from "@/lib/prisma";
 import { sahipMi } from "@/lib/visits";
 import "./globals.css";
 
@@ -98,7 +102,20 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Sağ üst menü ve alt menü oturuma göre değişir (giriş yapılmış / yapılmamış).
   const kullanici = await aktifKullanici();
   // CSP nonce'u middleware üretir; satır içi betiklerin çalışması için gerekli.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const basliklar = await headers();
+  const nonce = basliklar.get("x-nonce") ?? undefined;
+  // Arayüz dili çerezden (sunucu ilk boyamada doğru dili çizsin).
+  const cerezler = await cookies();
+  const dil = dilOku(cerezler.get(DIL_COOKIE)?.value);
+  // Giriş sonrası uygulama sayfalarında pazarlama kabuğu yerine uygulama kabuğu.
+  const yol = basliklar.get("x-yol") ?? "";
+  const uygulamaYolu =
+    Boolean(kullanici) &&
+    !yol.startsWith("/ekip/") &&
+    ["/panel", "/bugun", "/raporlar", "/takvim", "/gecmis", "/sql", "/yazdir", "/profil", "/mesajlar", "/ekip", "/ayarlar"].some(
+      (p) => yol === p || yol.startsWith(`${p}/`),
+    );
+
   const isletme = kullanici
     ? await prisma.business.findUnique({
         where: { userId: kullanici.id },
@@ -109,7 +126,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html
-      lang="tr"
+      lang={dil}
       suppressHydrationWarning
       className={`${bodyFont.variable} ${headingFont.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -120,9 +137,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body
         className={`flex min-h-full flex-col ${
-          kullanici ? "pb-16 sm:pb-0" : ""
+          kullanici && !uygulamaYolu ? "pb-16 sm:pb-0" : ""
         }`}
       >
+        <DilSaglayici dil={dil}>
         {/* Google Tag Manager (noscript) — JS kapalıysa devreye girer */}
         <noscript>
           <iframe
@@ -145,6 +163,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           İçeriğe geç
         </a>
 
+        {uygulamaYolu && kullanici ? (
+          <UygulamaKabuk
+            kullanici={{ email: kullanici.email, username: kullanici.username }}
+            isletme={isletme?.name ?? "İşletmem"}
+            sahip={sahipMi(kullanici.email)}
+          >
+            {children}
+          </UygulamaKabuk>
+        ) : (
+          <>
         <header className="site-header sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur print:hidden">
           <div className="kap flex h-14 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-6">
@@ -262,6 +290,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </footer>
 
         {kullanici ? <AltMenu /> : null}
+          </>
+        )}
+        </DilSaglayici>
       </body>
     </html>
   );

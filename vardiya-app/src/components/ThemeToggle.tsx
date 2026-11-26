@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useDil } from "@/components/DilSaglayici";
 
 const STORAGE_KEY = "vardiya-theme";
 
@@ -76,6 +77,7 @@ function AyIkonu() {
 
 export default function ThemeToggle() {
   const koyu = useSyncExternalStore(abone, koyuMu, () => false);
+  const { t } = useDil();
 
   function degistir() {
     const yeni = !koyuMu();
@@ -87,7 +89,7 @@ export default function ThemeToggle() {
     }
   }
 
-  const etiket = koyu ? "Aydınlık moda geç" : "Karanlık moda geç";
+  const etiket = koyu ? t("tema.gecAydinlik") : t("tema.gecKaranlik");
 
   return (
     <button
@@ -100,7 +102,7 @@ export default function ThemeToggle() {
       <span className="tema-simge" aria-hidden>
         {koyu ? <GunesIkonu /> : <AyIkonu />}
       </span>
-      <span className="tema-yazi">{koyu ? "Aydınlık" : "Karanlık"}</span>
+      <span className="tema-yazi">{koyu ? t("tema.aydinlik") : t("tema.karanlik")}</span>
     </button>
   );
 }

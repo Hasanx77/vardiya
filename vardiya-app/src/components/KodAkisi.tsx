@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import SifreAlani from "@/components/SifreAlani";
+import { useDil } from "@/components/DilSaglayici";
 import type { KodAmaci } from "@/lib/eposta-kodu";
 
 /**
@@ -38,6 +39,7 @@ export default function KodAkisi({
   basariliBaglanti?: { href: string; yazi: string };
 }) {
   const [adim, setAdim] = useState<Adim>("istek");
+  const { t } = useDil();
   const [eposta, setEposta] = useState(sabitEposta ?? baslangicEposta ?? "");
   const [kod, setKod] = useState("");
   const [sifre, setSifre] = useState("");
@@ -85,8 +87,8 @@ export default function KodAkisi({
       setKalanSn(j.tekrarSn ?? 60);
       setBilgi(
         j.zatenDogrulanmis
-          ? "Bu e-posta zaten doğrulanmış."
-          : "Kod yolda. Gelen kutunu (ve spam klasörünü) kontrol et.",
+          ? t("kod.alreadyVerified")
+          : t("kod.onTheWay"),
       );
     } catch {
       setHata("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.");
@@ -148,7 +150,7 @@ export default function KodAkisi({
             ✓
           </span>
           <div>
-            <p className="font-semibold">Tamam</p>
+            <p className="font-semibold">{t("kod.doneTitle")}</p>
             <p className="mt-0.5">{bilgi ?? basariliMetni}</p>
           </div>
         </div>
@@ -169,7 +171,7 @@ export default function KodAkisi({
             !
           </span>
           <div>
-            <p className="font-semibold">İşlem tamamlanamadı</p>
+            <p className="font-semibold">{t("kod.errorTitle")}</p>
             <p className="mt-0.5">{hata}</p>
           </div>
         </div>
@@ -179,12 +181,12 @@ export default function KodAkisi({
         <form onSubmit={istekGonder} className="space-y-4">
           {sabitEposta ? (
             <p className="rounded-lg border border-[#2a2a30] bg-[#141417] px-3 py-2.5 text-[13px] text-[#c9c9d1]">
-              Kod <strong>{sabitEposta}</strong> adresine gönderilecek.
+              {t("kod.fixedEmail", { email: sabitEposta })}
             </p>
           ) : (
             <div>
               <label className="etiket" htmlFor="kod-email">
-                {amac === "eposta-degistir" ? "Yeni e-posta adresin" : "E-posta"}
+                {amac === "eposta-degistir" ? t("kod.newEmail") : t("auth.email")}
               </label>
               <input
                 id="kod-email"
@@ -205,23 +207,22 @@ export default function KodAkisi({
             disabled={yukleniyor}
             className="btn-birincil h-11 w-full text-sm disabled:opacity-60"
           >
-            {yukleniyor ? "Gönderiliyor…" : "Kod gönder"}
+            {yukleniyor ? t("kod.sending") : t("kod.send")}
           </button>
 
           <p className="text-[12px] leading-relaxed text-[#8b8b93]">
-            Kayıtlı adresine 6 haneli bir kod gönderiyoruz. Kod{" "}
-            <strong>10 dakika</strong> geçerli; kimseyle paylaşma.
+            {t("kod.sentInfo")}
           </p>
         </form>
       ) : (
         <form onSubmit={koduGonder} className="space-y-4">
           <p className="rounded-lg border border-[#2a2a30] bg-[#141417] px-3 py-2.5 text-[13px] text-[#c9c9d1]">
-            Kod <strong>{eposta}</strong> adresine gönderildi.
+            {t("kod.sentTo", { email: eposta })}
           </p>
 
           <div>
             <label className="etiket" htmlFor="kod">
-              6 haneli kod
+              {t("kod.sixDigit")}
             </label>
             <input
               ref={kodGirdi}
@@ -243,9 +244,9 @@ export default function KodAkisi({
               <SifreAlani
                 id="yeni-sifre"
                 name="sifre"
-                label="Yeni şifre"
+                label={t("kod.newPassword")}
                 autoComplete="new-password"
-                placeholder="En az 8 karakter"
+                placeholder={t("kod.newPasswordHint")}
                 minLength={8}
                 value={sifre}
                 onChange={setSifre}
@@ -253,9 +254,9 @@ export default function KodAkisi({
               <SifreAlani
                 id="yeni-sifre-tekrar"
                 name="sifreTekrar"
-                label="Yeni şifre (tekrar)"
+                label={t("kod.newPasswordRepeat")}
                 autoComplete="new-password"
-                placeholder="Aynı şifreyi yaz"
+                placeholder={t("kod.repeatHint")}
                 minLength={8}
                 value={sifreTekrar}
                 onChange={setSifreTekrar}
@@ -268,7 +269,7 @@ export default function KodAkisi({
             disabled={yukleniyor || kod.length !== 6 || (amac === "sifre" && sifre.length < 8)}
             className="btn-birincil h-11 w-full text-sm disabled:opacity-50"
           >
-            {yukleniyor ? "Doğrulanıyor…" : amac === "sifre" ? "Şifremi güncelle" : "Doğrula"}
+            {yukleniyor ? t("kod.verifying") : amac === "sifre" ? t("kod.updatePassword") : t("kod.verify")}
           </button>
 
           <div className="flex items-center justify-between gap-3 text-[12px]">
@@ -281,7 +282,7 @@ export default function KodAkisi({
               }}
               className="text-[#a1a1aa] underline underline-offset-2"
             >
-              E-postayı değiştir
+              {t("kod.changeEmail")}
             </button>
             <button
               type="button"
@@ -289,13 +290,13 @@ export default function KodAkisi({
               onClick={() => void istekGonder()}
               className="text-[#e8ae55] underline underline-offset-2 disabled:opacity-50"
             >
-              {kalanSn > 0 ? `Yeniden gönder (${kalanSn} sn)` : "Yeniden gönder"}
+              {kalanSn > 0 ? t("kod.resendIn", { s: kalanSn }) : t("kod.resend")}
             </button>
           </div>
 
           {amac === "sifre" ? (
             <p className="text-[11.5px] leading-relaxed text-[#8b8b93]">
-              Şifre değişince tüm cihazlardaki oturumlar kapanır.
+              {t("kod.allDevices")}
             </p>
           ) : null}
         </form>

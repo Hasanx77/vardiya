@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDil } from "@/components/DilSaglayici";
 
 /**
  * "Google ile devam et" düğmesi — Google Identity Services (GSI), **popup** modu.
@@ -79,6 +80,7 @@ export default function GoogleGiris({
   hedef?: string;
 }) {
   const kap = useRef<HTMLDivElement>(null);
+  const { dil } = useDil();
   const [durum, setDurum] = useState<Durum>("yukleniyor");
   const [hata, setHata] = useState<string | null>(null);
 
@@ -123,7 +125,7 @@ export default function GoogleGiris({
 
         g.accounts.id.initialize({
           client_id: istemciKimligi,
-          locale: "tr",
+          locale: dil,
           cancel_on_tap_outside: true,
           ux_mode: "popup",
           callback: (yanit) => {
@@ -145,7 +147,7 @@ export default function GoogleGiris({
           shape: "rectangular",
           logo_alignment: "left",
           width: genislik,
-          locale: "tr",
+          locale: dil,
         });
         setDurum("hazir");
       } catch {
@@ -161,7 +163,7 @@ export default function GoogleGiris({
     return () => {
       iptal = true;
     };
-  }, [istemciKimligi, girisYap]);
+  }, [istemciKimligi, girisYap, dil]);
 
   return (
     <div>

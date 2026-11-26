@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
-import { cleanText, isValidISODate } from "@/lib/validate";
+import { isValidISODate } from "@/lib/validate";
+import { metinNormalizeCokSatir } from "@/lib/metin";
 
 // Gün notu ekler/günceller; not boşsa siler
 // body: { date, note }
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   const business = await ensureBusiness();
-  const note = cleanText(body?.note, 300);
+  const note = metinNormalizeCokSatir(body?.note, 300);
 
   if (!note) {
     await prisma.dayNote.deleteMany({ where: { businessId: business.id, date } });

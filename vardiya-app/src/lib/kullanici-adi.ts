@@ -1,33 +1,36 @@
 /**
  * Kullanıcı adı üretimi ve doğrulaması.
  *
- * Amaç: kayıtta e-posta yerine **kısa bir ad** göstermek ("hasan" gibi).
- * Kurallar: 3-24 karakter, küçük harf, harf/rakam/nokta/alt çizgi; baş ve son
- * karakter harf ya da rakam. Türkçe karakterler sadeleştirilir (ş → s).
+ * Kural (26 Kas 2026 güncellendi): **Türkçe ve diğer Unicode harfler serbest**.
+ * Eskiden ad ASCII'ye indiriliyordu ("ışıl" → "isil"); patron "Türkçe
+ * karakterlerde sıkıntı olmasın" dediği için artık korunuyor.
+ *
+ * Kurallar:
+ *   • 3–24 karakter
+ *   • Harf (her dil), rakam, nokta, tire, alt çizgi
+ *   • Başında ve sonunda harf/rakam
+ *   • Boşluklar tireye çevrilir ("ışıl öğüt" → "ışıl-öğüt")
+ *   • Türkçe küçük harfe çevrilir (I → ı, İ → i)
  */
+import { metinNormalize } from "./metin";
 
-const TR_HARF: Record<string, string> = {
-  ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u",
-  Ç: "c", Ğ: "g", İ: "i", Ö: "o", Ş: "s", Ü: "u",
-};
+/** Ad için izinli karakter deseni — tüm Unicode harfleri kapsar. */
+const DESEN = /^[\p{L}\p{N}][\p{L}\p{N}._-]*[\p{L}\p{N}]$/u;
 
 export function kullaniciAdiTemizle(ham: string): string {
-  const sade = (ham ?? "")
-    .split("")
-    .map((h) => TR_HARF[h] ?? h)
-    .join("")
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]/g, "")
-    .replace(/^[^a-z0-9]+/, "")
-    .replace(/[^a-z0-9]+$/, "")
+  return metinNormalize(ham, 64)
+    .toLocaleLowerCase("tr")
+    .replace(/\s+/g, "-")
+    .replace(/[^\p{L}\p{N}._-]/gu, "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/[^\p{L}\p{N}]+$/u, "")
     .slice(0, 24);
-  return sade;
 }
 
 /** Geçerli mi? (temizlenmiş hâli kurallara uyuyor mu) */
 export function kullaniciAdiGecerliMi(ham: string): boolean {
   const temiz = kullaniciAdiTemizle(ham);
-  return temiz.length >= 3 && temiz.length <= 24 && /^[a-z0-9][a-z0-9._-]*[a-z0-9]$/.test(temiz);
+  return temiz.length >= 3 && temiz.length <= 24 && DESEN.test(temiz);
 }
 
 /** Hata mesajı (geçerliyse null). */
@@ -35,8 +38,8 @@ export function kullaniciAdiHatasi(ham: string): string | null {
   const temiz = kullaniciAdiTemizle(ham);
   if (temiz.length < 3) return "Kullanıcı adı en az 3 karakter olmalı.";
   if (temiz.length > 24) return "Kullanıcı adı en fazla 24 karakter olabilir.";
-  if (!/^[a-z0-9][a-z0-9._-]*[a-z0-9]$/.test(temiz)) {
-    return "Kullanıcı adı harf veya rakamla başlayıp bitmeli; arada nokta, tire, alt çizgi olabilir.";
+  if (!DESEN.test(temiz)) {
+    return "Kullanıcı adı harf veya rakamla başlayıp bitmeli; arada nokta, tire, alt çizgi olabilir. Türkçe karakterler serbest.";
   }
   return null;
 }

@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { veritabaniBakimi } from "./db-bakim";
 import { ensureBusiness } from "./server-data";
 import { izinTalepleri } from "./izin-db";
 import type { ColorKey, StatePayload } from "./types";
@@ -12,6 +13,8 @@ import type { ColorKey, StatePayload } from "./types";
  * "Yükleniyor..." beklemeden, veriyle birlikte açılır — site daha akıcı olur.
  */
 export async function getStatePayload(): Promise<StatePayload> {
+  // İlk çağrıda WAL + indeksler (bir kez, fail-open).
+  await veritabaniBakimi();
   const business = await ensureBusiness();
 
   const [employees, shiftTemplates, assignments, announcements, dayNotes, weekPlans, izinler] =

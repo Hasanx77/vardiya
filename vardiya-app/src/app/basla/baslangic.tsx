@@ -101,8 +101,8 @@ export default function Baslangic({
                 />
               </div>
               <p className="mt-1 text-[11px] text-zinc-500">
-                Küçük harf, 3-24 karakter. Örn. <code>hasan</code>,{" "}
-                <code>kahve.dunyasi</code>
+                3–24 karakter; Türkçe karakterler serbest. Örn. <code>hasan</code>,{" "}
+                <code>ışıl</code>, <code>kahve.dunyasi</code>
               </p>
             </div>
 

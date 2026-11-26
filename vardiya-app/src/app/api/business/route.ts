@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureBusiness } from "@/lib/server-data";
 import { normalizeTime } from "@/lib/validate";
+import { metinNormalize } from "@/lib/metin";
 
 /**
  * İşletme ayarları: ad + **standart mesai saatleri**.
@@ -14,7 +15,7 @@ export async function PATCH(request: Request) {
   const data: { name?: string; openTime?: string; closeTime?: string } = {};
 
   if (body?.name !== undefined) {
-    data.name = String(body.name ?? "").trim().slice(0, 80) || "İşletmem";
+    data.name = metinNormalize(body.name, 80) || "İşletmem";
   }
 
   const acilis = normalizeTime(body?.openTime);
